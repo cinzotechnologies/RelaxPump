@@ -5,7 +5,7 @@
   "scripts": {
     "test": "firebase emulators:exec --only database --project demo-relaxpump \"node --test test/rules.test.js\"",
     "emulators": "firebase emulators:start --project demo-relaxpump",
-    "deploy:rules": "firebase deploy --only database --project iotcinzo",
+    "deploy:rules": "node scripts/deploy-rules.mjs",
     "new-device": "node scripts/new-device.mjs",
     "reset-password": "node scripts/reset-password.mjs",
     "fake-device": "node scripts/fake-device.mjs",

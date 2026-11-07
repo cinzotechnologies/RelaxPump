@@ -24,16 +24,21 @@ cd ../firebase && npm install
 3. Android app `com.cinzo.relaxpump` registered → `google-services.json` in `app/` (git-ignored).
 4. Service account key at `D:\keys\iotcinzo-admin.json` (outside the repo).
 
-Deploy the security rules (after the tests pass):
+Deploy the security rules (after the tests pass) — uses the service account key, no login:
 
 ```bash
 cd firebase
 npm test               # emulator tests for database.rules.json
-npx firebase login     # once
-npm run deploy:rules
+npm run deploy:rules   # deployed 2026-11-08
 ```
 
-## 3. See the app now — Expo Go (simulator data)
+## 3. See the app — Expo Go (simulator data)
+
+**Any time, no PC needed:** open Expo Go (signed in as `cinzotechnologies`) → Projects → **relaxpump**,
+or open `exp://u.expo.dev/db093452-b1ce-4449-b7a4-baee91a43ca4?channel-name=preview`.
+Publish a new version after changes: `npm run update:preview -- --environment preview --message "what changed"`.
+
+**Live while coding** (updates on every save):
 
 ```bash
 cd app
