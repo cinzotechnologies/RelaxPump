@@ -1,0 +1,22 @@
+{
+  "name": "relaxpump-firebase",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "firebase emulators:exec --only database --project demo-relaxpump \"node --test test/rules.test.js\"",
+    "emulators": "firebase emulators:start --project demo-relaxpump",
+    "deploy:rules": "firebase deploy --only database --project iotcinzo",
+    "new-device": "node scripts/new-device.mjs",
+    "reset-password": "node scripts/reset-password.mjs",
+    "fake-device": "node scripts/fake-device.mjs"
+  },
+  "devDependencies": {
+    "@firebase/rules-unit-testing": "^5.0.2",
+    "firebase": "^12.19.0",
+    "firebase-tools": "^14.27.0"
+  },
+  "dependencies": {
+    "firebase-admin": "^14.5.0",
+    "qrcode": "^1.5.4"
+  }
+}
