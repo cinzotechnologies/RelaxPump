@@ -84,14 +84,17 @@ It creates the device login, the claim hash and default config, and writes
 npm run fake-device -- --id RP-XXXXXX          # --fast fills 10x quicker
 ```
 
-In the app: sign up → Bluetooth setup opens → scan `qr.png`. The BLE search needs a real controller;
-to link the fake one, use the app with the QR when a board is present, or claim it from the
-Firebase console by hand during testing.
+Sign up in the app (development build), then link the fake controller to that phone number:
+
+```bash
+npm run link-device -- --id RP-XXXXXX --phone 9876543210
+```
+
+With a real board, the app links it itself: Bluetooth setup → scan `qr.png`.
 
 ## 6. Flash the ESP32
 
-Copy `firebase/out/<ID>/secrets.h` to
-`firmware/include/secrets.h`, then in VS Code: PlatformIO → Upload, Monitor at 115200.
+Copy `firebase/out/<ID>/secrets.h` to `firmware/include/secrets.h`, then in VS Code: PlatformIO → Upload, Monitor at 115200.
 Relay test: `firmware/tools/ValveTest`.
 
 ## 7. First-time setup (customer)
