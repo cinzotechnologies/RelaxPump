@@ -90,7 +90,7 @@ Firebase console by hand during testing.
 
 ## 6. Flash the ESP32
 
-Firmware lives in `firmware/` (milestone M6). Copy `firebase/out/<ID>/secrets.h` to
+Copy `firebase/out/<ID>/secrets.h` to
 `firmware/include/secrets.h`, then in VS Code: PlatformIO → Upload, Monitor at 115200.
 Relay test: `firmware/tools/ValveTest`.
 
