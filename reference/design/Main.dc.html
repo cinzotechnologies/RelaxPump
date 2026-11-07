@@ -1,0 +1,640 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RelaxPump</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;500;600&display=swap">
+<style>
+body{margin:0;font-family:-apple-system,'SF Pro Text',Inter,system-ui,sans-serif;color:#E8F6F7;-webkit-font-smoothing:antialiased}
+a{color:#7FE3EC}a:hover{color:#B5F1F6}
+button,input{font-family:inherit}
+input{outline:none;transition:border-color .2s,box-shadow .2s,background-color .2s}
+input:not([type=range]):focus{border-color:rgba(127,227,236,.7)!important;box-shadow:0 0 0 3px rgba(127,227,236,.14);background-color:#0C2B33!important}
+input::placeholder{color:#5E7C81}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:6px;border-radius:3px;margin:0;cursor:pointer}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:11px;background:#E8F6F7;border:4px solid #7FE3EC;box-shadow:0 0 12px rgba(127,227,236,.6);transition:transform .2s}
+input[type=range]::-webkit-slider-thumb:active{transform:scale(1.15)}
+input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:11px;background:#E8F6F7;border:4px solid #7FE3EC}
+@keyframes inR{from{opacity:0;transform:translateX(28px)}to{opacity:1;transform:none}}
+@keyframes inL{from{opacity:0;transform:translateX(-28px)}to{opacity:1;transform:none}}
+@keyframes inUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+@keyframes sheetUp{from{transform:translateY(100%)}to{transform:none}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes toastIn{from{opacity:0;transform:translateY(-10px) scale(.96)}to{opacity:1;transform:none}}
+@keyframes floaty{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+@keyframes glow{0%,100%{opacity:.5}50%{opacity:1}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes wvx{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+@keyframes wave{from{transform:translateX(0)}to{transform:translateX(-120px)}}
+@keyframes wave2{from{transform:translateX(-120px)}to{transform:translateX(0)}}
+@keyframes bub{0%{transform:translateY(0);opacity:0}20%{opacity:1}100%{transform:translateY(-60px);opacity:0}}
+@keyframes flow{to{stroke-dashoffset:-36}}
+.scrF{animation:inR .42s cubic-bezier(.22,1,.36,1) both}
+.scrB{animation:inL .42s cubic-bezier(.22,1,.36,1) both}
+.st{animation:inUp .5s cubic-bezier(.22,1,.36,1) both}
+.d1{animation-delay:.05s}.d2{animation-delay:.1s}.d3{animation-delay:.15s}.d4{animation-delay:.2s}.d5{animation-delay:.25s}
+.press{transition:transform .18s cubic-bezier(.22,1,.36,1),background-color .25s,color .25s,box-shadow .25s,border-color .25s,opacity .25s}
+.press:active{transform:scale(.96)}
+.fill{transition:height .8s cubic-bezier(.22,1,.36,1)}
+.knob{transition:left .3s cubic-bezier(.34,1.56,.64,1)}
+.trk{transition:background-color .25s,box-shadow .25s}
+.bar{transition:height .55s cubic-bezier(.22,1,.36,1),width .55s cubic-bezier(.22,1,.36,1)}
+.seg{transition:left .35s cubic-bezier(.22,1,.36,1)}
+.sheet{animation:sheetUp .45s cubic-bezier(.22,1,.36,1) both}
+.fade{animation:fadeIn .3s both}
+.toast{animation:toastIn .35s cubic-bezier(.22,1,.36,1) both}
+.floaty{animation:floaty 4s ease-in-out infinite}
+.glow{animation:glow 2.4s ease-in-out infinite}
+.spin{animation:spin .8s linear infinite}
+.wvA{animation:wvx 6s linear infinite}
+.wvB{animation:wvx 3.6s linear infinite reverse}
+.wv{animation:wave 3.2s linear infinite}
+.wv2{animation:wave2 5s linear infinite}
+.bub{animation:bub 2.6s ease-in infinite}.b2{animation-delay:.9s}.b3{animation-delay:1.7s}
+.stream{animation:flow .5s linear infinite}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; position: relative; overflow: hidden; background: #021A20; font-family: -apple-system, 'SF Pro Text', Inter, system-ui, sans-serif; color: #E8F6F7">
+
+  <!-- WELCOME -->
+  <sc-if value="{{isWelcome}}" hint-placeholder-val="{{ true }}">
+    <div class="{{scr}}" style="position: absolute; inset: 0; background: radial-gradient(110% 60% at 50% 36%, #044753 0%, #021A20 72%); display: flex; flex-direction: column; align-items: center; padding: 64px 24px 36px; box-sizing: border-box">
+
+      <div class="st d1 floaty" style="width: 220px; height: 220px; margin-top: 96px">
+        <svg width="220" height="220" viewBox="10 0 300 300" role="img" aria-label="Water tank filling">
+          <defs>
+            <clipPath id="tankClip"><rect x="90" y="64" width="140" height="196" rx="26"></rect></clipPath>
+            <linearGradient id="water" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8CEBF2"></stop><stop offset="1" stop-color="#03606E"></stop></linearGradient>
+            <linearGradient id="shade" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#000000" stop-opacity="0.45"></stop><stop offset="0.28" stop-color="#FFFFFF" stop-opacity="0.16"></stop><stop offset="0.36" stop-color="#FFFFFF" stop-opacity="0.04"></stop><stop offset="0.8" stop-color="#000000" stop-opacity="0.12"></stop><stop offset="1" stop-color="#000000" stop-opacity="0.5"></stop></linearGradient>
+            <linearGradient id="lid" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#0B3B44"></stop><stop offset="0.4" stop-color="#2A7883"></stop><stop offset="1" stop-color="#062A31"></stop></linearGradient>
+            <linearGradient id="pipe" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3C8D98"></stop><stop offset="1" stop-color="#0B3B44"></stop></linearGradient>
+            <radialGradient id="floor" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#7FE3EC" stop-opacity="0.4"></stop><stop offset="1" stop-color="#7FE3EC" stop-opacity="0"></stop></radialGradient>
+          </defs>
+          <ellipse cx="160" cy="276" rx="120" ry="16" fill="url(#floor)"></ellipse>
+          <path d="M300 30 H246 a14 14 0 0 0 -14 14 V56" fill="none" stroke="url(#pipe)" stroke-width="12" stroke-linecap="round"></path>
+          <rect x="268" y="21" width="14" height="18" rx="3" fill="#0E4650" stroke="#7FE3EC" stroke-opacity="0.4"></rect>
+          <line class="stream" x1="232" y1="64" x2="232" y2="158" stroke="#8CEBF2" stroke-width="4" stroke-linecap="round" stroke-dasharray="10 8" opacity="0.85" clip-path="url(#tankClip)"></line>
+          <rect x="90" y="64" width="140" height="196" rx="26" fill="#06303A" fill-opacity="0.55"></rect>
+          <g clip-path="url(#tankClip)">
+            <g class="wv2"><path d="M-40 156 Q-10 148 20 156 T80 156 T140 156 T200 156 T260 156 T320 156 T380 156 V270 H-40 Z" fill="#7FE3EC" fill-opacity="0.35"></path></g>
+            <g class="wv"><path d="M-40 160 Q-10 151 20 160 T80 160 T140 160 T200 160 T260 160 T320 160 T380 160 V270 H-40 Z" fill="url(#water)"></path></g>
+            <circle class="bub" cx="132" cy="240" r="3" fill="#FFFFFF" fill-opacity="0.6"></circle>
+            <circle class="bub b2" cx="176" cy="246" r="2.2" fill="#FFFFFF" fill-opacity="0.6"></circle>
+            <circle class="bub b3" cx="152" cy="242" r="1.8" fill="#FFFFFF" fill-opacity="0.6"></circle>
+            <path d="M90 102 Q160 112 230 102 M90 142 Q160 152 230 142 M90 182 Q160 192 230 182 M90 222 Q160 232 230 222" fill="none" stroke="#FFFFFF" stroke-opacity="0.14" stroke-width="2"></path>
+            <rect x="90" y="64" width="140" height="196" fill="url(#shade)"></rect>
+          </g>
+          <rect x="90" y="64" width="140" height="196" rx="26" fill="none" stroke="#7FE3EC" stroke-opacity="0.45" stroke-width="1.5"></rect>
+          <ellipse cx="160" cy="66" rx="70" ry="13" fill="url(#lid)" stroke="#7FE3EC" stroke-opacity="0.35"></ellipse>
+          <ellipse cx="160" cy="58" rx="22" ry="6" fill="#2A7883" stroke="#7FE3EC" stroke-opacity="0.4"></ellipse>
+          <rect x="138" y="52" width="44" height="8" fill="#1A5862"></rect>
+          <ellipse cx="160" cy="52" rx="22" ry="6" fill="#3C8D98"></ellipse>
+        </svg>
+      </div>
+
+      <h1 class="st d2" style="margin: 22px 0 0; font-family: Outfit, -apple-system, system-ui, sans-serif; font-size: 34px; line-height: 1.1; letter-spacing: -0.8px; text-align: center"><span style="font-weight: 300; color: #7FE3EC">Relax</span><span style="font-weight: 600; color: #FFFFFF">Pump</span></h1>
+      <span class="st d3" style="margin-top: 10px; font-size: 14px; color: #8FB3B8; text-align: center">Tanks that fill themselves.</span>
+      <div style="flex-grow: 1"></div>
+      <button class="press st d4" onClick="{{toAuth}}" style="width: 100%; height: 56px; border-radius: 28px; border: 1px solid rgba(255,255,255,0.35); background: linear-gradient(135deg, #A8F3F8 0%, #7FE3EC 45%, #2FB6C6 100%); color: #021A20; font-family: Outfit, system-ui, sans-serif; font-size: 17px; font-weight: 500; letter-spacing: -0.2px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; padding: 0 6px 0 24px; box-shadow: 0 10px 30px rgba(127,227,236,0.28), inset 0 1px 0 rgba(255,255,255,0.5)">Get started<span style="width: 44px; height: 44px; border-radius: 22px; background: #021A20; display: flex; align-items: center; justify-content: center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7FE3EC" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></button>
+      <span class="st d5" style="margin-top: 20px; display: flex; align-items: center; gap: 10px; font-family: Outfit, system-ui, sans-serif; font-size: 13px; font-weight: 300; color: #7F9EA3"><span style="width: 22px; height: 1px; background: linear-gradient(90deg, transparent, rgba(127,227,236,0.5))"></span>Engineered by <b style="font-weight: 600; letter-spacing: 1.5px; color: #FFFFFF; margin-left: -4px">CINZO</b><span style="width: 22px; height: 1px; background: linear-gradient(90deg, rgba(127,227,236,0.5), transparent)"></span></span>
+    </div>
+  </sc-if>
+
+  <!-- AUTH -->
+  <sc-if value="{{isAuth}}" hint-placeholder-val="{{ false }}">
+    <div class="{{scr}}" style="position: absolute; inset: 0; padding: 56px 20px 36px; box-sizing: border-box; display: flex; flex-direction: column; gap: 22px">
+      <button class="press" onClick="{{toWelcome}}" aria-label="Back" style="width: 40px; height: 40px; border-radius: 20px; border: 1px solid rgba(127,227,236,0.16); background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#E8F6F7" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></button>
+      <div class="st" style="display: flex; flex-direction: column; gap: 4px">
+        <span style="font-size: 24px; font-weight: 700; letter-spacing: -0.5px">{{authTitle}}</span>
+        <span style="font-size: 14px; color: #8FB3B8">{{authSub}}</span>
+      </div>
+      <div class="st d1" style="position: relative; display: flex; height: 40px; padding: 3px; border-radius: 20px; background: #0A242B; box-sizing: border-box">
+        <span class="seg" style="{{authInd}}"></span>
+        <button onClick="{{modeIn}}" style="{{modeInStyle}}">Sign in</button>
+        <button onClick="{{modeUp}}" style="{{modeUpStyle}}">Sign up</button>
+      </div>
+      <div class="st d2" style="display: flex; flex-direction: column; gap: 12px">
+        <sc-if value="{{isSignUp}}" hint-placeholder-val="{{ false }}">
+          <label class="fade" style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #8FB3B8">Name
+            <input id="fName" value="{{name}}" onChange="{{onName}}" placeholder="Your name" autocomplete="name" style="height: 46px; border-radius: 14px; border: 1px solid rgba(127,227,236,0.14); background: #0A242B; color: #E8F6F7; padding: 0 14px; font-size: 15px"></label>
+        </sc-if>
+        <label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #8FB3B8">Phone
+          <span style="display: flex; gap: 8px">
+            <span style="height: 46px; padding: 0 12px; border-radius: 14px; background: #0A242B; border: 1px solid rgba(127,227,236,0.14); display: flex; align-items: center; font-size: 15px; color: #E8F6F7">+91</span>
+            <input id="fPhone" value="{{phone}}" onChange="{{onPhone}}" inputmode="numeric" placeholder="10-digit number" autocomplete="tel" style="flex-grow: 1; min-width: 0; height: 46px; border-radius: 14px; border: 1px solid rgba(127,227,236,0.14); background: #0A242B; color: #E8F6F7; padding: 0 14px; font-size: 15px; letter-spacing: 0.5px">
+          </span>
+          <sc-if value="{{phoneErr}}" hint-placeholder-val="{{ false }}"><span class="fade" style="color: #FCA5A5; font-size: 12px">Enter a 10-digit number</span></sc-if>
+        </label>
+        <label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #8FB3B8">Password
+          <span style="position: relative; display: flex">
+            <input id="fPass" value="{{pass}}" onChange="{{onPass}}" type="{{passType}}" placeholder="At least 6 characters" autocomplete="current-password" style="flex-grow: 1; min-width: 0; height: 46px; border-radius: 14px; border: 1px solid rgba(127,227,236,0.14); background: #0A242B; color: #E8F6F7; padding: 0 46px 0 14px; font-size: 15px">
+            <button onClick="{{toggleShow}}" aria-label="Show password" style="position: absolute; right: 2px; top: 1px; width: 44px; height: 44px; border: 0; background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8FB3B8" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button>
+          </span>
+          <sc-if value="{{passErr}}" hint-placeholder-val="{{ false }}"><span class="fade" style="color: #FCA5A5; font-size: 12px">Use at least 6 characters</span></sc-if>
+        </label>
+        <sc-if value="{{isSignIn}}" hint-placeholder-val="{{ true }}">
+          <button style="align-self: flex-end; border: 0; background: transparent; color: #7FE3EC; font-size: 13px; cursor: pointer; padding: 4px 0">Forgot password?</button>
+        </sc-if>
+      </div>
+      <div style="flex-grow: 1"></div>
+      <button class="press st d3" onClick="{{submit}}" style="height: 50px; border-radius: 25px; border: 0; background: #7FE3EC; color: #021A20; font-size: 15px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 0 24px rgba(127,227,236,0.28)">
+        <sc-if value="{{loading}}" hint-placeholder-val="{{ false }}"><span class="spin" style="width: 16px; height: 16px; border-radius: 8px; border: 2px solid rgba(2,26,32,0.25); border-top-color: #021A20"></span></sc-if>
+        {{submitLabel}}</button>
+    </div>
+  </sc-if>
+
+  <!-- HOME -->
+  <sc-if value="{{isHome}}" hint-placeholder-val="{{ false }}">
+    <div class="{{scr}}" style="position: absolute; inset: 0; overflow-y: auto; padding-bottom: 110px; box-sizing: border-box">
+      <div style="background: radial-gradient(140% 100% at 15% 0%, #0A9AAE 0%, #037788 42%, #035360 100%); padding: 52px 20px 96px; border-radius: 0 0 30px 30px; display: flex; align-items: center; justify-content: space-between">
+        <div style="display: flex; gap: 10px; align-items: center">
+          <button class="press" onClick="{{toWelcome}}" aria-label="RelaxPump home" style="width: 48px; height: 48px; border-radius: 16px; border: 0; background: linear-gradient(160deg, #FFFFFF 0%, #E3F7F9 100%); display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 8px 20px rgba(2,26,32,0.35), inset 0 -2px 0 rgba(3,83,96,0.12)">
+            <svg width="40" height="40" viewBox="0 0 48 48" aria-hidden="true"><defs><linearGradient id="hmr" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#03606E"></stop><stop offset="0.55" stop-color="#22B8C6"></stop><stop offset="1" stop-color="#9AF0F6"></stop></linearGradient><linearGradient id="hmw" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8CEBF2"></stop><stop offset="1" stop-color="#037788"></stop></linearGradient><clipPath id="hmc"><circle cx="24" cy="24" r="13.6"></circle></clipPath><filter id="hmf" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="1.2"></feGaussianBlur></filter></defs><circle cx="24" cy="24" r="20.5" fill="none" stroke="rgba(3,83,96,0.08)" stroke-width="3.6"></circle><circle cx="24" cy="24" r="20.5" fill="none" stroke="url(#hmr)" stroke-width="3.6" stroke-linecap="round" stroke-dasharray="96.6 128.8" transform="rotate(128 24 24)" filter="url(#hmf)" opacity="0.35"></circle><circle cx="24" cy="24" r="20.5" fill="none" stroke="url(#hmr)" stroke-width="3.6" stroke-linecap="round" stroke-dasharray="96.6 128.8" transform="rotate(128 24 24)"></circle><circle cx="24" cy="24" r="13.6" fill="#EAF7F9"></circle><g clip-path="url(#hmc)"><path d="M6 23.5q3.75-3.2 7.5 0t7.5 0t7.5 0t7.5 0t7.5 0V40H6Z" fill="#7FE3EC" opacity="0.45"></path><path d="M2 26q3.75-3.4 7.5 0t7.5 0t7.5 0t7.5 0t7.5 0t7.5 0V40H2Z" fill="url(#hmw)"></path><path d="M14.5 31.5q2-1.4 4 0" fill="none" stroke="#FFFFFF" stroke-opacity="0.6" stroke-width="1.3" stroke-linecap="round"></path><circle cx="28.5" cy="33" r="0.9" fill="#FFFFFF" fill-opacity="0.6"></circle></g><circle cx="24" cy="24" r="13.6" fill="none" stroke="rgba(3,119,136,0.25)" stroke-width="0.8"></circle><path d="M16.5 16.8a10 10 0 0 1 5-3.2" fill="none" stroke="#FFFFFF" stroke-opacity="0.9" stroke-width="1.4" stroke-linecap="round"></path></svg></button>
+          <span style="display: flex; flex-direction: column"><span style="font-size: 11px; color: rgba(255,255,255,0.75)">Welcome back</span><span style="font-size: 15px; font-weight: 600; color: #FFFFFF">{{userName}}</span></span>
+        </div>
+        <span style="display: flex; align-items: center; gap: 8px">
+          <button class="press" onClick="{{openNotif}}" aria-label="Notifications" style="position: relative; width: 42px; height: 42px; border-radius: 21px; border: 1px solid rgba(255,255,255,0.22); background: rgba(255,255,255,0.12); display: flex; align-items: center; justify-content: center; cursor: pointer">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/></svg>
+            <sc-if value="{{hasNotif}}" hint-placeholder-val="{{ true }}"><span style="position: absolute; top: 9px; right: 10px; width: 8px; height: 8px; border-radius: 4px; background: #FF7A6B; box-shadow: 0 0 0 2px #037788"></span></sc-if>
+          </button>
+          <button class="press" onClick="{{goAccount}}" aria-label="Account" style="width: 42px; height: 42px; border-radius: 21px; border: 0; padding: 2px; background: conic-gradient(from 200deg, #FFFFFF, #7FE3EC, #FFFFFF); cursor: pointer; box-shadow: 0 6px 16px rgba(2,26,32,0.3)">
+            <span style="width: 100%; height: 100%; border-radius: 19px; background: linear-gradient(160deg, #FFFFFF 0%, #DDF6F8 100%); display: flex; align-items: center; justify-content: center; color: #035360; font-family: Outfit, system-ui, sans-serif; font-size: 14px; font-weight: 600; letter-spacing: 0.3px">{{initials}}</span></button>
+        </span>
+      </div>
+
+      <div class="st" style="margin: -78px 16px 0; background: #06171C; border: 1px solid rgba(127,227,236,0.12); border-radius: 26px; padding: 18px; height: 200px; box-sizing: border-box; position: relative; overflow: hidden; box-shadow: 0 18px 36px rgba(0,0,0,0.4)">
+        <div class="fill" style="{{waterH}}">
+          <svg class="wvA" width="200%" height="18" viewBox="0 0 800 40" preserveAspectRatio="none" aria-hidden="true" style="position: absolute; left: 0; top: -17px"><path d="M0 22 Q50 4 100 22 T200 22 T300 22 T400 22 T500 22 T600 22 T700 22 T800 22 V40 H0 Z" fill="#204449"></path></svg>
+          <svg class="wvB" width="200%" height="14" viewBox="0 0 800 40" preserveAspectRatio="none" aria-hidden="true" style="position: absolute; left: 0; top: -13px"><path d="M0 22 Q50 6 100 22 T200 22 T300 22 T400 22 T500 22 T600 22 T700 22 T800 22 V40 H0 Z" fill="#34646B"></path></svg>
+        </div>
+        <div style="position: relative; display: flex; justify-content: space-between; align-items: center">
+          <span style="font-size: 12px; color: #8FB3B8">{{countLabel}} · average</span>
+          <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: #7FE3EC"><span class="glow" style="width: 6px; height: 6px; border-radius: 3px; background: #7FE3EC; box-shadow: 0 0 6px #7FE3EC"></span>{{statusShort}}</span>
+        </div>
+        <div style="position: relative; font-size: 40px; font-weight: 700; letter-spacing: -1.2px; line-height: 1.1; margin-top: 4px; font-variant-numeric: tabular-nums">{{avg}}%</div>
+        <div style="position: absolute; left: 18px; bottom: 14px; display: flex; gap: 5px">
+          <span style="font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 999px; background: rgba(2,26,32,0.45); color: rgba(232,246,247,0.85)">Start {{low}}%</span>
+          <span style="font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 999px; background: rgba(2,26,32,0.45); color: rgba(232,246,247,0.85)">Stop {{high}}%</span>
+        </div>
+      </div>
+
+      <div class="st d1" style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin: 12px 16px 0">
+        <sc-for list="{{actions}}" as="a" hint-placeholder-count="4">
+          <button class="press" onClick="{{a.go}}" style="{{a.btn}}">
+            <sc-if value="{{a.isPump}}" hint-placeholder-val="{{ false }}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><path d="M12 3v9M7 6.3a8 8 0 1 0 10 0"/></svg></sc-if>
+            <sc-if value="{{a.isAuto}}" hint-placeholder-val="{{ false }}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7L21 8M21 3v5h-5"/></svg></sc-if>
+            <sc-if value="{{a.isTanks}}" hint-placeholder-val="{{ false }}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><rect x="3" y="6" width="5" height="14" rx="1.5"/><rect x="10" y="6" width="5" height="14" rx="1.5"/><rect x="17" y="6" width="4" height="14" rx="1.5"/></svg></sc-if>
+            <sc-if value="{{a.isStats}}" hint-placeholder-val="{{ false }}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg></sc-if>
+            <span style="font-size: 11px; font-weight: 600">{{a.label}}</span>
+          </button>
+        </sc-for>
+      </div>
+
+      <div class="st d2" style="margin: 20px 16px 0; display: flex; justify-content: space-between; align-items: center">
+        <span style="font-size: 15px; font-weight: 600">Tanks</span>
+        <button class="press" onClick="{{goTanks}}" style="border: 0; background: transparent; color: #7FE3EC; font-size: 13px; cursor: pointer; padding: 8px 0">See all</button>
+      </div>
+      <div class="st d3" style="margin: 4px 16px 0; display: flex; flex-direction: column; gap: 6px">
+        <sc-for list="{{tanks}}" as="t" hint-placeholder-count="3">
+          <button class="press" onClick="{{goTanksFn}}" style="display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 18px; border: 1px solid rgba(127,227,236,0.08); background: #0A242B; cursor: pointer; color: #E8F6F7; text-align: left">
+            <span style="{{t.ring}}"><span style="width: 28px; height: 28px; border-radius: 14px; background: #0A242B; display: flex; align-items: center; justify-content: center"><span style="{{t.dot}}"></span></span></span>
+            <span style="flex-grow: 1; display: flex; flex-direction: column; gap: 2px"><span style="font-size: 14px">{{t.name}}</span><sc-if value="{{t.hasCap}}" hint-placeholder-val="{{ false }}"><span style="font-size: 11px; color: #6E8A8F">{{t.litres}}</span></sc-if></span>
+            <span style="font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums">{{t.pct}}%</span>
+          </button>
+        </sc-for>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- TANKS -->
+  <sc-if value="{{isTanks}}" hint-placeholder-val="{{ false }}">
+    <div class="{{scr}}" style="position: absolute; inset: 0; overflow-y: auto; padding: 52px 16px 110px; box-sizing: border-box; display: flex; flex-direction: column; gap: 16px">
+      <div style="display: flex; align-items: center; gap: 10px">
+        <button class="press" onClick="{{goHome}}" aria-label="Back" style="width: 40px; height: 40px; border-radius: 20px; border: 1px solid rgba(127,227,236,0.16); background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#E8F6F7" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></button>
+        <span style="font-size: 17px; font-weight: 600; flex-grow: 1">Tanks</span>
+        <button class="press" onClick="{{openTanks}}" style="height: 34px; padding: 0 14px; border-radius: 17px; border: 1px solid rgba(127,227,236,0.25); background: transparent; color: #7FE3EC; font-size: 13px; font-weight: 600; cursor: pointer">Edit</button>
+      </div>
+
+      <div class="st" style="display: flex; flex-wrap: wrap; gap: 8px">
+        <sc-for list="{{tanks}}" as="t" hint-placeholder-count="3">
+          <div style="{{t.card}}">
+            <div style="{{t.gauge}}">
+              <div class="fill" style="{{t.fill}}"><svg class="wvA" width="200%" height="9" viewBox="0 0 800 40" preserveAspectRatio="none" aria-hidden="true" style="position: absolute; left: 0; top: -9px"><path d="M0 22 Q50 4 100 22 T200 22 T300 22 T400 22 T500 22 T600 22 T700 22 T800 22 V40 H0 Z" fill="currentColor" opacity="0.45"></path></svg><svg class="wvB" width="200%" height="8" viewBox="0 0 800 40" preserveAspectRatio="none" aria-hidden="true" style="position: absolute; left: 0; top: -7px"><path d="M0 22 Q50 4 100 22 T200 22 T300 22 T400 22 T500 22 T600 22 T700 22 T800 22 V40 H0 Z" fill="currentColor"></path></svg></div>
+              <span style="{{t.hiLine}}"></span>
+              <span style="{{t.loLine}}"></span>
+              <span style="position: absolute; left: 0; right: 0; top: 10px; text-align: center; font-size: 16px; font-weight: 700; font-variant-numeric: tabular-nums">{{t.pct}}%</span>
+            </div>
+            <span style="display: flex; flex-direction: column; align-items: center; gap: 1px"><span style="font-size: 12px; color: #8FB3B8">{{t.name}}</span><sc-if value="{{t.hasCap}}" hint-placeholder-val="{{ false }}"><span style="font-size: 11px; font-weight: 600; color: #E8F6F7">{{t.litresShort}}</span></sc-if></span>
+            <button class="press" onClick="{{t.toggle}}" aria-label="{{t.aria}}" style="{{t.valveBtn}}">{{t.valveLabel}}</button>
+          </div>
+        </sc-for>
+      </div>
+
+      <div class="st d1" style="display: flex; flex-direction: column; gap: 16px; padding: 14px 16px 18px; border-radius: 20px; background: #0A242B">
+        <div style="display: flex; align-items: center; justify-content: space-between">
+          <span style="font-size: 14px; font-weight: 600">Auto</span>
+          <button class="trk" onClick="{{toggleAuto}}" aria-label="Auto mode" style="{{autoTrk}}"><span class="knob" style="{{autoKnob}}"></span></button>
+        </div>
+        <label style="display: flex; flex-direction: column; gap: 10px">
+          <span style="display: flex; justify-content: space-between; font-size: 13px"><span style="color: #8FB3B8">Start below</span><span style="font-weight: 700; font-variant-numeric: tabular-nums">{{low}}%</span></span>
+          <input id="rLow" type="range" min="5" max="80" step="5" value="{{low}}" onChange="{{onLow}}" style="{{lowTrack}}">
+        </label>
+        <label style="display: flex; flex-direction: column; gap: 10px">
+          <span style="display: flex; justify-content: space-between; font-size: 13px"><span style="color: #8FB3B8">Stop at</span><span style="font-weight: 700; font-variant-numeric: tabular-nums">{{high}}%</span></span>
+          <input id="rHigh" type="range" min="20" max="100" step="5" value="{{high}}" onChange="{{onHigh}}" style="{{highTrack}}">
+        </label>
+      </div>
+
+      <sc-if value="{{hasMsg}}" hint-placeholder-val="{{ false }}">
+        <div class="fade" style="display: flex; gap: 8px; align-items: center; padding: 10px 14px; border-radius: 14px; background: rgba(250,204,21,0.08); border: 1px solid rgba(250,204,21,0.25); color: #FDE68A; font-size: 13px">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FACC15" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 3l10 18H2zM12 10v5M12 18v.5"/></svg>{{msg}}</div>
+      </sc-if>
+
+      <button class="press st d2" onClick="{{togglePump}}" style="{{pumpBtn}}">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 3v9M7 6.3a8 8 0 1 0 10 0"/></svg>{{pumpLabel}}</button>
+    </div>
+  </sc-if>
+
+  <!-- USAGE -->
+  <sc-if value="{{isActivity}}" hint-placeholder-val="{{ false }}">
+    <div class="{{scr}}" style="position: absolute; inset: 0; overflow-y: auto; padding: 52px 16px 110px; box-sizing: border-box; display: flex; flex-direction: column; gap: 16px">
+      <div style="display: flex; align-items: center; gap: 10px">
+        <button class="press" onClick="{{goHome}}" aria-label="Back" style="width: 40px; height: 40px; border-radius: 20px; border: 1px solid rgba(127,227,236,0.16); background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#E8F6F7" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></button>
+        <span style="font-size: 17px; font-weight: 600">Usage</span>
+      </div>
+      <div class="st" style="position: relative; display: flex; height: 38px; padding: 3px; border-radius: 19px; background: #0A242B; box-sizing: border-box; width: 200px">
+        <span class="seg" style="{{segInd}}"></span>
+        <button onClick="{{segUse}}" style="{{segA}}">Water</button>
+        <button onClick="{{segPump}}" style="{{segB}}">Pump</button>
+      </div>
+      <div class="st d1" style="font-size: 34px; font-weight: 700; letter-spacing: -1px; font-variant-numeric: tabular-nums">{{total}}</div>
+      <div class="st d2" style="display: flex; gap: 6px; align-items: flex-end; height: 190px; background: #06171C; border-radius: 22px; padding: 36px 12px 12px; box-sizing: border-box">
+        <sc-for list="{{bars}}" as="b" hint-placeholder-count="7">
+          <button onClick="{{b.pick}}" aria-label="{{b.aria}}" style="flex: 1; height: 100%; border: 0; background: transparent; padding: 0; cursor: pointer; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; position: relative; gap: 6px">
+            <sc-if value="{{b.sel}}" hint-placeholder-val="{{ false }}"><span class="fade" style="{{b.tip}}">{{b.value}}</span></sc-if>
+            <span class="bar" style="{{b.style}}"></span>
+            <span style="{{b.lbl}}">{{b.day}}</span>
+          </button>
+        </sc-for>
+      </div>
+      <div class="st d3" style="display: flex; flex-direction: column; gap: 6px">
+        <sc-for list="{{byTank}}" as="r" hint-placeholder-count="3">
+          <div style="display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 16px; background: #0A242B">
+            <span style="font-size: 13px; width: 52px">{{r.name}}</span>
+            <div style="flex-grow: 1; height: 4px; border-radius: 2px; background: rgba(127,227,236,0.1); overflow: hidden"><div class="bar" style="{{r.bar}}"></div></div>
+            <span style="font-size: 13px; font-weight: 600; width: 52px; text-align: right">{{r.val}}</span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- ACCOUNT -->
+  <sc-if value="{{isAccount}}" hint-placeholder-val="{{ false }}">
+    <div class="{{scr}}" style="position: absolute; inset: 0; overflow-y: auto; padding: 52px 16px 36px; box-sizing: border-box; display: flex; flex-direction: column; gap: 18px">
+      <div style="display: flex; align-items: center; gap: 10px">
+        <button class="press" onClick="{{goHome}}" aria-label="Back" style="width: 40px; height: 40px; border-radius: 20px; border: 1px solid rgba(127,227,236,0.16); background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#E8F6F7" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></button>
+        <span style="font-size: 17px; font-weight: 600">Account</span>
+      </div>
+      <div class="st" style="display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 8px 0 4px">
+        <span style="width: 72px; height: 72px; border-radius: 36px; background: linear-gradient(160deg, #FFFFFF, #DDF6F8); color: #035360; display: flex; align-items: center; justify-content: center; font-family: Outfit, system-ui, sans-serif; font-size: 24px; font-weight: 600; box-shadow: 0 0 0 4px rgba(127,227,236,0.15)">{{initials}}</span>
+        <span style="font-size: 18px; font-weight: 600; margin-top: 6px">{{userName}}</span>
+        <span style="font-size: 13px; color: #8FB3B8">{{phoneShow}}</span>
+      </div>
+      <div class="st d1" style="border-radius: 20px; background: #0A242B; overflow: hidden">
+        <button class="press" onClick="{{openPw}}" style="display: flex; align-items: center; gap: 12px; width: 100%; padding: 14px 16px; border: 0; background: transparent; cursor: pointer; text-align: left; font-size: 14px; color: #E8F6F7"><span style="width: 32px; height: 32px; border-radius: 10px; background: rgba(127,227,236,0.1); display: flex; align-items: center; justify-content: center; flex-shrink: 0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7FE3EC" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></span><span style="flex-grow: 1">Change password</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5E7C81" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>
+        <span style="display: block; height: 1px; margin-left: 60px; background: rgba(127,227,236,0.08)"></span>
+        <button class="press" onClick="{{openTanks}}" style="display: flex; align-items: center; gap: 12px; width: 100%; padding: 14px 16px; border: 0; background: transparent; cursor: pointer; text-align: left; font-size: 14px; color: #E8F6F7"><span style="width: 32px; height: 32px; border-radius: 10px; background: rgba(127,227,236,0.1); display: flex; align-items: center; justify-content: center; flex-shrink: 0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7FE3EC" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="3" y="6" width="5" height="14" rx="1.5"/><rect x="10" y="6" width="5" height="14" rx="1.5"/><rect x="17" y="6" width="4" height="14" rx="1.5"/></svg></span><span style="flex-grow: 1">Tanks</span><span style="font-size: 13px; color: #8FB3B8">{{count}}</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5E7C81" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>
+      </div>
+      <div class="st d2" style="border-radius: 20px; background: #0A242B; overflow: hidden">
+        <button class="press" onClick="{{signOut}}" style="display: flex; align-items: center; gap: 12px; width: 100%; padding: 14px 16px; border: 0; background: transparent; cursor: pointer; text-align: left; font-size: 14px; color: #E8F6F7; color: #FCA5A5"><span style="width: 32px; height: 32px; border-radius: 10px; background: rgba(127,227,236,0.1); display: flex; align-items: center; justify-content: center; flex-shrink: 0; background: rgba(248,113,113,0.12)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FCA5A5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 16l-4-4 4-4M6 12h10"/></svg></span><span style="flex-grow: 1">Sign out</span></button>
+      </div>
+      <div style="flex-grow: 1"></div>
+      <span style="align-self: center; font-family: Outfit, system-ui, sans-serif; font-size: 12px; font-weight: 300; color: #5E7C81">RelaxPump 1.0 · Engineered by <b style="font-weight: 600; color: #8FB3B8">CINZO</b></span>
+    </div>
+  </sc-if>
+
+  <!-- NAV -->
+  <sc-if value="{{showTabs}}" hint-placeholder-val="{{ false }}">
+    <div class="fade" style="position: absolute; left: 20px; right: 20px; bottom: 22px; height: 58px; border-radius: 29px; background: rgba(6,23,28,0.94); border: 1px solid rgba(127,227,236,0.45); display: flex; align-items: center; justify-content: space-between; padding: 0 7px; box-shadow: 0 14px 34px rgba(0,0,0,0.5), 0 0 18px rgba(127,227,236,0.12)">
+      <span style="flex: 1 1 0; min-width: 0; display: flex; align-items: center; justify-content: space-evenly">
+      <button class="press" onClick="{{goHome}}" aria-label="Home" style="{{navHome}}"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg><sc-if value="{{isHome}}" hint-placeholder-val="{{ true }}"><span class="fade">Home</span></sc-if></button>
+      <button class="press" onClick="{{goTanks}}" aria-label="Tanks" style="{{navTanks}}"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="3" y="6" width="5" height="14" rx="1.5"/><rect x="10" y="6" width="5" height="14" rx="1.5"/><rect x="17" y="6" width="4" height="14" rx="1.5"/></svg><sc-if value="{{isTanks}}" hint-placeholder-val="{{ false }}"><span class="fade">Tanks</span></sc-if></button>
+      </span>
+      <button class="press" onClick="{{openWifi}}" aria-label="Bluetooth setup" style="{{wifiBtn}}">
+        <sc-if value="{{wifiOpen}}" hint-placeholder-val="{{ false }}"><span class="glow" style="position: absolute; inset: -9px; border-radius: 50%; border: 1.5px solid rgba(127,227,236,0.45); pointer-events: none"></span></sc-if>
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10-5 4.5V2.5L17 7 7 17"/></svg>
+      </button>
+      <span style="flex: 1 1 0; min-width: 0; display: flex; align-items: center; justify-content: space-evenly">
+      <button class="press" onClick="{{goActivity}}" aria-label="Usage" style="{{navAct}}"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><sc-if value="{{isActivity}}" hint-placeholder-val="{{ false }}"><span class="fade">Usage</span></sc-if></button>
+      <button class="press" onClick="{{openTanks}}" aria-label="Manage tanks" style="{{navAdd}}"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+      </span>
+    </div>
+  </sc-if>
+
+  <!-- TANKS SHEET -->
+  <sc-if value="{{sheetOpen}}" hint-placeholder-val="{{ false }}">
+    <button class="fade" onClick="{{closeSheet}}" aria-label="Close" style="position: absolute; inset: 0; border: 0; background: rgba(0,0,0,0.5); cursor: pointer"></button>
+    <div class="sheet" style="position: absolute; left: 0; right: 0; bottom: 0; background: #06171C; border-top: 1px solid rgba(127,227,236,0.3); border-radius: 28px 28px 0 0; padding: 10px 20px 32px; display: flex; flex-direction: column; gap: 16px">
+      <span style="width: 36px; height: 4px; border-radius: 2px; background: rgba(255,255,255,0.2); align-self: center"></span>
+      <span style="font-size: 17px; font-weight: 600">Your tanks</span>
+      <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border-radius: 16px; background: #0A242B">
+        <span style="font-size: 14px">Number of tanks</span>
+        <span style="display: flex; align-items: center; gap: 12px">
+          <button class="press" onClick="{{minus}}" aria-label="Remove a tank" style="width: 32px; height: 32px; border-radius: 16px; border: 1px solid rgba(127,227,236,0.22); background: transparent; color: #E8F6F7; font-size: 16px; cursor: pointer">−</button>
+          <span style="font-size: 16px; font-weight: 600; width: 14px; text-align: center; font-variant-numeric: tabular-nums">{{count}}</span>
+          <button class="press" onClick="{{plus}}" aria-label="Add a tank" style="width: 32px; height: 32px; border-radius: 16px; border: 1px solid rgba(127,227,236,0.22); background: transparent; color: #E8F6F7; font-size: 16px; cursor: pointer">+</button>
+        </span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 6px; max-height: 300px; overflow-y: auto">
+        <sc-for list="{{tanks}}" as="t" hint-placeholder-count="3">
+          <label class="fade" style="display: flex; align-items: center; gap: 10px; padding: 6px 6px 6px 14px; border-radius: 14px; background: #0A242B">
+            <span style="font-size: 14px; flex-grow: 1">{{t.name}}</span>
+            <span style="position: relative; display: flex; align-items: center">
+              <input value="{{t.cap}}" onChange="{{t.onCap}}" inputmode="numeric" placeholder="Optional" aria-label="Tank size in litres" style="width: 104px; height: 38px; border-radius: 11px; border: 1px solid rgba(127,227,236,0.14); background: #06171C; color: #E8F6F7; padding: 0 28px 0 12px; font-size: 14px; text-align: right; box-sizing: border-box">
+              <span style="position: absolute; right: 10px; font-size: 13px; color: #6E8A8F; pointer-events: none">L</span>
+            </span>
+          </label>
+        </sc-for>
+      </div>
+      <span style="font-size: 12px; color: #6E8A8F">Tank size in litres is optional. One sensor and one valve per tank.</span>
+      <button class="press" onClick="{{closeSheet}}" style="height: 48px; border-radius: 24px; border: 0; background: #7FE3EC; color: #021A20; font-size: 15px; font-weight: 600; cursor: pointer">Done</button>
+    </div>
+  </sc-if>
+
+  <!-- PASSWORD SHEET -->
+  <sc-if value="{{pwOpen}}" hint-placeholder-val="{{ false }}">
+    <button class="fade" onClick="{{closePw}}" aria-label="Close" style="position: absolute; inset: 0; border: 0; background: rgba(0,0,0,0.5); cursor: pointer"></button>
+    <div class="sheet" style="position: absolute; left: 0; right: 0; bottom: 0; background: #06171C; border-top: 1px solid rgba(127,227,236,0.3); border-radius: 28px 28px 0 0; padding: 10px 20px 32px; display: flex; flex-direction: column; gap: 14px">
+      <span style="width: 36px; height: 4px; border-radius: 2px; background: rgba(255,255,255,0.2); align-self: center"></span>
+      <span style="font-size: 17px; font-weight: 600">Change password</span>
+      <input id="pwCur" type="password" value="{{curPw}}" onChange="{{onCurPw}}" placeholder="Current password" autocomplete="current-password" style="height: 46px; border-radius: 14px; border: 1px solid rgba(127,227,236,0.14); background: #0A242B; color: #E8F6F7; padding: 0 14px; font-size: 15px">
+      <input id="pwNew" type="password" value="{{newPw}}" onChange="{{onNewPw}}" placeholder="New password (6+ characters)" autocomplete="new-password" style="height: 46px; border-radius: 14px; border: 1px solid rgba(127,227,236,0.14); background: #0A242B; color: #E8F6F7; padding: 0 14px; font-size: 15px">
+      <sc-if value="{{pwErr}}" hint-placeholder-val="{{ false }}"><span class="fade" style="color: #FCA5A5; font-size: 12px">Fill both, new one at least 6 characters</span></sc-if>
+      <button onClick="{{sendReset}}" style="align-self: flex-start; border: 0; background: transparent; color: #7FE3EC; font-size: 13px; cursor: pointer; padding: 2px 0">Forgot it? Send a reset code</button>
+      <button class="press" onClick="{{savePw}}" style="height: 48px; border-radius: 24px; border: 0; background: #7FE3EC; color: #021A20; font-size: 15px; font-weight: 600; cursor: pointer">Save</button>
+    </div>
+  </sc-if>
+
+  <!-- NOTIFICATIONS SHEET -->
+  <sc-if value="{{notifOpen}}" hint-placeholder-val="{{ false }}">
+    <button class="fade" onClick="{{closeNotif}}" aria-label="Close" style="position: absolute; inset: 0; border: 0; background: rgba(0,0,0,0.5); cursor: pointer"></button>
+    <div class="sheet" style="position: absolute; left: 0; right: 0; bottom: 0; background: #06171C; border-top: 1px solid rgba(127,227,236,0.3); border-radius: 28px 28px 0 0; padding: 10px 20px 32px; display: flex; flex-direction: column; gap: 10px">
+      <span style="width: 36px; height: 4px; border-radius: 2px; background: rgba(255,255,255,0.2); align-self: center"></span>
+      <span style="font-size: 17px; font-weight: 600; margin-bottom: 4px">Notifications</span>
+      <div style="display: flex; gap: 12px; align-items: center; padding: 12px 14px; border-radius: 16px; background: #0A242B"><span style="width: 32px; height: 32px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 15px; background: rgba(127,227,236,0.12)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7FE3EC" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg></span><span style="flex-grow: 1; display: flex; flex-direction: column; gap: 2px"><span style="font-size: 14px">Tank 3 is full</span><span style="font-size: 12px; color: #6E8A8F">Pump stopped · 10 min ago</span></span></div>
+      <div style="display: flex; gap: 12px; align-items: center; padding: 12px 14px; border-radius: 16px; background: #0A242B"><span style="width: 32px; height: 32px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 15px; background: rgba(245,158,11,0.14)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6"/></svg></span><span style="flex-grow: 1; display: flex; flex-direction: column; gap: 2px"><span style="font-size: 14px">Tank 2 is low</span><span style="font-size: 12px; color: #6E8A8F">Below 20% · 1 h ago</span></span></div>
+      <div style="display: flex; gap: 12px; align-items: center; padding: 12px 14px; border-radius: 16px; background: #0A242B"><span style="width: 32px; height: 32px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 15px; background: rgba(127,227,236,0.12)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7FE3EC" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 3v9M7 6.3a8 8 0 1 0 10 0"/></svg></span><span style="flex-grow: 1; display: flex; flex-direction: column; gap: 2px"><span style="font-size: 14px">Pump ran 25 min</span><span style="font-size: 12px; color: #6E8A8F">Auto · Today 6:40 AM</span></span></div>
+      <button class="press" onClick="{{closeNotif}}" style="margin-top: 6px; height: 48px; border-radius: 24px; border: 0; background: #7FE3EC; color: #021A20; font-size: 15px; font-weight: 600; cursor: pointer">Done</button>
+    </div>
+  </sc-if>
+
+  <!-- WIFI SHEET -->
+  <sc-if value="{{wifiOpen}}" hint-placeholder-val="{{ false }}">
+    <button class="fade" onClick="{{closeWifi}}" aria-label="Close" style="position: absolute; inset: 0; border: 0; background: rgba(0,0,0,0.5); cursor: pointer"></button>
+    <div class="sheet" style="position: absolute; left: 0; right: 0; bottom: 0; background: #06171C; border-top: 1px solid rgba(127,227,236,0.3); border-radius: 28px 28px 0 0; padding: 10px 20px 32px; display: flex; flex-direction: column; gap: 12px">
+      <span style="width: 36px; height: 4px; border-radius: 2px; background: rgba(255,255,255,0.2); align-self: center"></span>
+      <span style="font-size: 17px; font-weight: 600">{{wifiTitle}}</span>
+
+      <sc-if value="{{wStatus}}" hint-placeholder-val="{{ true }}">
+        <div class="fade" style="display: flex; flex-direction: column; gap: 12px">
+          <div style="display: flex; align-items: center; gap: 14px; padding: 16px; border-radius: 20px; background: linear-gradient(140deg, #0C3640, #0A242B); border: 1px solid rgba(127,227,236,0.2)">
+            <span style="width: 48px; height: 48px; border-radius: 14px; background: rgba(127,227,236,0.12); display: flex; align-items: center; justify-content: center; flex-shrink: 0"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#7FE3EC" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><rect x="5" y="5" width="14" height="14" rx="2.5"/><path d="M9 2v3M15 2v3M9 19v3M15 19v3M2 9h3M2 15h3M19 9h3M19 15h3"/></svg></span>
+            <span style="flex-grow: 1; display: flex; flex-direction: column; gap: 3px"><span style="font-size: 15px; font-weight: 600">RelaxPump Controller</span><span style="font-size: 12px; color: #8FB3B8">{{devSub}}</span></span>
+            <span style="{{devBadge}}">{{devState}}</span>
+          </div>
+          <sc-if value="{{online}}" hint-placeholder-val="{{ true }}">
+            <div style="display: flex; gap: 8px">
+              <span style="flex: 1; padding: 12px; border-radius: 16px; background: #0A242B; display: flex; flex-direction: column; gap: 2px"><span style="font-size: 11px; color: #6E8A8F">Wi-Fi</span><span style="font-size: 14px; font-weight: 600">{{ssid}}</span></span>
+              <span style="flex: 1; padding: 12px; border-radius: 16px; background: #0A242B; display: flex; flex-direction: column; gap: 2px"><span style="font-size: 11px; color: #6E8A8F">Signal</span><span style="font-size: 14px; font-weight: 600">Strong</span></span>
+            </div>
+          </sc-if>
+          <button class="press" onClick="{{startSetup}}" style="height: 48px; border-radius: 24px; border: 0; background: #7FE3EC; color: #021A20; font-size: 15px; font-weight: 600; cursor: pointer">{{setupLabel}}</button>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{wSearch}}" hint-placeholder-val="{{ false }}">
+        <div class="fade" style="display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 18px 0 8px">
+          <span class="spin" style="width: 28px; height: 28px; border-radius: 14px; border: 3px solid rgba(127,227,236,0.2); border-top-color: #7FE3EC"></span>
+          <span style="font-size: 14px; color: #8FB3B8; text-align: center">Turn on Bluetooth, power the controller and keep your phone close.</span>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{wFound}}" hint-placeholder-val="{{ false }}">
+        <div class="fade" style="display: flex; flex-direction: column; gap: 10px">
+          <span style="font-size: 13px; color: #8FB3B8">Found nearby</span>
+          <button class="press" onClick="{{pickDevice}}" style="display: flex; align-items: center; gap: 12px; width: 100%; padding: 13px 14px; border-radius: 16px; border: 1px solid rgba(127,227,236,0.1); background: #0A242B; cursor: pointer; color: #E8F6F7; font-size: 14px; text-align: left"><span style="width: 8px; height: 8px; border-radius: 4px; background: #7FE3EC; box-shadow: 0 0 8px #7FE3EC"></span><span style="flex-grow: 1">RelaxPump-3F2A</span><span style="font-size: 12px; color: #7FE3EC; font-weight: 600">Connect</span></button>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{wNets}}" hint-placeholder-val="{{ false }}">
+        <div class="fade" style="display: flex; flex-direction: column; gap: 8px">
+          <span style="font-size: 13px; color: #8FB3B8">Choose your home Wi-Fi. We send it to the controller over Bluetooth.</span>
+          <sc-for list="{{nets}}" as="n" hint-placeholder-count="3">
+            <button class="press" onClick="{{n.pick}}" style="{{n.style}}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7FE3EC" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M2.5 9a15 15 0 0 1 19 0"/><path d="M5.5 12.5a10 10 0 0 1 13 0"/><path d="M8.7 16a5 5 0 0 1 6.6 0"/><circle cx="12" cy="19.5" r="1.2" fill="currentColor" stroke="none"/></svg><span style="flex-grow: 1">{{n.name}}</span><sc-if value="{{n.sel}}" hint-placeholder-val="{{ false }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7FE3EC" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg></sc-if></button>
+          </sc-for>
+          <input id="wPass" type="password" value="{{wpass}}" onChange="{{onWpass}}" placeholder="Wi-Fi password" style="height: 46px; border-radius: 14px; border: 1px solid rgba(127,227,236,0.14); background: #0A242B; color: #E8F6F7; padding: 0 14px; font-size: 15px; margin-top: 4px">
+          <sc-if value="{{wErr}}" hint-placeholder-val="{{ false }}"><span class="fade" style="color: #FCA5A5; font-size: 12px">Pick a network and enter its password</span></sc-if>
+          <button class="press" onClick="{{joinWifi}}" style="height: 48px; border-radius: 24px; border: 0; background: #7FE3EC; color: #021A20; font-size: 15px; font-weight: 600; cursor: pointer; margin-top: 4px">Connect</button>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{wJoin}}" hint-placeholder-val="{{ false }}">
+        <div class="fade" style="display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 18px 0 8px">
+          <span class="spin" style="width: 28px; height: 28px; border-radius: 14px; border: 3px solid rgba(127,227,236,0.2); border-top-color: #7FE3EC"></span>
+          <span style="font-size: 14px; color: #8FB3B8">Connecting to {{ssidPick}}…</span>
+        </div>
+      </sc-if>
+    </div>
+  </sc-if>
+
+  <!-- TOAST -->
+  <sc-if value="{{hasToast}}" hint-placeholder-val="{{ false }}">
+    <div style="position: absolute; left: 0; right: 0; top: 50px; display: flex; justify-content: center; pointer-events: none">
+      <span class="toast" style="background: rgba(10,36,43,0.96); border: 1px solid rgba(127,227,236,0.3); color: #E8F6F7; font-size: 13px; padding: 8px 14px; border-radius: 999px; box-shadow: 0 10px 28px rgba(0,0,0,0.45); display: flex; align-items: center; gap: 8px"><span style="width: 6px; height: 6px; border-radius: 3px; background: #7FE3EC; box-shadow: 0 0 6px #7FE3EC"></span>{{toast}}</span>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(p) {
+    super(p);
+    this.state = { screen: 'welcome', dir: 'f', mode: 'in', name: '', phone: '', pass: '', show: false, errs: false, loading: false, user: 'My Home',
+      levels: [75, 40, 90], caps: ['1000', '500', ''], valves: [false, true, false], pump: true, auto: true, msg: '', toast: '',
+      seg: 'use', bar: 2, sheet: false, low: 20, high: 95, pw: false, curPw: '', newPw: '', pwErr: false, notif: false, seen: false, wifi: false, wstep: 'status', online: true, ssid: 'Home_WiFi', ssidPick: '', wpass: '', wErr: false };
+  }
+  componentDidMount() { this.iv = setInterval(() => this.tick(), 700); }
+  componentWillUnmount() { clearInterval(this.iv); clearTimeout(this.wt); clearTimeout(this.tt); clearTimeout(this.lt); }
+  rank(s) { return { welcome: 0, auth: 1, home: 2, tanks: 3, activity: 3, account: 3 }[s]; }
+  go(screen, extra) { const cur = this.state.screen; this.setState(Object.assign({ screen, dir: this.rank(screen) >= this.rank(cur) ? 'f' : 'b', msg: '' }, extra || {})); }
+  showToast(t) { clearTimeout(this.tt); this.setState({ toast: t }); this.tt = setTimeout(() => this.setState({ toast: '' }), 2200); }
+  tick() {
+    const s = this.state, L = s.levels.slice(), n = L.length;
+    const active = s.pump ? s.valves.indexOf(true) : -1;
+    for (let i = 0; i < n; i++) if (i !== active) L[i] = Math.max(0, L[i] - 0.12);
+    if (active >= 0) {
+      L[active] = Math.min(s.high, L[active] + 1.2);
+      if (L[active] >= s.high) { this.setState({ levels: L, pump: false, valves: L.map(() => false) }); this.showToast('Tank ' + (active + 1) + ' full'); return; }
+    } else if (s.auto) {
+      let low = -1;
+      for (let i = 0; i < n; i++) if (L[i] < s.low && (low < 0 || L[i] < L[low])) low = i;
+      if (low >= 0) { const v = L.map((x, i) => i === low); this.setState({ levels: L, valves: v, pump: true }); this.showToast('Filling Tank ' + (low + 1)); return; }
+    }
+    this.setState({ levels: L });
+  }
+  trk(on) { return 'position: relative; width: 46px; height: 28px; border-radius: 14px; border: 0; padding: 0; cursor: pointer; background-color: ' + (on ? '#7FE3EC' : 'rgba(255,255,255,0.14)') + '; box-shadow: ' + (on ? '0 0 14px rgba(127,227,236,0.4)' : 'none'); }
+  knob(on) { return 'position: absolute; top: 3px; left: ' + (on ? '21px' : '3px') + '; width: 22px; height: 22px; border-radius: 11px; background: ' + (on ? '#021A20' : '#FFFFFF'); }
+  togglePump() {
+    const s = this.state;
+    if (!s.pump && s.valves.indexOf(true) < 0) { this.setState({ msg: 'Open a valve first' }); return; }
+    if (s.pump) { this.setState({ pump: false, auto: false, msg: '' }); this.showToast('Pump off'); setTimeout(() => this.setState({ valves: this.state.valves.map(() => false) }), 1200); }
+    else { this.setState({ pump: true, auto: false, msg: '' }); this.showToast('Pump on'); }
+  }
+  toggleValve(i) {
+    const s = this.state, v = s.valves.slice(), open = v.filter(Boolean).length;
+    if (v[i] && s.pump && open === 1) { this.setState({ pump: false, auto: false, valves: v.map(() => false), msg: 'Pump stopped first' }); return; }
+    v[i] = !v[i];
+    this.setState({ valves: v, auto: false, msg: '' });
+  }
+  setCount(n) {
+    const s = this.state; n = Math.max(1, Math.min(8, n));
+    if (n === s.levels.length) return;
+    const L = s.levels.slice(0, n), V = s.valves.slice(0, n), C = s.caps.slice(0, n);
+    while (L.length < n) { L.push(50); V.push(false); }
+    while (C.length < n) C.push('');
+    const stillOpen = V.indexOf(true) >= 0;
+    this.setState({ levels: L, valves: V, caps: C, pump: s.pump && stillOpen });
+  }
+  submit() {
+    const s = this.state, ok = /^\d{10}$/.test(s.phone) && s.pass.length >= 6;
+    if (!ok) { this.setState({ errs: true }); return; }
+    this.setState({ loading: true });
+    this.lt = setTimeout(() => { this.setState({ loading: false, errs: false, user: s.mode === 'up' && s.name ? s.name : 'My Home' }); this.go('home'); this.showToast(s.mode === 'up' ? 'Account created' : 'Signed in'); }, 900);
+  }
+  renderVals() {
+    const s = this.state, L = s.levels.map(Math.round), n = L.length;
+    const active = s.pump ? s.valves.indexOf(true) : -1;
+    const avg = Math.round(L.reduce((a, b) => a + b, 0) / n);
+    const big = n <= 3;
+    const tanks = L.map((p, i) => ({
+      name: 'Tank ' + (i + 1), pct: p,
+      cap: s.caps[i] || '', hasCap: +s.caps[i] > 0,
+      litres: +s.caps[i] > 0 ? Math.round(+s.caps[i] * p / 100).toLocaleString('en-US') + ' / ' + (+s.caps[i]).toLocaleString('en-US') + ' L' : '',
+      litresShort: +s.caps[i] > 0 ? Math.round(+s.caps[i] * p / 100).toLocaleString('en-US') + ' L' : '',
+      onCap: e => { const c = this.state.caps.slice(); c[i] = e.target.value.replace(/\D/g, '').slice(0, 6); this.setState({ caps: c }); },
+      ring: 'width: 36px; height: 36px; border-radius: 18px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; background: conic-gradient(' + (p < s.low ? '#F59E0B' : '#7FE3EC') + ' ' + p + '%, rgba(127,227,236,0.12) 0)',
+      dot: 'width: 6px; height: 6px; border-radius: 3px; background: ' + (i === active ? '#7FE3EC; box-shadow: 0 0 6px #7FE3EC' : 'transparent'),
+      gauge: 'width: 100%; height: ' + (big ? 170 : 120) + 'px; border-radius: 16px; background: rgba(127,227,236,0.06); position: relative; overflow: hidden',
+      fill: 'position: absolute; left: 0; right: 0; bottom: 0; height: ' + p + '%; color: ' + (p < s.low ? '#FCD34D' : '#7FE3EC') + '; background: ' + (p < s.low ? 'linear-gradient(180deg, #FCD34D, #D97706)' : 'linear-gradient(180deg, #7FE3EC, #037788)') + (i === active ? '; box-shadow: 0 0 20px rgba(127,227,236,0.55)' : ''),
+      hiLine: 'position: absolute; left: 6px; right: 6px; bottom: ' + s.high + '%; border-top: 1.5px dashed rgba(232,246,247,0.75); transition: bottom .35s cubic-bezier(.22,1,.36,1)',
+      loLine: 'position: absolute; left: 6px; right: 6px; bottom: ' + s.low + '%; border-top: 1.5px dashed rgba(245,158,11,0.85); transition: bottom .35s cubic-bezier(.22,1,.36,1)',
+      card: 'flex: 0 0 calc((100% - 16px) / 3); box-sizing: border-box; display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 8px; border-radius: 22px; transition: box-shadow .3s, border-color .3s; background: #0A242B; border: 1px solid ' + (i === active ? 'rgba(127,227,236,0.55); box-shadow: 0 0 20px rgba(127,227,236,0.15)' : 'rgba(127,227,236,0.06)'),
+      valveBtn: 'width: 100%; height: 34px; border-radius: 17px; font-size: 12px; font-weight: 600; cursor: pointer; border: 0; ' + (s.valves[i] ? 'background-color: #7FE3EC; color: #021A20' : 'background-color: rgba(255,255,255,0.07); color: #B8CDD0'),
+      valveLabel: s.valves[i] ? 'Open' : 'Closed', aria: 'Valve ' + (i + 1) + ' ' + (s.valves[i] ? 'open' : 'closed'),
+      toggle: () => this.toggleValve(i)
+    }));
+    const act = (key, label, on, fn) => ({ label, go: fn, isPump: key === 'pump', isAuto: key === 'auto', isTanks: key === 'tanks', isStats: key === 'stats',
+      btn: 'height: 70px; border-radius: 20px; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 7px; border: 1px solid ' + (on ? 'transparent; background-color: #7FE3EC; color: #021A20; box-shadow: 0 0 18px rgba(127,227,236,0.3)' : 'rgba(127,227,236,0.45); background-color: #0A242B; color: #E8F6F7') });
+    const use = [160, 120, 240, 180, 150, 210, 180], pt = [55, 40, 80, 60, 50, 70, 25], days = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+    const data = s.seg === 'use' ? use : pt, mx = Math.max.apply(null, data);
+    const fmt = v => s.seg === 'use' ? v + ' L' : v + ' min';
+    const bars = data.map((v, i) => ({ day: days[i], sel: i === s.bar, value: fmt(v), aria: fmt(v), pick: () => this.setState({ bar: i }),
+      style: 'width: 100%; max-width: 26px; border-radius: 8px; height: ' + Math.round(v / mx * 110) + 'px; ' + (i === s.bar ? 'background: linear-gradient(180deg, #7FE3EC, #037788); box-shadow: 0 0 16px rgba(127,227,236,0.45)' : 'background: rgba(127,227,236,0.12)'),
+      tip: 'position: absolute; bottom: ' + (Math.round(v / mx * 110) + 26) + 'px; background: #7FE3EC; color: #021A20; font-size: 11px; font-weight: 600; padding: 4px 8px; border-radius: 999px; white-space: nowrap',
+      lbl: 'font-size: 11px; ' + (i === s.bar ? 'color: #7FE3EC; font-weight: 600' : 'color: #6E8A8F') }));
+    const tot = data.reduce((a, b) => a + b, 0);
+    const base = s.seg === 'use' ? [420, 510, 310, 280, 360, 300, 330, 290] : [130, 160, 90, 85, 110, 95, 100, 88];
+    const per = base.slice(0, n), pmx = Math.max.apply(null, per);
+    const segBtn = on => 'flex: 1; position: relative; z-index: 1; border: 0; background: transparent; cursor: pointer; font-size: 13px; font-weight: 600; transition: color .3s; color: ' + (on ? '#021A20' : '#8FB3B8');
+    const nav = on => 'height: 44px; border: 0; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 13px; font-weight: 600; border-radius: 22px; transition: background-color .3s, padding .35s cubic-bezier(.22,1,.36,1), color .3s; ' + (on ? 'padding: 0 12px; background-color: #7FE3EC; color: #021A20' : 'padding: 0 10px; background-color: transparent; color: #7F9EA3');
+    const signUp = s.mode === 'up';
+    const phoneBad = s.errs && !/^\d{10}$/.test(s.phone), passBad = s.errs && s.pass.length < 6;
+    return {
+      scr: s.dir === 'f' ? 'scrF' : 'scrB',
+      isWelcome: s.screen === 'welcome', isAuth: s.screen === 'auth', isHome: s.screen === 'home', isTanks: s.screen === 'tanks', isActivity: s.screen === 'activity', isAccount: s.screen === 'account',
+      showTabs: ['home', 'tanks', 'activity'].indexOf(s.screen) >= 0,
+      toAuth: () => this.go('auth', { errs: false }), toWelcome: () => this.go('welcome'),
+      authTitle: signUp ? 'Create account' : 'Welcome back', authSub: signUp ? 'It takes a minute.' : 'Sign in to your tanks.',
+      isSignUp: signUp, isSignIn: !signUp,
+      authInd: 'position: absolute; top: 3px; bottom: 3px; width: calc(50% - 3px); border-radius: 17px; background: #7FE3EC; left: ' + (signUp ? '50%' : '3px'),
+      modeIn: () => this.setState({ mode: 'in', errs: false }), modeUp: () => this.setState({ mode: 'up', errs: false }),
+      modeInStyle: segBtn(!signUp), modeUpStyle: segBtn(signUp),
+      name: s.name, phone: s.phone, pass: s.pass,
+      onName: e => this.setState({ name: e.target.value }),
+      onPhone: e => this.setState({ phone: e.target.value.replace(/\D/g, '').slice(0, 10) }),
+      onPass: e => this.setState({ pass: e.target.value }),
+      passType: s.show ? 'text' : 'password', toggleShow: () => this.setState({ show: !s.show }),
+      phoneErr: phoneBad, passErr: passBad, loading: s.loading,
+      submitLabel: s.loading ? '' : (signUp ? 'Sign up' : 'Sign in'),
+      submit: () => this.submit(),
+      userName: s.user,
+      goHome: () => this.go('home'), goTanks: () => this.go('tanks'), goTanksFn: () => this.go('tanks'), goActivity: () => this.go('activity'),
+      tanks, avg, count: n, countLabel: n + (n === 1 ? ' tank' : ' tanks'),
+      statusShort: active >= 0 ? 'Filling Tank ' + (active + 1) : (s.auto ? 'Auto' : 'Idle'),
+      actions: [
+        act('pump', 'Pump', s.pump, () => this.togglePump()),
+        act('auto', 'Auto', s.auto, () => { this.setState({ auto: !s.auto }); this.showToast(s.auto ? 'Auto off' : 'Auto on'); }),
+        act('tanks', 'Tanks', false, () => this.go('tanks')),
+        act('stats', 'Usage', false, () => this.go('activity'))
+      ],
+      autoTrk: this.trk(s.auto), autoKnob: this.knob(s.auto),
+      toggleAuto: () => { this.setState({ auto: !s.auto, msg: '' }); this.showToast(s.auto ? 'Auto off' : 'Auto on'); },
+      togglePump: () => this.togglePump(),
+      pumpLabel: s.pump ? 'Stop pump' : 'Start pump',
+      pumpBtn: 'height: 50px; border-radius: 25px; border: 0; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 15px; font-weight: 600; ' + (s.pump ? 'background-color: #7FE3EC; color: #021A20; box-shadow: 0 0 24px rgba(127,227,236,0.35)' : 'background-color: #0A242B; color: #E8F6F7; box-shadow: inset 0 0 0 1px rgba(127,227,236,0.25)'),
+      hasMsg: !!s.msg, msg: s.msg,
+      segInd: 'position: absolute; top: 3px; bottom: 3px; width: calc(50% - 3px); border-radius: 16px; background: #7FE3EC; left: ' + (s.seg === 'use' ? '3px' : '50%'),
+      segA: segBtn(s.seg === 'use'), segB: segBtn(s.seg !== 'use'),
+      segUse: () => this.setState({ seg: 'use' }), segPump: () => this.setState({ seg: 'pump' }),
+      total: s.seg === 'use' ? tot.toLocaleString('en-US') + ' L' : Math.floor(tot / 60) + 'h ' + (tot % 60) + 'm',
+      bars,
+      byTank: per.map((v, i) => ({ name: 'Tank ' + (i + 1), val: s.seg === 'use' ? v + ' L' : v + 'm', bar: 'height: 100%; border-radius: 2px; background: #7FE3EC; width: ' + Math.round(v / pmx * 100) + '%' })),
+      navHome: nav(s.screen === 'home'), navTanks: nav(s.screen === 'tanks'), navAct: nav(s.screen === 'activity'), navAdd: nav(false),
+      goAccount: () => this.go('account'),
+      wifiOpen: s.wifi,
+      wifiBtn: 'position: relative; flex-shrink: 0; width: 58px; height: 58px; margin-top: -30px; border-radius: 29px; border: 4px solid #021A20; padding: 0; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background .3s, color .3s, box-shadow .3s; ' + (s.wifi ? 'background: radial-gradient(120% 120% at 30% 20%, #B5F4F8 0%, #7FE3EC 35%, #1FA9B9 100%); color: #021A20; box-shadow: 0 0 0 1px rgba(127,227,236,0.5), 0 8px 24px rgba(127,227,236,0.4)' : 'background: #0A242B; color: #E8F6F7; box-shadow: 0 0 0 1px rgba(127,227,236,0.45), 0 8px 20px rgba(0,0,0,0.4)'), openWifi: () => this.setState({ wifi: true, wstep: 'status', wErr: false }), closeWifi: () => { clearTimeout(this.wt); this.setState({ wifi: false }); },
+      wifiTitle: { status: 'Device', search: 'Searching via Bluetooth', found: 'Controller found', nets: 'Wi-Fi', join: 'Connecting' }[s.wstep],
+      wStatus: s.wstep === 'status', wSearch: s.wstep === 'search', wFound: s.wstep === 'found', wNets: s.wstep === 'nets', wJoin: s.wstep === 'join',
+      online: s.online, ssid: s.ssid, ssidPick: s.ssidPick, wpass: s.wpass, wErr: s.wErr,
+      devSub: s.online ? 'Online · ' + n + (n === 1 ? ' tank' : ' tanks') : 'Not connected',
+      devState: s.online ? 'Online' : 'Offline',
+      devBadge: 'font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 999px; ' + (s.online ? 'background: rgba(127,227,236,0.15); color: #7FE3EC' : 'background: rgba(248,113,113,0.15); color: #FCA5A5'),
+      wifiDot: 'position: absolute; top: 2px; right: 2px; width: 10px; height: 10px; border-radius: 5px; border: 2px solid #021A20; background: ' + (s.online ? '#4ADE80' : '#F87171'),
+      setupLabel: s.online ? 'Change Wi-Fi' : 'Set up device',
+      startSetup: () => { this.setState({ wstep: 'search' }); clearTimeout(this.wt); this.wt = setTimeout(() => this.setState({ wstep: 'found' }), 1600); },
+      pickDevice: () => this.setState({ wstep: 'nets', ssidPick: '', wpass: '', wErr: false }),
+      nets: ['Home_WiFi', 'JioFiber-5G', 'Airtel_Xstream'].map(nm => ({ name: nm, sel: s.ssidPick === nm, pick: () => this.setState({ ssidPick: nm, wErr: false }),
+        style: 'display: flex; align-items: center; gap: 12px; width: 100%; padding: 12px 14px; border-radius: 16px; background: #0A242B; cursor: pointer; color: #E8F6F7; font-size: 14px; text-align: left; border: 1px solid ' + (s.ssidPick === nm ? 'rgba(127,227,236,0.6)' : 'rgba(127,227,236,0.1)') })),
+      onWpass: e => this.setState({ wpass: e.target.value }),
+      joinWifi: () => { if (!s.ssidPick || s.wpass.length < 8) { this.setState({ wErr: true }); return; } this.setState({ wstep: 'join' }); clearTimeout(this.wt); this.wt = setTimeout(() => { this.setState({ wstep: 'status', online: true, ssid: this.state.ssidPick }); this.showToast('Wi-Fi saved · Controller online'); }, 1800); },
+      notifOpen: s.notif, hasNotif: !s.seen, openNotif: () => this.setState({ notif: true, seen: true }), closeNotif: () => this.setState({ notif: false }),
+      initials: (s.user || 'Me').split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase(),
+      phoneShow: '+91 ' + (s.phone.length === 10 ? s.phone.slice(0, 5) + ' ' + s.phone.slice(5) : '98765 43210'),
+      pwOpen: s.pw, openPw: () => this.setState({ pw: true, curPw: '', newPw: '', pwErr: false }), closePw: () => this.setState({ pw: false }),
+      curPw: s.curPw, newPw: s.newPw, pwErr: s.pwErr,
+      onCurPw: e => this.setState({ curPw: e.target.value }), onNewPw: e => this.setState({ newPw: e.target.value }),
+      savePw: () => { if (!s.curPw || s.newPw.length < 6) { this.setState({ pwErr: true }); return; } this.setState({ pw: false }); this.showToast('Password updated'); },
+      sendReset: () => { this.setState({ pw: false }); this.showToast('Reset code sent by SMS'); },
+      signOut: () => { this.setState({ pass: '', errs: false, mode: 'in', sheet: false, pw: false }); this.go('auth'); this.showToast('Signed out'); },
+      sheetOpen: s.sheet, openTanks: () => this.setState({ sheet: true }), closeSheet: () => this.setState({ sheet: false }),
+      minus: () => this.setCount(n - 1), plus: () => this.setCount(n + 1),
+      low: s.low, high: s.high,
+      onLow: e => { const v = +e.target.value; this.setState({ low: Math.min(v, s.high - 10) }); },
+      onHigh: e => { const v = +e.target.value; this.setState({ high: Math.max(v, s.low + 10) }); },
+      lowTrack: 'background: linear-gradient(90deg, #F59E0B 0%, #F59E0B ' + Math.round((s.low - 5) / 75 * 100) + '%, rgba(127,227,236,0.14) ' + Math.round((s.low - 5) / 75 * 100) + '%)',
+      highTrack: 'background: linear-gradient(90deg, #7FE3EC 0%, #7FE3EC ' + Math.round((s.high - 20) / 80 * 100) + '%, rgba(127,227,236,0.14) ' + Math.round((s.high - 20) / 80 * 100) + '%)',
+      waterH: 'position: absolute; left: 0; right: 0; bottom: 0; height: ' + avg + '%; background: linear-gradient(180deg, #34646B 0%, #044C57 100%)',
+      hasToast: !!s.toast, toast: s.toast
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,39 @@
+# Dependencies / build output
+node_modules/
+.expo/
+dist/
+web-build/
+android/
+ios/
+coverage/
+
+# Firebase / app secrets (repo is public)
+google-services.json
+GoogleService-Info.plist
+.env
+.env.*
+!.env.example
+*.keystore
+*.jks
+*.p8
+*.p12
+*.mobileprovision
+
+# Firmware
+firmware/.pio/
+firmware/include/secrets.h
+.pio/
+
+# Firebase local
+.firebase/
+firebase-debug.log
+database-debug.log
+firebase/functions/lib/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.log
