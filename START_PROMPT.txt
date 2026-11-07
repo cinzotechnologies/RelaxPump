@@ -1,0 +1,7 @@
+Read CLAUDE.md first, then everything in reference/ (especially reference/design/Main.dc.html — read the markup and the script at the bottom).
+
+Build RelaxPump as described in CLAUDE.md: the Expo app (matching the design exactly), the ESP32 firmware with BLE provisioning + Firebase, and the Firebase rules with emulator tests.
+
+This folder is the git repo for https://github.com/cinzotechnologies/RelaxPump (branch main). If git is not set up yet, run git init, add that remote, and make the first commit with CLAUDE.md, reference/ and a .gitignore before anything else.
+
+Start by showing me your milestone plan. After each milestone: typecheck, lint, test, commit and push. Stop and give me short numbered steps whenever you need me to do something in the Firebase console, on my phone, or on the ESP32 board.
