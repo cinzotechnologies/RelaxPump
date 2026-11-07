@@ -17,6 +17,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { Toast } from '@/components/Toast';
 import { Sheets } from '@/features/sheets/Sheets';
+import { prepareNotifications } from '@/services/notify';
 import { useDevice } from '@/state/device';
 import { useSession } from '@/state/session';
 import { useUi } from '@/state/ui';
@@ -40,6 +41,9 @@ export default function RootLayout() {
 
   useEffect(() => useSession.getState().start(), []);
   useEffect(() => useDevice.getState().attach(deviceId), [deviceId]);
+  useEffect(() => {
+    if (deviceId) prepareNotifications();
+  }, [deviceId]);
 
   // Auth gate: signed in → Home; signed out from inside the app → Auth.
   useEffect(() => {

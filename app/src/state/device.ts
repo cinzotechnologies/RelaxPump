@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-import { eventToast } from '@/logic/events';
+import { eventRow, eventToast } from '@/logic/events';
 import { dayKey } from '@/logic/format';
 import { decidePump, decideValve, parseLitres, resizeConfig, setHigh, setLow } from '@/logic/pump';
 import {
@@ -13,6 +13,7 @@ import {
 } from '@/model/types';
 import { backend } from '@/services';
 import type { Unsub } from '@/services/backend';
+import { notify } from '@/services/notify';
 
 import { useUi } from './ui';
 
@@ -104,6 +105,11 @@ export const useDevice = create<DeviceStore>((set, get) => {
           const fresh = events.filter((e) => e.ts > prevTop && e.ts > since);
           const text = fresh[0] && eventToast(fresh[0]);
           if (text) useUi.getState().showToast(text);
+          // Real controllers only; the simulator would fire one every minute.
+          if (fresh[0] && b.kind !== 'mock' && fresh[0].type !== 'pump_on' && fresh[0].type !== 'pump_off') {
+            const row = eventRow(fresh[0], get().config.low);
+            void notify(row.title, row.sub);
+          }
         }),
         b.onUsage(id, last7Days(), (usage) => set({ usage })),
       );
