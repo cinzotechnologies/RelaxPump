@@ -65,7 +65,9 @@
     "typecheck": "tsc --noEmit",
     "test": "jest",
     "format": "prettier --write .",
-    "check": "npm run typecheck && npm run lint && npm test -- --passWithNoTests"
+    "check": "npm run typecheck && npm run lint && npm test -- --passWithNoTests",
+    "go": "expo start --go",
+    "go:tunnel": "expo start --go --tunnel"
   },
   "private": true
 }
