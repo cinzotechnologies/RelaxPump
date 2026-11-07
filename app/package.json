@@ -31,6 +31,7 @@
     "expo-splash-screen": "~58.0.13",
     "expo-status-bar": "~58.0.4",
     "expo-system-ui": "~58.0.7",
+    "expo-updates": "~58.0.21",
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "react-hook-form": "^7.91.0",
@@ -67,7 +68,8 @@
     "format": "prettier --write .",
     "check": "npm run typecheck && npm run lint && npm test -- --passWithNoTests",
     "go": "expo start --go",
-    "go:tunnel": "expo start --go --tunnel"
+    "go:tunnel": "expo start --go --tunnel",
+    "update:preview": "eas update --channel preview"
   },
   "private": true
 }

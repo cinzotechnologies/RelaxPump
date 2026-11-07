@@ -2,10 +2,15 @@ import type { ExpoConfig } from 'expo/config';
 
 // google-services.json is git-ignored (public repo). Locally it sits next to this file;
 // on EAS Build it comes from the GOOGLE_SERVICES_JSON file environment variable.
+const EAS_PROJECT_ID = 'db093452-b1ce-4449-b7a4-baee91a43ca4';
+// 'production' = Play Store builds (eas.json sets it; also set it for `eas update --channel production`).
+const STORE = process.env.APP_VARIANT === 'production';
+
 const googleServicesFile = process.env.GOOGLE_SERVICES_JSON ?? './google-services.json';
 
 const config: ExpoConfig = {
   name: 'RelaxPump',
+  owner: 'cinzotechnologies',
   slug: 'relaxpump',
   version: '1.0.0',
   orientation: 'portrait',
@@ -58,8 +63,13 @@ const config: ExpoConfig = {
       },
     ],
   ],
+  // Preview: 'sdkVersion' = the Expo Go runtime (exposdk:58.0.0), so preview updates open in Expo Go
+  // (and in preview APKs). Store builds: 'appVersion' — bump `version` when native code changes.
+  runtimeVersion: { policy: STORE ? 'appVersion' : 'sdkVersion' },
+  updates: { url: `https://u.expo.dev/${EAS_PROJECT_ID}`, fallbackToCacheTimeout: 0 },
   experiments: { typedRoutes: true, reactCompiler: true },
   extra: {
+    eas: { projectId: EAS_PROJECT_ID },
     // Feature flags (see CLAUDE.md §5)
     ENABLE_PHONE_OTP: false,
     SUPPORT_WHATSAPP: 'https://wa.me/910000000000',
