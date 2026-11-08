@@ -5,6 +5,7 @@ import { Press } from '@/components/Press';
 import { PrimaryButton } from '@/components/PrimaryButton';
 import { Sheet } from '@/components/Sheet';
 import { TextField } from '@/components/TextField';
+import { TANK_NAME_MAX } from '@/logic/format';
 import { useDevice } from '@/state/device';
 import { useUi } from '@/state/ui';
 import { alpha, colors, s, Txt } from '@/theme';
@@ -35,6 +36,7 @@ export function TanksSheet() {
   const config = useDevice((d) => d.config);
   const setCount = useDevice((d) => d.setCount);
   const setLitres = useDevice((d) => d.setLitres);
+  const setTankName = useDevice((d) => d.setTankName);
   const n = config.tankCount;
 
   return (
@@ -68,13 +70,28 @@ export function TanksSheet() {
               alignItems: 'center',
               gap: s(10),
               paddingVertical: s(6),
-              paddingRight: s(6),
-              paddingLeft: s(14),
+              paddingHorizontal: s(6),
               borderRadius: s(14),
               backgroundColor: colors.card,
             }}
           >
-            <Txt size={14} style={{ flex: 1 }}>{`Tank ${i + 1}`}</Txt>
+            <TextField
+              inSheet
+              defaultValue={t.name ?? ''}
+              onChangeText={(text) => setTankName(i, text)}
+              maxLength={TANK_NAME_MAX}
+              autoCapitalize="words"
+              placeholder={`Tank ${i + 1}`}
+              accessibilityLabel={`Name for tank ${i + 1}`}
+              style={{
+                flex: 1,
+                height: s(38),
+                borderRadius: s(11),
+                backgroundColor: 'transparent',
+                paddingHorizontal: s(8),
+                fontSize: s(14),
+              }}
+            />
             <View style={{ justifyContent: 'center' }}>
               <TextField
                 inSheet
@@ -108,7 +125,7 @@ export function TanksSheet() {
         ))}
       </View>
       <Txt size={12} color={colors.faint}>
-        Tank size in litres is optional. One sensor and one valve per tank.
+        Tap a name to change it. Tank size in litres is optional. One sensor and one valve per tank.
       </Txt>
       <PrimaryButton label="Done" onPress={close} />
     </Sheet>

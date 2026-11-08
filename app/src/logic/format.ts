@@ -2,6 +2,19 @@ const nf = new Intl.NumberFormat('en-US');
 
 export const fmtNum = (n: number) => nf.format(Math.round(n));
 
+export const TANK_NAME_MAX = 14;
+
+/** The user's tank name, or "Tank N" when none is set. */
+export function tankName(names: readonly (string | null | undefined)[], i: number): string {
+  return names[i]?.trim() || `Tank ${i + 1}`;
+}
+
+/** Name field: single spaces, max 14 characters, empty → null (falls back to "Tank N"). */
+export function parseTankName(text: string): string | null {
+  const t = text.replace(/\s+/g, ' ').trim().slice(0, TANK_NAME_MAX);
+  return t || null;
+}
+
 /** "520 / 1,000 L" */
 export function litresOf(pct: number, cap: number | null): string {
   return cap ? `${fmtNum((cap * pct) / 100)} / ${fmtNum(cap)} L` : '';

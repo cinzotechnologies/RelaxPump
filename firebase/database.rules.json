@@ -74,6 +74,7 @@
               "emptyCm": { ".validate": "newData.isNumber() && newData.val() > 0 && newData.val() <= 500" },
               "fullCm": { ".validate": "newData.isNumber() && newData.val() >= 20 && newData.val() <= 500" },
               "litres": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 999999" },
+              "name": { ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 14" },
               "$other": { ".validate": false }
             }
           },

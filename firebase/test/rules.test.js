@@ -118,6 +118,14 @@ describe('owner', () => {
     await assertFails(set(ref(db, `devices/${ID}/config`), { ...config, tankCount: 4 }));
     await assertFails(set(ref(user('bob'), `devices/${ID}/config`), config));
   });
+
+  it('accepts a tank name up to 14 characters', async () => {
+    const db = user('alice');
+    const named = (name) => ({ ...config, tanks: [{ emptyCm: 120, fullCm: 30, litres: 1000, name }] });
+    await assertSucceeds(set(ref(db, `devices/${ID}/config`), named('Kitchen roof')));
+    await assertFails(set(ref(db, `devices/${ID}/config`), named('A very long tank name')));
+    await assertFails(set(ref(db, `devices/${ID}/config`), named(42)));
+  });
   it('sends commands but cannot fake device state, events or usage', async () => {
     const db = user('alice');
     await assertSucceeds(set(ref(db, `devices/${ID}/cmd`), { pump: true, ts: Date.now() }));

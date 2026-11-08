@@ -92,8 +92,9 @@ function normConfig(v: Partial<DeviceConfig> | null): DeviceConfig | null {
     emptyCm: Number(t?.emptyCm ?? 120),
     fullCm: Number(t?.fullCm ?? 30),
     litres: t?.litres ? Number(t.litres) : null,
+    name: typeof t?.name === 'string' && t.name.trim() ? t.name : null,
   }));
-  while (tanks.length < n) tanks.push({ emptyCm: 120, fullCm: 30, litres: null });
+  while (tanks.length < n) tanks.push({ emptyCm: 120, fullCm: 30, litres: null, name: null });
   return {
     tankCount: n,
     low: Number(v.low ?? 20),
@@ -260,7 +261,13 @@ export function createFirebaseBackend(): Backend {
     async setConfig(id, cfg) {
       await set(ref(db, `devices/${id}/config`), {
         ...cfg,
-        tanks: cfg.tanks.map((t) => ({ emptyCm: t.emptyCm, fullCm: t.fullCm, litres: t.litres ?? 0 })),
+        tanks: cfg.tanks.map((t) => ({
+          emptyCm: t.emptyCm,
+          fullCm: t.fullCm,
+          litres: t.litres ?? 0,
+          // RTDB drops nulls, so an unnamed tank simply has no `name` key.
+          ...(t.name ? { name: t.name } : {}),
+        })),
       });
     },
 

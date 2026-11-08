@@ -29,3 +29,14 @@ describe('format', () => {
     );
   });
 });
+
+describe('tank names', () => {
+  it('falls back to "Tank N" and trims user names', () => {
+    const { parseTankName, tankName } = jest.requireActual<typeof import('../format')>('../format');
+    expect(tankName([null, '  Roof '], 0)).toBe('Tank 1');
+    expect(tankName([null, '  Roof '], 1)).toBe('Roof');
+    expect(parseTankName('   ')).toBeNull();
+    expect(parseTankName('  Kitchen   tank  ')).toBe('Kitchen tank');
+    expect(parseTankName('A very long tank name')).toHaveLength(14);
+  });
+});

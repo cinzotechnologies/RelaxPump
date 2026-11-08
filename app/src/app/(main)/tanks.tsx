@@ -97,7 +97,7 @@ function TankCard({
         </Txt>
       </View>
       <View style={{ alignItems: 'center', gap: 1 }}>
-        <Txt size={12} color={colors.muted}>
+        <Txt size={12} color={colors.muted} numberOfLines={1} style={{ maxWidth: s(96) }}>
           {t.name}
         </Txt>
         {t.litres ? (

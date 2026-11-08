@@ -1,3 +1,4 @@
+import { tankName } from '@/logic/format';
 import { activeTank } from '@/logic/pump';
 import type { DeviceConfig, DeviceState } from '@/model/types';
 
@@ -23,7 +24,10 @@ export function tankViews(state: DeviceState | null, config: DeviceConfig): Tank
     const t = state?.tanks[i];
     return {
       i,
-      name: `Tank ${i + 1}`,
+      name: tankName(
+        config.tanks.map((c) => c.name),
+        i,
+      ),
       pct: Math.round(t?.pct ?? 0),
       valve: !!t?.valve,
       ok: t?.ok ?? false,

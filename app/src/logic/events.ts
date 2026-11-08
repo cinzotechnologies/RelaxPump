@@ -1,13 +1,21 @@
 import type { DeviceEvent } from '@/model/types';
 
-import { ago } from './format';
+import { ago, tankName } from './format';
 
 export type NotifRow = { id: string; title: string; sub: string; tone: 'ok' | 'warn' | 'pump' };
 
-/** Turn a device event into a Notifications sheet row. `low` is the current Start threshold. */
-export function eventRow(e: DeviceEvent, low: number, now = Date.now()): NotifRow {
+/**
+ * Turn a device event into a Notifications sheet row. `low` is the current Start threshold,
+ * `names` the user's tank names (missing → "Tank N").
+ */
+export function eventRow(
+  e: DeviceEvent,
+  low: number,
+  now = Date.now(),
+  names: readonly (string | null | undefined)[] = [],
+): NotifRow {
   const when = ago(e.ts, now);
-  const tank = `Tank ${e.tank + 1}`;
+  const tank = tankName(names, e.tank);
   switch (e.type) {
     case 'full':
       return { id: e.id, title: `${tank} is full`, sub: `Pump stopped · ${when}`, tone: 'ok' };
@@ -42,12 +50,15 @@ export function eventRow(e: DeviceEvent, low: number, now = Date.now()): NotifRo
 }
 
 /** Short toast text for a fresh event, or null if it does not need one. */
-export function eventToast(e: DeviceEvent): string | null {
+export function eventToast(
+  e: DeviceEvent,
+  names: readonly (string | null | undefined)[] = [],
+): string | null {
   switch (e.type) {
     case 'full':
-      return `Tank ${e.tank + 1} full`;
+      return `${tankName(names, e.tank)} full`;
     case 'pump_on':
-      return `Filling Tank ${e.tank + 1}`;
+      return `Filling ${tankName(names, e.tank)}`;
     case 'dry_run':
     case 'timeout':
     case 'sensor':

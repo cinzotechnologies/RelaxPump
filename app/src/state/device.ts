@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 
 import { eventRow, eventToast } from '@/logic/events';
-import { dayKey } from '@/logic/format';
+import { dayKey, parseTankName } from '@/logic/format';
 import { decidePump, decideValve, parseLitres, resizeConfig, setHigh, setLow } from '@/logic/pump';
 import {
   DEFAULT_CONFIG,
@@ -47,6 +47,7 @@ type DeviceStore = {
   setHigh: (v: number) => void;
   setCount: (n: number) => void;
   setLitres: (i: number, text: string) => void;
+  setTankName: (i: number, text: string) => void;
 };
 
 let unsubs: Unsub[] = [];
@@ -139,11 +140,12 @@ export const useDevice = create<DeviceStore>((set, get) => {
           const prevTop = get().events[0]?.ts ?? since;
           set({ events });
           const fresh = events.filter((e) => e.ts > prevTop && e.ts > since);
-          const text = fresh[0] && eventToast(fresh[0]);
+          const names = get().config.tanks.map((t) => t.name);
+          const text = fresh[0] && eventToast(fresh[0], names);
           if (text) useUi.getState().showToast(text);
           // Real controllers only; the simulator would fire one every minute.
           if (fresh[0] && b.kind !== 'mock' && fresh[0].type !== 'pump_on' && fresh[0].type !== 'pump_off') {
-            const row = eventRow(fresh[0], get().config.low);
+            const row = eventRow(fresh[0], get().config.low, Date.now(), names);
             void notify(row.title, row.sub);
           }
         }),
@@ -206,6 +208,11 @@ export const useDevice = create<DeviceStore>((set, get) => {
     setLitres: (i, text) => {
       const c = get().config;
       const tanks = c.tanks.map((t, j) => (j === i ? { ...t, litres: parseLitres(text) } : t));
+      writeConfig({ ...c, tanks }, 800);
+    },
+    setTankName: (i, text) => {
+      const c = get().config;
+      const tanks = c.tanks.map((t, j) => (j === i ? { ...t, name: parseTankName(text) } : t));
       writeConfig({ ...c, tanks }, 800);
     },
   };

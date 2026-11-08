@@ -8,7 +8,7 @@ import { Fade, FadeUp } from '@/components/FadeUp';
 import { Press } from '@/components/Press';
 import { Screen } from '@/components/Screen';
 import { Segmented } from '@/components/Segmented';
-import { fmtNum, hm } from '@/logic/format';
+import { fmtNum, hm, tankName } from '@/logic/format';
 import { useDevice } from '@/state/device';
 import { go } from '@/state/nav';
 import { alpha, colors, motion, s, Txt } from '@/theme';
@@ -31,6 +31,7 @@ export default function Usage() {
   const insets = useSafeAreaInsets();
   const usage = useDevice((d) => d.usage);
   const tankCount = useDevice((d) => d.config.tankCount);
+  const tankCfg = useDevice((d) => d.config.tanks);
   const [seg, setSeg] = useState<Seg>('use');
   const [picked, setSel] = useState<number | null>(null);
   const back = useCallback(() => go('home'), []);
@@ -161,7 +162,12 @@ export default function Usage() {
               backgroundColor: colors.card,
             }}
           >
-            <Txt size={13} style={{ width: s(52) }}>{`Tank ${i + 1}`}</Txt>
+            <Txt size={13} numberOfLines={1} style={{ width: s(92) }}>
+              {tankName(
+                tankCfg.map((t) => t.name),
+                i,
+              )}
+            </Txt>
             <View
               style={{
                 flex: 1,

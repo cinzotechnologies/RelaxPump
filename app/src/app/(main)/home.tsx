@@ -304,7 +304,9 @@ export default function Home() {
           >
             <ProgressRing pct={t.pct} low={t.pct < config.low} active={t.active} />
             <View style={{ flex: 1, gap: s(2) }}>
-              <Txt size={14}>{t.name}</Txt>
+              <Txt size={14} numberOfLines={1}>
+                {t.name}
+              </Txt>
               {t.litres ? (
                 <Txt size={11} color={colors.faint}>
                   {litresOf(t.pct, t.litres)}

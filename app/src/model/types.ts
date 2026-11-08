@@ -13,7 +13,13 @@ export type DeviceState = {
   tanks: TankState[];
 };
 
-export type TankConfig = { emptyCm: number; fullCm: number; litres: number | null };
+export type TankConfig = {
+  emptyCm: number;
+  fullCm: number;
+  litres: number | null;
+  /** User's own name for the tank ("Kitchen", "Roof"). Empty → "Tank N". */
+  name?: string | null;
+};
 
 export type DeviceConfig = {
   tankCount: number;

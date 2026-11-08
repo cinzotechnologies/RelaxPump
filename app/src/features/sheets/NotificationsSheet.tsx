@@ -28,6 +28,7 @@ export function NotificationsSheet() {
   const close = useUi((st) => st.closeSheet);
   const events = useDevice((d) => d.events);
   const low = useDevice((d) => d.config.low);
+  const tanks = useDevice((d) => d.config.tanks);
 
   return (
     <Sheet open={open} onClose={close} title="Notifications" gap={10}>
@@ -37,7 +38,12 @@ export function NotificationsSheet() {
         </Txt>
       ) : null}
       {events.slice(0, 6).map((e) => {
-        const r = eventRow(e, low);
+        const r = eventRow(
+          e,
+          low,
+          undefined,
+          tanks.map((t) => t.name),
+        );
         const t = iconFor(e);
         return (
           <View
