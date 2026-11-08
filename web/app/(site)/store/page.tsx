@@ -4,8 +4,7 @@ import { Footer } from '@/components/site/Footer';
 import { TopBar } from '@/components/site/TopBar';
 import { CartProvider } from '@/components/store/cart';
 import { CartButton, CartDrawer, Catalogue, StoreHead } from '@/components/store/StoreView';
-import { DEFAULT_CONTACT } from '@/lib/content/contact';
-import { DEFAULT_PRODUCTS } from '@/lib/content/products';
+import { getProducts, getSite, orderingOpen } from '@/lib/content/load';
 
 import '@/components/store/products.css';
 import '@/components/store/store.css';
@@ -15,20 +14,21 @@ export const metadata: Metadata = {
   description: 'RelaxPump controller kit, sensors, valves and home installation.',
 };
 
-export default function StorePage() {
-  const products = DEFAULT_PRODUCTS;
-  const contact = DEFAULT_CONTACT;
-  const orderingOpen = false; // settings.ordering_open from D1 (W5)
+export const dynamic = 'force-dynamic';
+
+export default async function StorePage() {
+  const [site, products, open] = await Promise.all([getSite(), getProducts(), orderingOpen()]);
+  const contact = site.contact;
   return (
     <CartProvider ids={products.map((p) => p.id)}>
       <div className="shop">
         <TopBar variant="store" right={<CartButton />} />
         <main>
-          <StoreHead contact={contact} />
+          <StoreHead contact={contact} orderingOpen={open} />
           <Catalogue products={products} contact={contact} />
         </main>
         <Footer c={contact} variant="store" />
-        <CartDrawer products={products} contact={contact} orderingOpen={orderingOpen} />
+        <CartDrawer products={products} contact={contact} orderingOpen={open} />
       </div>
     </CartProvider>
   );

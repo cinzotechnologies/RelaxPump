@@ -194,12 +194,45 @@ export function CartDrawer({
   contact: Contact;
   orderingOpen: boolean;
 }) {
-  const { cart, count, setQty, open, setOpen } = useCart();
-  const [step, setStep] = useState<'cart' | 'checkout'>('cart');
+  const { cart, count, setQty, clear, open, setOpen } = useCart();
+  const [step, setStep] = useState<'cart' | 'checkout' | 'done'>('cart');
   const [pay, setPay] = useState<'cod' | 'upi'>('cod');
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState('');
   const closeRef = useRef<HTMLButtonElement>(null);
   const lines = products.filter((p) => cart[p.id]);
   const close = () => setOpen(false);
+
+  const placeOrder = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!orderingOpen || busy) return;
+    const f = new FormData(e.currentTarget);
+    setBusy(true);
+    setErr('');
+    try {
+      const res = await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          name: f.get('name'),
+          phone: f.get('phone'),
+          address: f.get('address'),
+          town: f.get('town'),
+          pin: f.get('pin'),
+          payment: pay,
+          items: cart,
+        }),
+      });
+      const body = (await res.json().catch(() => ({}))) as { error?: string };
+      if (!res.ok) throw new Error(body.error ?? 'Could not place the order. Please call us.');
+      clear();
+      setStep('done');
+    } catch (x) {
+      setErr(x instanceof Error ? x.message : 'Could not place the order. Please call us.');
+    } finally {
+      setBusy(false);
+    }
+  };
 
   useEffect(() => {
     if (!open) return;
@@ -237,7 +270,7 @@ export function CartDrawer({
               <ArrowLeft size={18} />
             </button>
           ) : null}
-          <h2>{step === 'cart' ? 'Your cart' : 'Checkout'}</h2>
+          <h2>{step === 'cart' ? 'Your cart' : step === 'done' ? 'Thank you' : 'Checkout'}</h2>
           <button className="xb" type="button" aria-label="Close" onClick={close} ref={closeRef}>
             <Stroke size={18}>
               <path d="M6 6l12 12M18 6L6 18" />
@@ -245,7 +278,22 @@ export function CartDrawer({
           </button>
         </div>
 
-        {step === 'cart' ? (
+        {step === 'done' ? (
+          <div className="db slide">
+            <div className="empty" role="status">
+              <span className="ico">
+                <Stroke size={30}>
+                  <path d="M5 12l5 5 9-10" />
+                </Stroke>
+              </span>
+              <b>Order received</b>
+              <span>We will call you to confirm the price and delivery.</span>
+              <button className="btn" type="button" onClick={close}>
+                Done
+              </button>
+            </div>
+          </div>
+        ) : step === 'cart' ? (
           <div className="db slide">
             {count === 0 ? (
               <div className="empty">
@@ -309,7 +357,7 @@ export function CartDrawer({
             )}
           </div>
         ) : (
-          <form className="db slide" onSubmit={(e) => e.preventDefault()}>
+          <form className="db slide" onSubmit={placeOrder}>
             <label className="fld" htmlFor="oname">
               Full name
               <input
@@ -383,11 +431,16 @@ export function CartDrawer({
             <button
               className="btn"
               type="submit"
-              disabled={!orderingOpen}
+              disabled={!orderingOpen || busy || count === 0}
               style={{ width: '100%', marginTop: 8 }}
             >
-              {orderingOpen ? 'Place order' : 'Place order — opens soon'}
+              {orderingOpen ? (busy ? 'Placing order…' : 'Place order') : 'Place order — opens soon'}
             </button>
+            {err ? (
+              <p className="order-note" role="alert" style={{ color: 'var(--amber)' }}>
+                {err}
+              </p>
+            ) : null}
             <p className="order-note">
               Order now: <a href={`tel:${contact.phoneTel}`}>{contact.phone}</a>
             </p>
@@ -405,8 +458,8 @@ function subtotal(lines: Product[], cart: Record<string, number>): string | null
   return priceLabel({ price: total });
 }
 
-/** Header: crumb, title, "orders open soon" note. */
-export function StoreHead({ contact }: { contact: Contact }) {
+/** Header: crumb, title, "orders open soon" note (while online ordering is closed). */
+export function StoreHead({ contact, orderingOpen }: { contact: Contact; orderingOpen: boolean }) {
   return (
     <section className="shop-head" id="top">
       <div className="wrap">
@@ -424,7 +477,16 @@ export function StoreHead({ contact }: { contact: Contact }) {
             <path d="M12 7v5l3 2" />
           </Stroke>
           <span>
-            <b>Online orders open soon.</b> Order now: <a href={`tel:${contact.phoneTel}`}>{contact.phone}</a>
+            {orderingOpen ? (
+              <>
+                <b>Questions before you order?</b> Call{' '}
+              </>
+            ) : (
+              <>
+                <b>Online orders open soon.</b> Order now:{' '}
+              </>
+            )}
+            <a href={`tel:${contact.phoneTel}`}>{contact.phone}</a>
           </span>
         </div>
       </div>
