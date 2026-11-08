@@ -57,6 +57,25 @@ export const shade = {
   soonBg: '#FFF4DB',
   soonText: '#8A5300',
   hover: '#ECF8FA',
+  // admin panel (Admin.dc.html)
+  selLine: '#9CC9CF', // selected nav / row outline
+  divider: '#E1EDEF',
+  navHover: '#F0F7F8',
+  rowLine: '#EEF4F5',
+  rowHover: '#F6FAFB',
+  inputLine: '#9DBFC4',
+  dropBg: '#F8FBFC',
+  uploadBg: '#F3FAFB',
+  tabsBg: '#EEF5F6',
+  offText: '#7A9094',
+  offBg: '#F3F7F8',
+  waGreen: '#15803D',
+  okBg: '#DCFCE7',
+  okText: '#166534',
+  okLine: '#16A34A',
+  msgBg: '#E7F8EC',
+  msgLine: '#BBE5C7',
+  msgText: '#14532D',
 } as const;
 
 /** The mobile app's dark theme, for the phone mockups (AppScreen.dc.html). */

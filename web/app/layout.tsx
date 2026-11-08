@@ -22,7 +22,7 @@ export const viewport: Viewport = { themeColor: theme.white, width: 'device-widt
 
 export default function RootLayout({ children }: LayoutProps<'/'>) {
   return (
-    <html lang="en" className={`${inter.variable} ${outfit.variable}`}>
+    <html lang="en" className={`${inter.variable} ${outfit.variable}`} data-scroll-behavior="smooth">
       <head>
         {/* Colour tokens as CSS variables — single source: styles/tokens.ts */}
         <style dangerouslySetInnerHTML={{ __html: cssVariables() }} />
