@@ -1,0 +1,5 @@
+# Local secrets for `npm run dev` / `npm run preview`. Copy to .dev.vars (git-ignored).
+# Firebase service account JSON on one line (for admin password resets, W8).
+FIREBASE_SERVICE_ACCOUNT={"type":"service_account","project_id":"iotcinzo","client_email":"...","private_key":"..."}
+# Local only: skip Cloudflare Access and sign in as this email.
+DEV_ADMIN_EMAIL=hacheh976@gmail.com

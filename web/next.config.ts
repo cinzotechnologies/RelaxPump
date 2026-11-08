@@ -1,0 +1,14 @@
+import { initOpenNextCloudflareForDev } from '@opennextjs/cloudflare';
+import type { NextConfig } from 'next';
+
+// Pages read D1 per request (fast, at the edge). Cache Components is off: it needs the Node.js
+// runtime and is not guaranteed on Cloudflare Workers.
+const nextConfig: NextConfig = {
+  poweredByHeader: false,
+  images: { unoptimized: true },
+};
+
+export default nextConfig;
+
+// `next dev` gets the same D1 / R2 bindings as the Worker (local Miniflare state in .wrangler/).
+void initOpenNextCloudflareForDev();

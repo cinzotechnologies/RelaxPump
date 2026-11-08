@@ -1,0 +1,26 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "relaxpump-web",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-10-01",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": { "directory": ".open-next/assets", "binding": "ASSETS" },
+  "observability": { "enabled": true },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "relaxpump-web",
+      // Replace with the id from `wrangler d1 create relaxpump-web` (docs/website-setup.md).
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "migrations",
+    },
+  ],
+  "r2_buckets": [{ "binding": "MEDIA", "bucket_name": "relaxpump-media" }],
+  "vars": {
+    // Comma-separated emails allowed into /admin (Cloudflare Access checks them first).
+    "ADMIN_EMAILS": "cinzotechnologies@gmail.com,hacheh976@gmail.com",
+    // Cloudflare Access team domain and application AUD tag (set after Access is set up).
+    "ACCESS_TEAM_DOMAIN": "",
+    "ACCESS_AUD": "",
+  },
+}
