@@ -1,0 +1,79 @@
+import Link from 'next/link';
+
+import { Globe, Mail, Phone, Pin } from '@/components/ui/icons';
+import { LogoMark, Wordmark } from '@/components/ui/Logo';
+import type { Contact } from '@/lib/content/contact';
+
+/** Dark footer with company, contact, product links and the "Developed by CINZO" bar. */
+export function Footer({ c }: { c: Contact }) {
+  const year = new Date().getFullYear();
+  return (
+    <footer className="foot" id="contact">
+      <div className="wrap">
+        <div className="fgrid">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+            <div className="fbrand">
+              <span className="tile">
+                <LogoMark />
+              </span>
+              <Wordmark />
+            </div>
+            <p className="fcompany">{c.company}</p>
+            <a className="btn" href={`tel:${c.phoneTel}`}>
+              Call us now
+            </a>
+          </div>
+          <div className="fl">
+            <span className="fh">Contact</span>
+            <a className="ci" href={`tel:${c.phoneTel}`}>
+              <span className="i">
+                <Phone />
+              </span>
+              <span>{c.phone}</span>
+            </a>
+            <a className="ci" href={`mailto:${c.email}`}>
+              <span className="i">
+                <Mail />
+              </span>
+              <span style={{ wordBreak: 'break-all' }}>{c.email}</span>
+            </a>
+            <div className="ci">
+              <span className="i">
+                <Pin />
+              </span>
+              <span>{c.address}</span>
+            </div>
+            <a className="ci" href={`https://${c.website}`}>
+              <span className="i">
+                <Globe />
+              </span>
+              <span>{c.website}</span>
+            </a>
+          </div>
+          <div className="fl">
+            <span className="fh">Product</span>
+            <Link href="/#how">How it works</Link>
+            <Link href="/#app">App screens</Link>
+            <Link href="/#guide">Install video</Link>
+            <Link href="/#manual">Manual</Link>
+            <Link href="/#download">Download the app</Link>
+            <Link href="/store">Store</Link>
+          </div>
+          <div className="fl">
+            <span className="fh">App</span>
+            <a href={c.playUrl}>Google Play</a>
+            <a href={c.appStoreUrl}>App Store</a>
+          </div>
+        </div>
+        <div className="fbar">
+          <span>
+            © {year} {c.company}
+          </span>
+          <span>
+            Developed by <b>CINZO</b>
+          </span>
+        </div>
+      </div>
+    </footer>
+  );
+}

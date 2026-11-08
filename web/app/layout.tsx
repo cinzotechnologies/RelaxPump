@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from 'next';
 import { Inter, Outfit } from 'next/font/google';
 
+import { cssVariables, theme } from '@/styles/tokens';
+
 import './globals.css';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter', display: 'swap' });
@@ -16,11 +18,15 @@ export const metadata: Metadata = {
   description: 'RelaxPump fills your water tanks by itself. Engineered by CINZO.',
 };
 
-export const viewport: Viewport = { themeColor: '#FFFFFF', width: 'device-width', initialScale: 1 };
+export const viewport: Viewport = { themeColor: theme.white, width: 'device-width', initialScale: 1 };
 
 export default function RootLayout({ children }: LayoutProps<'/'>) {
   return (
     <html lang="en" className={`${inter.variable} ${outfit.variable}`}>
+      <head>
+        {/* Colour tokens as CSS variables — single source: styles/tokens.ts */}
+        <style dangerouslySetInnerHTML={{ __html: cssVariables() }} />
+      </head>
       <body>{children}</body>
     </html>
   );

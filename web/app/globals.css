@@ -3,14 +3,26 @@
 *::after {
   box-sizing: border-box;
 }
+html {
+  scroll-behavior: smooth;
+}
 html,
 body {
   margin: 0;
   padding: 0;
 }
 body {
-  background: #ffffff;
-  color: #021a20;
+  background: var(--white);
+  color: var(--ink);
   font-family: var(--font-inter), system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
+}
+/* Anchor jumps land below the sticky top bar. */
+[id] {
+  scroll-margin-top: 76px;
+}
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
 }

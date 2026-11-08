@@ -5,6 +5,7 @@ import type { NextConfig } from 'next';
 // runtime and is not guaranteed on Cloudflare Workers.
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  devIndicators: false,
   images: { unoptimized: true },
 };
 
