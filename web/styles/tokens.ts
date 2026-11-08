@@ -35,6 +35,7 @@ export const shade = {
   board1: '#046270', // book hardcover
   board2: '#023E47',
   bright: '#0A9AAE',
+  deepTeal: '#02343C', // feature panel 2
   galBg: '#F2FAFB',
   manualBg: '#E8F4F6',
   card1: '#DDF2F5', // product image gradient
@@ -47,6 +48,32 @@ export const shade = {
   soonBg: '#FFF4DB',
   soonText: '#8A5300',
   hover: '#ECF8FA',
+} as const;
+
+/** The mobile app's dark theme, for the phone mockups (AppScreen.dc.html). */
+export const app = {
+  appBase: '#021A20',
+  appCard: '#0A242B',
+  appDeep: '#06171C',
+  appFocus: '#0C2B33',
+  appText: '#E8F6F7',
+  appMuted: '#8FB3B8',
+  appFooter: '#7F9EA3',
+  appDim: '#5E7C81',
+  appValveOff: '#B8CDD0',
+  appNotif: '#FF7A6B',
+  appDanger: '#FCA5A5',
+  appWaveBack: '#204449',
+  appWaveFront: '#34646B',
+  appWarnLight: '#FCD34D',
+  appWarnDeep: '#D97706',
+  appWelcome: '#044753',
+  appCta: '#A8F3F8',
+  appAvatar: '#DDF6F8',
+  appRing: '#1FA9B9',
+  appFrame1: '#1B2B30',
+  appFrame2: '#070D0F',
+  black: '#000000',
 } as const;
 
 /** Artwork-only colours (logo gradient, wiring diagrams, product drawings). */
@@ -81,7 +108,7 @@ const kebab = (k: string) => k.replace(/([a-z])([A-Z0-9])/g, '$1-$2').toLowerCas
 
 /** `:root { --ink: #021A20; --ink-rgb: 2 26 32; … }` for every theme + shade token. */
 export function cssVariables(): string {
-  const all = { ...theme, ...shade };
+  const all = { ...theme, ...shade, ...app };
   const lines = Object.entries(all).flatMap(([k, v]) => [
     `--${kebab(k)}:${v}`,
     `--${kebab(k)}-rgb:${rgbTriplet(v)}`,
