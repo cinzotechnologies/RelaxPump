@@ -9,7 +9,8 @@
     "new-device": "node scripts/new-device.mjs",
     "reset-password": "node scripts/reset-password.mjs",
     "fake-device": "node scripts/fake-device.mjs",
-    "link-device": "node scripts/link-device.mjs"
+    "link-device": "node scripts/link-device.mjs",
+    "deploy:functions": "firebase deploy --only functions --project iotcinzo"
   },
   "devDependencies": {
     "@firebase/rules-unit-testing": "^5.0.2",

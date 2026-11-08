@@ -17,5 +17,7 @@ Until then:
 ## Steps when you upgrade
 
 1. Firebase console → **Upgrade** → Blaze; set a budget alert (e.g. ₹500/month).
-2. `cd firebase/functions && npm install && npm run build`
-3. `npx firebase deploy --only functions --project iotcinzo`
+2. `cd firebase/functions && npm install` (once)
+3. `cd firebase && npm run deploy:rules && npm run deploy:functions` (builds first; needs `npx firebase login`)
+4. iOS only: Firebase console → Project settings → Cloud Messaging → upload the APNs key.
+5. Test push on a development build or preview APK (not Expo Go).
