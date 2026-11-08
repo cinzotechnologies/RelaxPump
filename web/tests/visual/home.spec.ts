@@ -21,7 +21,10 @@ test('app screens: chips move the coverflow', async ({ page }) => {
 
 test('install guide: play says video coming soon', async ({ page }) => {
   await page.goto('/');
-  await page.locator('#guide').getByRole('button', { name: /Mount the sensors/ }).click();
+  await page
+    .locator('#guide')
+    .getByRole('button', { name: /Mount the sensors/ })
+    .click();
   await expect(page.locator('#guide .ptitle')).toHaveText('Mount the sensors');
   await page.locator('#guide').getByRole('button', { name: 'Play video' }).click();
   await expect(page.getByRole('status')).toHaveText('Video coming soon');

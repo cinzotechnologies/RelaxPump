@@ -36,6 +36,15 @@ export const shade = {
   board2: '#023E47',
   bright: '#0A9AAE',
   deepTeal: '#02343C', // feature panel 2
+  // store page (Shop.dc.html)
+  storeGlow: '#DDF4F7',
+  storeTop: '#F4FBFC',
+  lineBg: '#EAF8FA', // cart line icon tile
+  noteBg: '#FFF7E6',
+  noteLine: '#F6DFAE',
+  noteText: '#5C3B00',
+  noteLink: '#7A4A00',
+  amber: '#B45309',
   galBg: '#F2FAFB',
   manualBg: '#E8F4F6',
   card1: '#DDF2F5', // product image gradient

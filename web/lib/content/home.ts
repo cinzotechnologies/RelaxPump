@@ -14,14 +14,6 @@ export type ManualPage =
   | { kind: 'end' }
   | { kind: 'back' }
   | { kind: 'text'; k: string; t: string; lines: ManualLine[]; ill?: ManualIll };
-export type Product = {
-  id: string;
-  name: string;
-  desc: string;
-  tag: string;
-  art: 'ctrl' | 'sensor' | 'install';
-  imageUrl?: string | null;
-};
 
 export type HomeContent = {
   hero: {
@@ -45,7 +37,7 @@ export type HomeContent = {
     playLive: boolean;
     appStoreLive: boolean;
   };
-  store: { kicker: string; title: string; badge: string; products: Product[] };
+  store: { kicker: string; title: string; badge: string };
 };
 
 const L = (arr: string[], cols?: (DotColor | undefined)[]): ManualLine[] =>
@@ -242,28 +234,5 @@ export const DEFAULT_HOME: HomeContent = {
     kicker: 'RelaxPump Store',
     title: 'Order the kit',
     badge: 'Coming soon',
-    products: [
-      {
-        id: 'kit',
-        name: 'RelaxPump Controller Kit',
-        desc: 'The ESP32 controller that runs your pump and up to 3 tanks.',
-        tag: 'Start here',
-        art: 'ctrl',
-      },
-      {
-        id: 'sensor',
-        name: 'Ultrasonic Level Sensor',
-        desc: 'Add one sensor per tank to see its level live.',
-        tag: 'Add-on',
-        art: 'sensor',
-      },
-      {
-        id: 'install',
-        name: 'Home Installation',
-        desc: 'Our team fits the kit, wires the pump and sets up the app with you.',
-        tag: 'Service',
-        art: 'install',
-      },
-    ],
   },
 };

@@ -1,8 +1,44 @@
-import type { Product } from '@/lib/content/home';
+import type { ProductArtKind } from '@/lib/content/products';
 import { app, art, shade, theme } from '@/styles/tokens';
 
-/** Drawn product images used until real photos are uploaded (Main.dc.html store cards). */
-export function ProductArt({ art: kind }: { art: Product['art'] }) {
+/** Drawn product images used until real photos are uploaded (Main/Shop.dc.html cards). */
+export function ProductArt({ art: kind }: { art: ProductArtKind }) {
+  if (kind === 'valve')
+    return (
+      <svg width="170" height="150" viewBox="0 0 170 150" aria-hidden>
+        <rect x="14" y="84" width="142" height="24" rx="12" fill={art.pipe} />
+        <rect x="58" y="70" width="54" height="52" rx="12" fill={theme.teal} />
+        <rect x="66" y="26" width="38" height="46" rx="10" fill={theme.ink} />
+        <path d="M74 40h22 M74 52h22" stroke={art.slot} strokeWidth="4" strokeLinecap="round" />
+        <circle cx="85" cy="96" r="9" fill={theme.glow} />
+      </svg>
+    );
+  if (kind === 'relay')
+    return (
+      <svg width="170" height="150" viewBox="0 0 170 150" aria-hidden>
+        <rect
+          x="34"
+          y="30"
+          width="102"
+          height="90"
+          rx="18"
+          fill={theme.white}
+          stroke={art.roof}
+          strokeWidth="3"
+        />
+        <rect x="50" y="46" width="30" height="40" rx="6" fill={theme.teal} />
+        <rect x="90" y="46" width="30" height="40" rx="6" fill={theme.teal} />
+        <path d="M60 100h50" stroke={theme.teal2} strokeWidth="5" strokeLinecap="round" />
+        <path
+          d="M88 10l-12 22h14l-10 20"
+          fill="none"
+          stroke={theme.warning}
+          strokeWidth="4"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    );
   if (kind === 'sensor')
     return (
       <svg width="170" height="150" viewBox="0 0 170 150" aria-hidden>

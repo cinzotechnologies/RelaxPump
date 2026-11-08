@@ -4,24 +4,32 @@ import { Globe, Mail, Phone, Pin } from '@/components/ui/icons';
 import { LogoMark, Wordmark } from '@/components/ui/Logo';
 import type { Contact } from '@/lib/content/contact';
 
-/** Dark footer with company, contact, product links and the "Developed by CINZO" bar. */
-export function Footer({ c }: { c: Contact }) {
+/**
+ * Dark footer with company, contact, product links and the "Developed by CINZO" bar.
+ * `variant="store"` (Shop.dc.html): wordmark only, no call button, no Product column.
+ */
+export function Footer({ c, variant = 'home' }: { c: Contact; variant?: 'home' | 'store' }) {
+  const store = variant === 'store';
   const year = new Date().getFullYear();
   return (
-    <footer className="foot" id="contact">
+    <footer className={store ? 'foot foot-store' : 'foot'} id="contact">
       <div className="wrap">
         <div className="fgrid">
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: store ? 16 : 18 }}>
             <div className="fbrand">
-              <span className="tile">
-                <LogoMark />
-              </span>
+              {store ? null : (
+                <span className="tile">
+                  <LogoMark />
+                </span>
+              )}
               <Wordmark />
             </div>
             <p className="fcompany">{c.company}</p>
-            <a className="btn" href={`tel:${c.phoneTel}`}>
-              Call us now
-            </a>
+            {store ? null : (
+              <a className="btn" href={`tel:${c.phoneTel}`}>
+                Call us now
+              </a>
+            )}
           </div>
           <div className="fl">
             <span className="fh">Contact</span>
@@ -50,15 +58,17 @@ export function Footer({ c }: { c: Contact }) {
               <span>{c.website}</span>
             </a>
           </div>
-          <div className="fl">
-            <span className="fh">Product</span>
-            <Link href="/#how">How it works</Link>
-            <Link href="/#app">App screens</Link>
-            <Link href="/#guide">Install video</Link>
-            <Link href="/#manual">Manual</Link>
-            <Link href="/#download">Download the app</Link>
-            <Link href="/store">Store</Link>
-          </div>
+          {store ? null : (
+            <div className="fl">
+              <span className="fh">Product</span>
+              <Link href="/#how">How it works</Link>
+              <Link href="/#app">App screens</Link>
+              <Link href="/#guide">Install video</Link>
+              <Link href="/#manual">Manual</Link>
+              <Link href="/#download">Download the app</Link>
+              <Link href="/store">Store</Link>
+            </div>
+          )}
           <div className="fl">
             <span className="fh">App</span>
             <a href={c.playUrl}>Google Play</a>

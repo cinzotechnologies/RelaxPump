@@ -5,11 +5,12 @@ import { useState } from 'react';
 
 import { ArrowRight } from '@/components/ui/icons';
 import type { HomeContent } from '@/lib/content/home';
+import { type Product, priceLabel } from '@/lib/content/products';
 
 import { ProductArt } from './ProductArt';
 
 /** Three product cards, "Notify me" toggles, and a link to the store. */
-export function StoreTeaser({ c }: { c: HomeContent['store'] }) {
+export function StoreTeaser({ c, products }: { c: HomeContent['store']; products: Product[] }) {
   const [notified, setNotified] = useState<Record<string, boolean>>({});
   return (
     <section className="store" id="store">
@@ -22,7 +23,7 @@ export function StoreTeaser({ c }: { c: HomeContent['store'] }) {
           <span className="eyebrow soon">{c.badge}</span>
         </div>
         <div className="pgrid">
-          {c.products.slice(0, 3).map((p) => {
+          {products.slice(0, 3).map((p) => {
             const on = !!notified[p.id];
             return (
               <article className="pc rv" key={p.id}>
@@ -38,7 +39,7 @@ export function StoreTeaser({ c }: { c: HomeContent['store'] }) {
                 <div className="pbody">
                   <h3>{p.name}</h3>
                   <div className="pfoot">
-                    <span className="pprice">Price soon</span>
+                    <span className="pprice">{priceLabel(p) ?? 'Price soon'}</span>
                     <button
                       className={on ? 'btn nb on' : 'btn nb'}
                       type="button"
