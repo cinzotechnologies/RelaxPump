@@ -135,6 +135,8 @@ export default function Account() {
             showToast('Signed out');
           }}
         />
+        <View style={{ height: 1, marginLeft: s(60), backgroundColor: alpha(colors.glow, 0.08) }} />
+        <Row icon="trash" label="Delete account" danger onPress={() => openSheet('delete')} />
       </FadeUp>
       <View style={{ flex: 1 }} />
       <Txt family="outfit" weight={300} size={12} color={colors.dim} style={{ alignSelf: 'center' }}>

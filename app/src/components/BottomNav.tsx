@@ -1,17 +1,21 @@
 import { View } from 'react-native';
-import Animated, { Easing, FadeIn, LinearTransition } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useNav } from '@/state/nav';
 import { useUi, type Route } from '@/state/ui';
-import { alpha, colors, motion, s, Txt } from '@/theme';
+import { alpha, colors, s } from '@/theme';
 
 import { Glow } from './Glow';
 import { Icon, type IconName } from './Icon';
 import { Press } from './Press';
 
-const layout = LinearTransition.duration(350).easing(Easing.bezier(...motion.ease));
+const ITEM = 42;
 
+/**
+ * Icon-only tab. Active = soft see-through teal circle behind a glowing icon, same size as the
+ * other tabs, so nothing shifts or crowds the neighbours when you switch.
+ */
 function NavItem({
   icon,
   label,
@@ -23,34 +27,31 @@ function NavItem({
   active: boolean;
   onPress: () => void;
 }) {
-  const color = active ? colors.base : colors.footer;
   return (
-    <Animated.View layout={layout}>
-      <Press
-        onPress={onPress}
-        accessibilityLabel={label}
-        accessibilityState={{ selected: active }}
-        style={{
-          height: s(44),
-          borderRadius: s(22),
-          flexDirection: 'row',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: s(6),
-          paddingHorizontal: active ? s(12) : s(10),
-          backgroundColor: active ? colors.glow : 'transparent',
-        }}
-      >
-        <Icon name={icon} size={19} color={color} />
-        {active && label !== 'Manage tanks' ? (
-          <Animated.View entering={FadeIn.duration(300)}>
-            <Txt size={13} weight={600} color={color}>
-              {label}
-            </Txt>
-          </Animated.View>
-        ) : null}
-      </Press>
-    </Animated.View>
+    <Press
+      onPress={onPress}
+      accessibilityLabel={label}
+      accessibilityRole="tab"
+      accessibilityState={{ selected: active }}
+      style={{ width: s(ITEM), height: s(ITEM), alignItems: 'center', justifyContent: 'center' }}
+    >
+      {active ? (
+        <Animated.View
+          entering={FadeIn.duration(220)}
+          exiting={FadeOut.duration(160)}
+          style={{
+            position: 'absolute',
+            width: s(ITEM),
+            height: s(ITEM),
+            borderRadius: s(ITEM / 2),
+            backgroundColor: alpha(colors.glow, 0.14),
+            borderWidth: 1,
+            borderColor: alpha(colors.glow, 0.22),
+          }}
+        />
+      ) : null}
+      <Icon name={icon} size={20} color={active ? colors.glow : colors.footer} />
+    </Press>
   );
 }
 

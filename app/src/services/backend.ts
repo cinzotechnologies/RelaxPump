@@ -39,6 +39,11 @@ export interface Backend {
   signUp(name: string, phone: string, password: string): Promise<void>;
   signOut(): Promise<void>;
   changePassword(current: string, next: string): Promise<void>;
+  /** Store requirement: delete the account, release its controllers, then sign out. */
+  deleteAccount(password: string): Promise<void>;
+
+  /** Server clock minus phone clock, in ms, so a wrong phone clock can't fake "online". */
+  onServerOffset(cb: (ms: number) => void): Unsub;
 
   onProfile(uid: string, cb: (p: Profile | null) => void): Unsub;
 

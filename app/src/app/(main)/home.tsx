@@ -13,7 +13,7 @@ import { WaveFill } from '@/components/WaveFill';
 import { initials, litresOf } from '@/logic/format';
 import { useDevice } from '@/state/device';
 import { go } from '@/state/nav';
-import { isOnline, useTanks } from '@/state/selectors';
+import { useTanks } from '@/state/selectors';
 import { useSession } from '@/state/session';
 import { useUi } from '@/state/ui';
 import { alpha, colors, s, Txt } from '@/theme';
@@ -92,7 +92,7 @@ export default function Home() {
   const n = tanks.length;
   const avg = n ? Math.round(tanks.reduce((a, t) => a + t.pct, 0) / n) : 0;
   const active = tanks.find((t) => t.active);
-  const online = isOnline(state);
+  const online = useDevice((d) => d.online);
   const status = !deviceId
     ? 'No controller'
     : !online

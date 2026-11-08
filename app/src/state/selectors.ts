@@ -1,7 +1,9 @@
 import { activeTank } from '@/logic/pump';
 import type { DeviceConfig, DeviceState } from '@/model/types';
 
-import { OFFLINE_AFTER_MS, useDevice } from './device';
+import { useDevice } from './device';
+
+export { isOnline } from './device';
 
 export type TankView = {
   i: number;
@@ -29,10 +31,6 @@ export function tankViews(state: DeviceState | null, config: DeviceConfig): Tank
       active: i === act,
     };
   });
-}
-
-export function isOnline(state: DeviceState | null, now = Date.now()): boolean {
-  return !!state?.online && now - (state.lastSeen ?? 0) < OFFLINE_AFTER_MS;
 }
 
 export function useTanks(): TankView[] {

@@ -53,6 +53,14 @@ static void applyCmdJson(const String &json) {
   if (deserializeJson(doc, json) || !doc.is<JsonObject>()) return;
   extern Controller ctl;
   Serial.println("[CLOUD] cmd " + json);
+  // Command hlui (controller offline laia dah) chu ti suh — pump a hun thlawn a on palh ang.
+  const double ts = doc["ts"] | 0.0;
+  const time_t nowS = time(nullptr);
+  if (ts > 0 && nowS > 1700000000 && (double)nowS * 1000.0 - ts > 60000.0) {
+    Serial.println("[CLOUD] stale cmd ignored");
+    db.remove(aClient, BASE + "/cmd", onResult, "cmdDel");
+    return;
+  }
   if (doc["auto"].is<bool>()) ctl.cmdAuto(doc["auto"].as<bool>());
   if (doc["pump"].is<bool>()) ctl.cmdPump(doc["pump"].as<bool>());
   if (doc["valve"].is<JsonObject>()) ctl.cmdValve(doc["valve"]["i"] | -1, doc["valve"]["open"] | false);

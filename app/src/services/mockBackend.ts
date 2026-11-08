@@ -208,6 +208,21 @@ export function createMockBackend(): Backend {
       user = null;
       auth.emit();
     },
+    async deleteAccount(password) {
+      await wait(700);
+      const phone = [...accounts.entries()].find(([, a]) => a.uid === user?.uid)?.[0];
+      const entry = phone ? accounts.get(phone) : undefined;
+      if (!phone || !entry || entry.password !== password)
+        throw new AuthError('wrong-password', 'Password is wrong');
+      accounts.delete(phone);
+      profiles.delete(entry.uid);
+      user = null;
+      auth.emit();
+    },
+    onServerOffset: (cb) => {
+      cb(0);
+      return () => {};
+    },
     async changePassword(current, next) {
       await wait(600);
       const entry = [...accounts.values()].find((a) => a.uid === user?.uid);

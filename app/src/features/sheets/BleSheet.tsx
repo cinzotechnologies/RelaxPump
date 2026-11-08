@@ -14,7 +14,6 @@ import { backend } from '@/services';
 import { MOCK_DEVICE_ID } from '@/services/mockBackend';
 import { provisioner, type FoundController, type WifiNetwork } from '@/services/provisioning';
 import { useDevice } from '@/state/device';
-import { isOnline } from '@/state/selectors';
 import { useSession } from '@/state/session';
 import { useUi } from '@/state/ui';
 import { alpha, colors, s, Txt } from '@/theme';
@@ -51,7 +50,7 @@ export function BleSheet() {
   const hasDevice = !!myDevice;
   const state = useDevice((d) => d.state);
   const tankCount = useDevice((d) => d.config.tankCount);
-  const online = hasDevice && isOnline(state);
+  const online = useDevice((d) => hasDevice && d.online);
 
   const [step, setStep] = useState<Step>('status');
   const [found, setFound] = useState<FoundController[]>([]);

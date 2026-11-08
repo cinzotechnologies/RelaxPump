@@ -3,6 +3,7 @@
 import {
   connectAuthEmulator,
   createUserWithEmailAndPassword,
+  deleteUser,
   EmailAuthProvider,
   getAuth,
   onAuthStateChanged,
@@ -13,6 +14,7 @@ import {
 } from '@react-native-firebase/auth';
 import {
   connectDatabaseEmulator,
+  get,
   getDatabase,
   limitToLast,
   onValue,
@@ -165,6 +167,35 @@ export function createFirebaseBackend(): Backend {
         throw mapAuthError(e);
       }
     },
+
+    async deleteAccount(password) {
+      const u = auth.currentUser;
+      if (!u?.email) throw new AuthError('unknown', 'Sign in again');
+      try {
+        await reauthenticateWithCredential(u, EmailAuthProvider.credential(u.email, password));
+      } catch (e) {
+        const err = mapAuthError(e);
+        throw err.code === 'wrong-password' ? new AuthError('wrong-password', 'Password is wrong') : err;
+      }
+      try {
+        // Release every controller (so it can be set up again) and drop the profile in one write.
+        const snap = await get(ref(db, `users/${u.uid}/devices`));
+        const ids = Object.keys((snap.val() ?? {}) as Record<string, true>);
+        const wipe: Record<string, null> = { [`users/${u.uid}`]: null };
+        for (const id of ids) wipe[`devices/${id}/info/ownerUid`] = null;
+        await update(ref(db), wipe);
+        await deleteUser(u);
+      } catch (e) {
+        throw mapAuthError(e);
+      }
+    },
+
+    onServerOffset: (cb) =>
+      onValue(
+        ref(db, '.info/serverTimeOffset'),
+        (snap) => cb(Number(snap.val() ?? 0)),
+        () => cb(0),
+      ),
 
     onProfile: (uid, cb) =>
       watch(

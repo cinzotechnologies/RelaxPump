@@ -4,6 +4,7 @@ import { useDevice } from '@/state/device';
 import { useUi } from '@/state/ui';
 
 import { BleSheet } from './BleSheet';
+import { DeleteSheet } from './DeleteSheet';
 import { ForgotSheet } from './ForgotSheet';
 import { NotificationsSheet } from './NotificationsSheet';
 import { PasswordSheet } from './PasswordSheet';
@@ -22,6 +23,7 @@ export function Sheets() {
       <NotificationsSheet />
       <ForgotSheet />
       <BleSheet />
+      <DeleteSheet />
     </>
   );
 }

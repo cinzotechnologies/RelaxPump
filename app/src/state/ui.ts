@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-export type SheetName = 'tanks' | 'pw' | 'notif' | 'ble' | 'forgot';
+export type SheetName = 'tanks' | 'pw' | 'notif' | 'ble' | 'forgot' | 'delete';
 export type Route = 'welcome' | 'auth' | 'home' | 'tanks' | 'usage' | 'account';
 
 const RANK: Record<Route, number> = { welcome: 0, auth: 1, home: 2, tanks: 3, usage: 3, account: 3 };
