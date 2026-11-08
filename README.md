@@ -8,6 +8,7 @@ watch the levels and run the pump by hand or automatically.
 |---|---|
 | `app/` | Expo (React Native, TypeScript) app — development build, Expo Router |
 | `firmware/` | PlatformIO project for the ESP32 controller (`tools/ValveTest` = relay test) |
+| `web/` | Website, store and admin panel — Next.js on Cloudflare (see `docs/website-brief.md`) |
 | `firebase/` | Realtime Database rules, emulator tests, admin/seed scripts |
 | `docs/` | Setup guide, data model, wiring |
 | `reference/` | Approved design and legacy code (read-only) |

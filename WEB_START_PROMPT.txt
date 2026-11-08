@@ -1,0 +1,5 @@
+Read CLAUDE.md, then docs/website-brief.md, then every file in reference/website/ (read the markup AND the script at the bottom of each .dc.html file, and look at reference/website/assets/).
+
+Build the RelaxPump website and admin panel in web/ exactly as docs/website-brief.md says: Next.js (App Router, TypeScript) on Cloudflare Workers with OpenNext, Cloudflare D1 for data and R2 for media. The pages must look and move exactly like the designs — same layout, colours, sizes, text, animations and the phone layout at 390 px. Buttons are white with a thin outline, no shadows, press = scale only.
+
+Start by showing me your milestone plan. After each milestone: typecheck, lint, test, compare with the design (desktop 1440 and phone 390), commit and push to main. Stop and give me short numbered steps whenever you need me to do something in Cloudflare, Firebase, the domain, or on my phone.

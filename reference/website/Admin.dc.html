@@ -1,0 +1,499 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RelaxPump Admin</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;family=Outfit:wght@300;400;500;600&amp;display=swap">
+<style>
+body{margin:0;background:#F3F9FA}
+a{color:#035360}a:hover{color:#037788}
+.adm{container-type:inline-size;container-name:adm;font-family:Inter,system-ui,sans-serif;color:#021A20;background:#F3F9FA;-webkit-font-smoothing:antialiased}
+.adm *{box-sizing:border-box}
+.adm h1,.adm h2,.adm h3{margin:0;font-family:Outfit,Inter,sans-serif;font-weight:500}
+.adm p{margin:0}
+.shell{display:grid;grid-template-columns:264px minmax(0,1fr);min-height:960px}
+.side{background:#FFFFFF;border-right:1px solid #CFE3E7;padding:20px 14px;display:flex;flex-direction:column;gap:4px}
+.brand{display:flex;align-items:center;gap:10px;padding:4px 10px 22px;font-family:Outfit,sans-serif;font-size:22px}
+.brand small{display:block;font:600 11px/1 Inter,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#037788;margin-top:4px}
+.navi{position:relative;display:flex;align-items:center;gap:12px;width:100%;height:48px;padding:0 14px;border:0;border-radius:12px;background:none;font:500 15px/1 Inter,sans-serif;color:#2E4A50;text-align:left;cursor:pointer;touch-action:manipulation;transition:background-color .2s,color .2s,transform .12s}
+.navi:hover{background:#F0F7F8}
+.navi:active{transform:scale(.97)}
+.navi.on{background:#E6F4F6;color:#035360;font-weight:600;box-shadow:inset 0 0 0 1px #9CC9CF}
+.navi .cnt{margin-left:auto;min-width:24px;height:24px;padding:0 7px;border-radius:999px;background:#F59E0B;color:#021A20;font:700 12px/24px Inter,sans-serif;text-align:center}
+.sfoot{margin-top:auto;padding-top:16px;border-top:1px solid #E1EDEF;display:flex;flex-direction:column;gap:4px}
+.me{display:flex;align-items:center;gap:10px;padding:10px 12px}
+.av{width:38px;height:38px;border-radius:50%;background:#E3F5F7;box-shadow:inset 0 0 0 1px #9CC9CF;color:#035360;display:flex;align-items:center;justify-content:center;font:700 13px/1 Inter,sans-serif;flex-shrink:0}
+.main{min-width:0;display:flex;flex-direction:column}
+.top{position:sticky;top:0;z-index:20;height:72px;padding:0 32px;display:flex;align-items:center;gap:16px;background:rgba(255,255,255,.97);border-bottom:1px solid #CFE3E7;box-shadow:0 10px 28px -22px rgba(2,26,32,.35)}
+.top h1{font-size:24px}
+.body{padding:28px 32px 48px;display:flex;flex-direction:column;gap:24px;animation:fade .35s cubic-bezier(.22,1,.36,1) both}
+@keyframes fade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:42px;padding:0 18px;border:0;border-radius:999px;background:#FFFFFF;color:#035360;box-shadow:inset 0 0 0 1px #035360;font:600 14px/1 Inter,sans-serif;text-decoration:none;white-space:nowrap;cursor:pointer;touch-action:manipulation;transition:transform .12s cubic-bezier(.22,1,.36,1)}
+.btn:hover{color:#035360}
+.btn:active{transform:scale(.96)}
+.btn.strong{font-weight:700;box-shadow:inset 0 0 0 1.5px #035360}
+.btn[disabled]{color:#7A9094;box-shadow:inset 0 0 0 1px #C6D5D8;background:#F3F7F8;cursor:not-allowed;transform:none}
+.btn.wa{color:#15803D;box-shadow:inset 0 0 0 1.5px #15803D}
+.btn.wa:hover{color:#15803D}
+.dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.card{background:#FFFFFF;border:1px solid #CFE3E7;border-radius:20px}
+.ch{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:18px 22px;border-bottom:1px solid #E1EDEF}
+.ch h2{font-size:19px}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
+.stat{padding:20px 22px;display:flex;flex-direction:column;gap:10px}
+.stat .ico{width:40px;height:40px;border-radius:12px;background:#E3F5F7;display:flex;align-items:center;justify-content:center}
+.stat b{font:500 32px/1 Outfit,sans-serif}
+.lbl{font-size:13px;color:#48656A}
+.sample{height:28px;padding:0 12px;border-radius:999px;background:#FFF4DB;color:#7A4A00;font:600 12px/28px Inter,sans-serif}
+.g2{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:20px;align-items:start}
+.row{display:flex;align-items:center;gap:14px;width:100%;padding:14px 22px;border:0;border-bottom:1px solid #EEF4F5;background:none;text-align:left;font:inherit;color:inherit;cursor:pointer;touch-action:manipulation;transition:background-color .15s}
+.row:last-child{border-bottom:0}
+.row:hover{background:#F6FAFB}
+.row.on{background:#E6F4F6;box-shadow:inset 0 0 0 1px #9CC9CF}
+.rn{display:flex;flex-direction:column;gap:3px;min-width:0;flex-grow:1}
+.rn b{font-size:15px;font-weight:600}
+.rn span{font-size:13px;color:#48656A}
+.pillst{height:26px;padding:0 10px;border-radius:999px;font:600 12px/26px Inter,sans-serif;white-space:nowrap}
+.pend{background:#FFF4DB;color:#7A4A00}
+.done{background:#DCFCE7;color:#166534}
+.qgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding:18px 22px}
+.qt{display:flex;align-items:center;gap:12px;padding:14px;border:1px solid #CFE3E7;border-radius:16px;background:#FFFFFF;text-align:left;font:600 14px/1.2 Inter,sans-serif;color:#021A20;cursor:pointer;touch-action:manipulation;transition:transform .12s,border-color .2s}
+.qt:hover{border-color:#035360}
+.qt:active{transform:scale(.97)}
+.qt .ico{width:36px;height:36px;border-radius:10px;background:#E3F5F7;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.ed{display:grid;grid-template-columns:240px minmax(0,1fr);gap:20px;align-items:start}
+.secs{padding:8px;display:flex;flex-direction:column;gap:2px}
+.sec{display:flex;align-items:center;gap:10px;width:100%;height:44px;padding:0 12px;border:0;border-radius:12px;background:none;font:500 14px/1 Inter,sans-serif;color:#2E4A50;text-align:left;cursor:pointer;touch-action:manipulation;transition:background-color .15s,transform .12s}
+.sec:hover{background:#F0F7F8}
+.sec:active{transform:scale(.97)}
+.sec.on{background:#E6F4F6;color:#035360;font-weight:600;box-shadow:inset 0 0 0 1px #9CC9CF}
+.grp{padding:20px 22px;border-bottom:1px solid #E1EDEF;display:flex;flex-direction:column;gap:14px}
+.grp:last-child{border-bottom:0}
+.grp h3{font-size:16px;font-family:Inter,sans-serif;font-weight:600;color:#035360}
+.fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.fld{display:flex;flex-direction:column;gap:7px;font:600 13px/1.2 Inter,sans-serif;color:#2E4A50;min-width:0}
+.fld.wide{grid-column:1/-1}
+.inp{height:46px;width:100%;border-radius:12px;border:1px solid #9DBFC4;padding:0 14px;font:400 15px Inter,sans-serif;color:#021A20;background:#FFFFFF;transition:border-color .2s,box-shadow .2s}
+.inp:focus{outline:none;border-color:#037788;box-shadow:0 0 0 4px rgba(127,227,236,.35)}
+.ta{height:96px;padding:12px 14px;resize:vertical;line-height:1.5}
+.media{display:flex;align-items:center;gap:14px;padding:10px;border:1px dashed #9DBFC4;border-radius:14px;background:#F8FBFC}
+.thumb{width:132px;aspect-ratio:16/9;border-radius:10px;overflow:hidden;flex-shrink:0;background:#E3F5F7;display:flex;align-items:center;justify-content:center}
+.thumb img{width:100%;height:100%;object-fit:cover}
+.mname{font-weight:500;font-size:13px;color:#48656A;word-break:break-all}
+.tgl{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;border:1px solid #CFE3E7;border-radius:12px;font:500 14px/1.3 Inter,sans-serif;color:#021A20}
+.sw{position:relative;width:52px;height:30px;flex-shrink:0;border-radius:999px;border:0;padding:0;background:#C6D5D8;cursor:pointer;touch-action:manipulation;transition:background-color .25s}
+.sw i{position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:#FFFFFF;box-shadow:0 1px 3px rgba(2,26,32,.25);transition:transform .4s cubic-bezier(.34,1.56,.64,1)}
+.sw.on{background:#037788}
+.sw.on i{transform:translateX(22px)}
+.mgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;padding:20px 22px}
+.mt{display:flex;flex-direction:column;gap:8px;font-size:13px;color:#2E4A50}
+.mt .thumb{width:100%;border:1px solid #CFE3E7}
+.upl{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;aspect-ratio:16/9;border:1.5px dashed #037788;border-radius:10px;background:#F3FAFB;color:#035360;font:600 13px/1 Inter,sans-serif;cursor:pointer}
+.tabs{display:inline-flex;padding:4px;border-radius:999px;background:#EEF5F6;box-shadow:inset 0 0 0 1px #CFE3E7}
+.tab{height:36px;padding:0 16px;border:0;border-radius:999px;background:none;font:600 13px/1 Inter,sans-serif;color:#48656A;cursor:pointer;touch-action:manipulation}
+.tab.on{background:#FFFFFF;color:#035360;box-shadow:inset 0 0 0 1px #035360}
+.det{padding:22px;display:flex;flex-direction:column;gap:18px}
+.stp{display:flex;gap:14px;align-items:flex-start}
+.sn{width:30px;height:30px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font:700 13px/1 Inter,sans-serif;background:#FFFFFF;color:#035360;box-shadow:inset 0 0 0 1px #035360}
+.sn.ok{background:#DCFCE7;color:#166534;box-shadow:inset 0 0 0 1px #16A34A}
+.msg{padding:14px 16px;border-radius:14px 14px 14px 4px;background:#E7F8EC;border:1px solid #BBE5C7;font-size:14px;line-height:1.55;color:#14532D;white-space:pre-line}
+.note{padding:12px 14px;border-radius:12px;background:#F3F9FA;border:1px solid #E1EDEF;font-size:13px;line-height:1.5;color:#48656A}
+.toast{position:fixed;left:50%;bottom:28px;z-index:99;transform:translateX(-50%);display:flex;align-items:center;gap:10px;padding:12px 18px;border-radius:999px;background:#021A20;color:#FFFFFF;font:600 14px/1 Inter,sans-serif;box-shadow:0 18px 40px -16px rgba(2,26,32,.6);animation:tin .35s cubic-bezier(.22,1,.36,1) both}
+@keyframes tin{from{opacity:0;transform:translate(-50%,16px)}to{opacity:1;transform:translate(-50%,0)}}
+.unsaved{display:inline-flex;align-items:center;gap:8px;font:600 13px/1 Inter,sans-serif;color:#7A4A00}
+.ghost{color:#48656A;font-size:13px}
+@container adm (max-width:1100px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.g2{grid-template-columns:minmax(0,1fr)}.mgrid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@container adm (max-width:820px){
+.shell{grid-template-columns:minmax(0,1fr)}
+.side{position:sticky;top:0;z-index:30;flex-direction:row;align-items:center;gap:6px;padding:10px 12px;border-right:0;border-bottom:1px solid #CFE3E7;overflow-x:auto;scrollbar-width:none}
+.brand{padding:0 8px 0 0}
+.brand .bt{display:none}
+.navi{width:auto;flex-shrink:0;height:42px;padding:0 14px;font-size:14px}
+.navi svg{display:none}
+.sfoot{display:none}
+.top{position:static;height:auto;padding:16px;flex-wrap:wrap;box-shadow:none}
+.top h1{font-size:22px}
+.body{padding:16px 16px 40px;gap:16px}
+.stats{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.stat{padding:16px}
+.stat b{font-size:26px}
+.ed{grid-template-columns:minmax(0,1fr)}
+.secs{flex-direction:row;overflow-x:auto;scrollbar-width:none}
+.sec{width:auto;flex-shrink:0}
+.fields,.qgrid{grid-template-columns:minmax(0,1fr)}
+.mgrid{grid-template-columns:repeat(2,minmax(0,1fr))}
+.media{flex-direction:column;align-items:stretch}
+.thumb{width:100%}
+.row{padding:14px 16px}
+.ch,.grp,.det{padding-left:16px;padding-right:16px}
+}
+@media (prefers-reduced-motion: reduce){.adm *{animation:none!important;transition-duration:.01ms!important}}
+</style>
+</helmet>
+<div class="adm" style="width: 100%">
+<div class="shell">
+
+<aside class="side" aria-label="Admin menu">
+<div class="brand">
+<svg width="36" height="36" viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="20.5" fill="none" stroke="rgba(3,83,96,0.08)" stroke-width="3.6"></circle><circle cx="24" cy="24" r="20.5" fill="none" stroke="#1FA9B9" stroke-width="3.6" stroke-linecap="round" stroke-dasharray="96.6 128.8" transform="rotate(128 24 24)"></circle><circle cx="24" cy="24" r="13.6" fill="#EAF7F9"></circle><path d="M10.4 26q3.4-3 6.8 0t6.8 0t6.8 0t6.8 0V38H10.4z" fill="#037788"></path></svg>
+<span class="bt"><span><span style="font-weight: 300; color: #037788">Relax</span><span style="font-weight: 600">Pump</span></span><small>Admin</small></span>
+</div>
+<sc-for list="{{navItems}}" as="n" hint-placeholder-count="4">
+<button class="navi {{n.cls}}" type="button" aria-current="{{n.cur}}" onClick="{{n.go}}">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{n.icon}}"></path></svg>
+<span>{{n.label}}</span>
+<sc-if value="{{n.hasCnt}}" hint-placeholder-val="{{ false }}"><span class="cnt">{{n.cnt}}</span></sc-if>
+</button>
+</sc-for>
+<div class="sfoot">
+<a class="navi" href="Main.dc.html" style="text-decoration: none"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h6v6 M20 4l-9 9 M19 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h5"></path></svg><span>View website</span></a>
+<a class="navi" href="AdminLogin.dc.html" style="text-decoration: none"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 4h4v16h-4 M10 8l-4 4 4 4 M6 12h10"></path></svg><span>Sign out</span></a>
+<div class="me"><span class="av">CA</span><span style="display: flex; flex-direction: column; gap: 3px; min-width: 0"><b style="font-size: 14px">CINZO Admin</b><span style="font-size: 12px; color: #48656A; word-break: break-all">cinzotechnologies@gmail.com</span></span></div>
+</div>
+</aside>
+
+<div class="main">
+<header class="top">
+<h1>{{title}}</h1>
+<sc-if value="{{showUnsaved}}" hint-placeholder-val="{{ false }}"><span class="unsaved"><span class="dot" style="background: #F59E0B"></span>Unsaved changes</span></sc-if>
+<span style="margin-left: auto"></span>
+<sc-if value="{{isSite}}" hint-placeholder-val="{{ false }}">
+<span class="ghost">Published {{pubAt}}</span>
+<button class="btn" type="button" onClick="{{discard}}" disabled="{{noChanges}}">Discard</button>
+<button class="btn strong" type="button" onClick="{{publish}}" disabled="{{noChanges}}">Publish</button>
+</sc-if>
+<sc-if value="{{notSite}}" hint-placeholder-val="{{ true }}">
+<a class="btn" href="Main.dc.html">View website</a>
+</sc-if>
+</header>
+
+<sc-if value="{{isDash}}" hint-placeholder-val="{{ true }}">
+<div class="body">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap">
+<div style="display: flex; flex-direction: column; gap: 6px"><h2 style="font-size: 28px">Hello, CINZO</h2><span class="lbl">Here is what needs you today.</span></div>
+<span class="sample">Sample data</span>
+</div>
+<div class="stats">
+<div class="card stat"><span class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#035360" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 11a4 4 0 1 0 0 8 4 4 0 0 0 0-8z M11 13l9-9 M17 7l3 3 M15 9l2 2"></path></svg></span><b>{{pendingCount}}</b><span class="lbl">Password requests waiting</span></div>
+<div class="card stat"><span class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#035360" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 18 0 9 9 0 0 0-18 0z M3 12h18 M12 3a14 14 0 0 1 0 18 M12 3a14 14 0 0 0 0 18"></path></svg></span><b>8</b><span class="lbl">Website sections</span></div>
+<div class="card stat"><span class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#035360" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10"></path></svg></span><b style="font-size: 24px; line-height: 32px">{{pubAt}}</b><span class="lbl">Last published</span></div>
+<div class="card stat"><span class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#035360" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4h2l2.4 11h11l2-8H6.2 M9.5 20h.01 M17 20h.01"></path></svg></span><b style="font-size: 24px; line-height: 32px">{{orderState}}</b><span class="lbl">Online ordering</span></div>
+</div>
+<div class="g2">
+<div class="card">
+<div class="ch"><h2>Forgot password requests</h2><button class="btn" type="button" onClick="{{goResets}}">Open all</button></div>
+<sc-if value="{{noPending}}" hint-placeholder-val="{{ false }}"><p style="padding: 22px; font-size: 14px; color: #48656A">All done. No one is waiting.</p></sc-if>
+<sc-for list="{{pendingTop}}" as="r" hint-placeholder-count="3">
+<button class="row" type="button" onClick="{{r.open}}">
+<span class="av">{{r.ini}}</span>
+<span class="rn"><b>{{r.name}}</b><span>+91 {{r.phoneFmt}} · {{r.ts}}</span></span>
+<span class="pillst pend">Waiting</span>
+</button>
+</sc-for>
+</div>
+<div class="card">
+<div class="ch"><h2>Quick edit</h2></div>
+<div class="qgrid">
+<sc-for list="{{quick}}" as="q" hint-placeholder-count="4">
+<button class="qt" type="button" onClick="{{q.go}}"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#035360" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{q.icon}}"></path></svg></span>{{q.label}}</button>
+</sc-for>
+</div>
+</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{isSite}}" hint-placeholder-val="{{ false }}">
+<div class="body">
+<div class="ed">
+<div class="card secs" role="tablist" aria-label="Website sections">
+<sc-for list="{{secList}}" as="x" hint-placeholder-count="8">
+<button class="sec {{x.cls}}" type="button" role="tab" aria-selected="{{x.sel}}" onClick="{{x.go}}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{x.icon}}"></path></svg>{{x.label}}</button>
+</sc-for>
+</div>
+<div class="card">
+<div class="ch"><h2>{{secTitle}}</h2><a class="btn" href="{{secLink}}">Preview</a></div>
+<sc-for list="{{groups}}" as="g" hint-placeholder-count="2">
+<div class="grp">
+<h3>{{g.title}}</h3>
+<div class="fields">
+<sc-for list="{{g.fields}}" as="f" hint-placeholder-count="2">
+<sc-if value="{{f.isText}}" hint-placeholder-val="{{ true }}"><label class="fld {{f.w}}">{{f.label}}<input class="inp" type="text" value="{{f.value}}" placeholder="{{f.ph}}" onChange="{{f.set}}"></label></sc-if>
+<sc-if value="{{f.isLink}}" hint-placeholder-val="{{ false }}"><label class="fld {{f.w}}">{{f.label}}<input class="inp" type="url" value="{{f.value}}" placeholder="https://" onChange="{{f.set}}"></label></sc-if>
+<sc-if value="{{f.isArea}}" hint-placeholder-val="{{ false }}"><label class="fld wide">{{f.label}}<textarea class="inp ta" value="{{f.value}}" onChange="{{f.set}}"></textarea></label></sc-if>
+<sc-if value="{{f.isToggle}}" hint-placeholder-val="{{ false }}"><div class="tgl {{f.w}}"><span>{{f.label}}</span><button class="sw {{f.onCls}}" type="button" aria-label="{{f.label}}" aria-pressed="{{f.pressed}}" onClick="{{f.toggle}}"><i></i></button></div></sc-if>
+<sc-if value="{{f.isMedia}}" hint-placeholder-val="{{ false }}">
+<div class="fld wide"><span>{{f.label}}</span>
+<div class="media">
+<span class="thumb">
+<sc-if value="{{f.hasImg}}" hint-placeholder-val="{{ false }}"><img src="{{f.value}}" alt=""></sc-if>
+<sc-if value="{{f.noImg}}" hint-placeholder-val="{{ true }}"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#037788" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{f.icon}}"></path></svg></sc-if>
+</span>
+<span style="display: flex; flex-direction: column; gap: 8px; min-width: 0; flex-grow: 1">
+<span class="mname">{{f.name}}</span>
+<span style="display: flex; gap: 8px; flex-wrap: wrap">
+<label class="btn">Upload<input type="file" accept="{{f.accept}}" onChange="{{f.pick}}" style="display: none"></label>
+<sc-if value="{{f.hasValue}}" hint-placeholder-val="{{ false }}"><button class="btn" type="button" onClick="{{f.clear}}">Remove</button></sc-if>
+</span>
+<sc-if value="{{f.isVideo}}" hint-placeholder-val="{{ false }}"><input class="inp" type="url" value="{{f.url}}" placeholder="Or paste a YouTube link" onChange="{{f.setUrl}}"></sc-if>
+</span>
+</div>
+</div>
+</sc-if>
+</sc-for>
+</div>
+</div>
+</sc-for>
+</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{isMedia}}" hint-placeholder-val="{{ false }}">
+<div class="body">
+<div class="card">
+<div class="ch"><h2>Images and videos</h2><span class="lbl">{{mediaCount}} files</span></div>
+<div class="mgrid">
+<label class="upl"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4 M7 9l5-5 5 5 M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"></path></svg>Upload<input type="file" accept="image/*,video/*" onChange="{{addMedia}}" style="display: none"></label>
+<sc-for list="{{media}}" as="m" hint-placeholder-count="3">
+<div class="mt">
+<span class="thumb">
+<sc-if value="{{m.isImg}}" hint-placeholder-val="{{ true }}"><img src="{{m.src}}" alt=""></sc-if>
+<sc-if value="{{m.isVid}}" hint-placeholder-val="{{ false }}"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#037788" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h11v12H4z M15 10l5-3v10l-5-3"></path></svg></sc-if>
+</span>
+<span style="display: flex; justify-content: space-between; gap: 8px"><b style="font-weight: 600; word-break: break-all">{{m.name}}</b><span class="ghost">{{m.use}}</span></span>
+</div>
+</sc-for>
+</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{isResets}}" hint-placeholder-val="{{ false }}">
+<div class="body">
+<div class="note">When someone taps <b>Forgot password</b> in the app, the request lands here. Set a new password, send it on WhatsApp, then mark it done.</div>
+<div class="g2">
+<div class="card">
+<div class="ch">
+<div class="tabs" role="tablist" aria-label="Requests">
+<button class="tab {{tabPendCls}}" type="button" role="tab" aria-selected="{{tabPendSel}}" onClick="{{showPend}}">Waiting · {{pendingCount}}</button>
+<button class="tab {{tabDoneCls}}" type="button" role="tab" aria-selected="{{tabDoneSel}}" onClick="{{showDone}}">Done · {{doneCount}}</button>
+</div>
+<span class="sample">Sample data</span>
+</div>
+<sc-if value="{{listEmpty}}" hint-placeholder-val="{{ false }}"><p style="padding: 22px; font-size: 14px; color: #48656A">Nothing here.</p></sc-if>
+<sc-for list="{{rlist}}" as="r" hint-placeholder-count="3">
+<button class="row {{r.cls}}" type="button" onClick="{{r.open}}">
+<span class="av">{{r.ini}}</span>
+<span class="rn"><b>{{r.name}}</b><span>+91 {{r.phoneFmt}} · {{r.ts}}</span></span>
+<span class="pillst {{r.stCls}}">{{r.stLabel}}</span>
+</button>
+</sc-for>
+</div>
+
+<div class="card">
+<sc-if value="{{noSel}}" hint-placeholder-val="{{ false }}"><p style="padding: 22px; font-size: 14px; color: #48656A">Pick a request to start.</p></sc-if>
+<sc-if value="{{hasSel}}" hint-placeholder-val="{{ true }}">
+<div class="ch"><div style="display: flex; align-items: center; gap: 12px"><span class="av">{{sel.ini}}</span><span class="rn"><b>{{sel.name}}</b><span>+91 {{sel.phoneFmt}}</span></span></div><span class="pillst {{sel.stCls}}">{{sel.stLabel}}</span></div>
+<div class="det">
+<div class="stp"><span class="sn {{step1Cls}}">1</span>
+<div style="display: flex; flex-direction: column; gap: 10px; flex-grow: 1; min-width: 0">
+<b style="font-size: 15px">Set a new password</b>
+<div style="display: flex; gap: 8px; flex-wrap: wrap">
+<input class="inp" type="text" aria-label="New password" value="{{selPw}}" placeholder="At least 6 characters" onChange="{{setPw}}" style="flex: 1 1 180px; font-family: ui-monospace, monospace; letter-spacing: 1px">
+<button class="btn" type="button" onClick="{{genPw}}">Generate</button>
+</div>
+<button class="btn strong" type="button" onClick="{{savePw}}" disabled="{{cantSave}}" style="align-self: flex-start">{{saveLabel}}</button>
+</div>
+</div>
+<div class="stp"><span class="sn {{step2Cls}}">2</span>
+<div style="display: flex; flex-direction: column; gap: 10px; flex-grow: 1; min-width: 0">
+<b style="font-size: 15px">Send it on WhatsApp</b>
+<div class="msg">{{waText}}</div>
+<sc-if value="{{canSend}}" hint-placeholder-val="{{ false }}"><a class="btn wa" href="{{waHref}}" onClick="{{markSent}}" style="align-self: flex-start"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20l1.5-4A8 8 0 1 1 9 19.5z"></path></svg>Open WhatsApp</a></sc-if>
+<sc-if value="{{cantSend}}" hint-placeholder-val="{{ true }}"><button class="btn" type="button" disabled="{{ true }}" style="align-self: flex-start">Open WhatsApp</button></sc-if>
+</div>
+</div>
+<div class="stp"><span class="sn {{step3Cls}}">3</span>
+<div style="display: flex; flex-direction: column; gap: 10px; flex-grow: 1">
+<b style="font-size: 15px">Mark as done</b>
+<button class="btn" type="button" onClick="{{markDone}}" disabled="{{cantDone}}" style="align-self: flex-start">{{doneLabel}}</button>
+</div>
+</div>
+</div>
+</sc-if>
+</div>
+</div>
+</div>
+</sc-if>
+
+</div>
+</div>
+<sc-if value="{{hasToast}}" hint-placeholder-val="{{ false }}"><div class="toast" role="status"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7FE3EC" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10"></path></svg>{{toast}}</div></sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1100}}'>
+class Component extends DCLogic {
+  constructor(p) {
+    super(p);
+    this.state = {
+      view: 'dash', sec: 'hero', vals: {}, saved: {}, dirty: false, pubAt: 'today, 9:30 PM',
+      tab: 'pending', selId: 1, pw: {}, pwSaved: {}, sent: {}, toast: '',
+      resets: [
+        { id: 1, name: 'Lalremruati', phone: '9876543210', ts: '5 min ago', status: 'pending' },
+        { id: 2, name: 'Vanlalhriata', phone: '9612345678', ts: '42 min ago', status: 'pending' },
+        { id: 3, name: 'Zothanpuii', phone: '8794012345', ts: '2 h ago', status: 'pending' },
+        { id: 4, name: 'Rohmingliana', phone: '7005123456', ts: 'Yesterday', status: 'done' }
+      ],
+      media: [
+        { name: 'hero-water.jpg', src: './assets/hero-water.jpg', use: 'Hero', isImg: true },
+        { name: 'install-poster.jpg', src: './assets/hero-water.jpg', use: 'Video poster', isImg: true },
+        { name: 'install-video.mp4', src: '', use: 'Not uploaded', isImg: false }
+      ]
+    };
+  }
+  componentWillUnmount() { clearTimeout(this.tt); }
+  say(t) { this.setState({ toast: t }); clearTimeout(this.tt); this.tt = setTimeout(() => this.setState({ toast: '' }), 2200); }
+  setVal(k, v) { this.setState({ vals: { ...this.state.vals, [k]: v }, dirty: true }); }
+  renderVals() {
+    const s = this.state;
+    const IC = {
+      dash: 'M4 4h7v7H4z M13 4h7v7h-7z M4 13h7v7H4z M13 13h7v7h-7z',
+      site: 'M3 12a9 9 0 1 0 18 0 9 9 0 0 0-18 0z M3 12h18 M12 3a14 14 0 0 1 0 18 M12 3a14 14 0 0 0 0 18',
+      media: 'M3 6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z M3 16l5-5 4 4 3-3 6 6',
+      key: 'M8 11a4 4 0 1 0 0 8 4 4 0 0 0 0-8z M11 13l9-9 M17 7l3 3 M15 9l2 2',
+      hero: 'M3 5h18v14H3z M3 15l5-4 4 3 3-2 6 4',
+      how: 'M5 6h14 M5 12h14 M5 18h9',
+      phone: 'M7 3h10v18H7z M11 18h2',
+      video: 'M4 6h11v12H4z M15 10l5-3v10l-5-3',
+      book: 'M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z M4 21V5',
+      dl: 'M12 4v12 M7 11l5 5 5-5 M4 20h16',
+      cart: 'M3 4h2l2.4 11h11l2-8H6.2',
+      mail: 'M3 5h18v14H3z M3 7l9 6 9-6',
+      file: 'M6 3h8l4 4v14H6z M14 3v4h4'
+    };
+    const BLOB = './assets/hero-water.jpg';
+    const t = (label, def, w) => ({ type: 'text', label, def, w: w || '' });
+    const SECS = [
+      { id: 'hero', label: 'Hero', icon: IC.hero, link: 'Main.dc.html', groups: [
+        { title: 'Text', fields: [t('Heading', 'Smart water tank automation', 'wide'), { type: 'area', label: 'Sub text', def: 'See every tank and run your pump from your phone — by hand or fully automatic.' }] },
+        { title: 'Background', fields: [{ type: 'image', label: 'Background image (16:9)', def: BLOB, name: 'hero-water.jpg' }] },
+        { title: 'Buttons', fields: [t('Button 1 text', 'Get the app'), { type: 'link', label: 'Button 1 link', def: '#download' }, t('Button 2 text', 'Order the kit'), { type: 'link', label: 'Button 2 link', def: '/store' }] }
+      ] },
+      { id: 'how', label: 'How it works', icon: IC.how, link: 'Main.dc.html', groups: [1, 2, 3, 4].map((n, i) => ({ title: 'Slide ' + n, fields: [t('Title', ['Live levels', 'Auto fill', 'Usage & alerts', '1-minute setup'][i]), t('Short line', ['Every tank on your phone, anywhere.', 'Set start and stop. It does the rest.', 'Litres, pump time, and dry-run alerts.', 'Scan, connect Wi-Fi, done.'][i])] })) },
+      { id: 'app', label: 'App screens', icon: IC.phone, link: 'Main.dc.html', groups: [{ title: 'Screenshots', fields: ['Welcome', 'Home', 'Tanks', 'Usage', 'Bluetooth setup', 'Account'].map(n => ({ type: 'image', label: n, def: '', name: 'Using the built-in design' })) }] },
+      { id: 'video', label: 'Install video', icon: IC.video, link: 'Main.dc.html', groups: [
+        { title: 'Video', fields: [{ type: 'video', label: 'Video file (16:9)', def: '', name: 'No video yet' }, { type: 'image', label: 'Poster image', def: BLOB, name: 'install-poster.jpg' }, { type: 'toggle', label: 'Show "Video soon" badge', def: true, w: 'wide' }] },
+        { title: 'Chapters', fields: ['Unboxing', 'Mount the sensors', 'Fit the valves', 'Wire the pump', 'Set up in the app'].map((c, i) => t('Chapter ' + (i + 1) + ' title', c)) }
+      ] },
+      { id: 'manual', label: 'Manual', icon: IC.book, link: 'Main.dc.html', groups: [
+        { title: 'Manual', fields: [t('Section title', 'The install manual', 'wide'), { type: 'file', label: 'Manual PDF', def: '', name: 'No PDF yet' }, { type: 'toggle', label: 'Show "Download PDF" button', def: true, w: 'wide' }] }
+      ] },
+      { id: 'download', label: 'App download', icon: IC.dl, link: 'Main.dc.html', groups: [
+        { title: 'Store links', fields: [{ type: 'link', label: 'Google Play link', def: 'https://play.google.com/store/apps/details?id=com.cinzo.relaxpump', w: 'wide' }, { type: 'link', label: 'App Store link', def: '', w: 'wide' }, { type: 'toggle', label: 'Show "SOON" badge', def: true, w: 'wide' }] }
+      ] },
+      { id: 'store', label: 'Store', icon: IC.cart, link: 'Shop.dc.html', groups: [
+        { title: 'Ordering', fields: [{ type: 'toggle', label: 'Online ordering open', def: false }, t('Order phone', '+91 98632 62589')] }
+      ].concat(['RelaxPump Controller Kit', 'Ultrasonic Level Sensor', 'Solenoid Valve', 'Pump Relay + Contactor', 'Home Installation'].map(n => ({ title: n, fields: [t('Name', n), t('Price (₹)', ''), { type: 'image', label: 'Photo', def: '', name: 'Using the drawing' }, { type: 'toggle', label: 'Show in store', def: true }] }))) },
+      { id: 'contact', label: 'Contact info', icon: IC.mail, link: 'Main.dc.html', groups: [
+        { title: 'Company', fields: [t('Company name', 'Chhinlung Zofa Technologies Private Limited', 'wide'), t('Brand', 'CINZO')] },
+        { title: 'Contact', fields: [t('Phone', '+91 98632 62589'), t('Email', 'cinzotechnologies@gmail.com'), t('Address', 'Chala Road, Luangmual'), { type: 'link', label: 'Website', def: 'https://cinzotechnologies.com' }] }
+      ] }
+    ];
+    const cur = SECS.find(x => x.id === s.sec) || SECS[0];
+    const get = (k, def) => (s.vals[k] !== undefined ? s.vals[k] : def);
+    const groups = cur.groups.map((g, gi) => ({
+      title: g.title,
+      fields: g.fields.map((f, fi) => {
+        const k = cur.id + '.' + gi + '.' + fi;
+        const v = get(k, f.def);
+        const isMedia = f.type === 'image' || f.type === 'video' || f.type === 'file';
+        const nameKey = k + '.name';
+        return {
+          label: f.label, w: f.w || '', value: v, ph: '',
+          isText: f.type === 'text', isLink: f.type === 'link', isArea: f.type === 'area', isToggle: f.type === 'toggle', isMedia, isVideo: f.type === 'video',
+          set: (e) => this.setVal(k, e.target.value),
+          onCls: v ? 'on' : '', pressed: v ? 'true' : 'false', toggle: () => this.setVal(k, !v),
+          hasImg: f.type === 'image' && !!v, noImg: !(f.type === 'image' && v), hasValue: !!v,
+          icon: f.type === 'image' ? IC.media : (f.type === 'video' ? IC.video : IC.file),
+          name: get(nameKey, v ? (f.name || 'Uploaded') : (f.name || 'Nothing uploaded')),
+          accept: f.type === 'image' ? 'image/*' : (f.type === 'video' ? 'video/*' : 'application/pdf'),
+          pick: (e) => { const file = e.target.files && e.target.files[0]; if (!file) return; const url = f.type === 'image' ? URL.createObjectURL(file) : file.name; this.setState({ vals: { ...this.state.vals, [k]: url, [nameKey]: file.name }, dirty: true }); },
+          clear: () => this.setState({ vals: { ...this.state.vals, [k]: '', [nameKey]: 'Nothing uploaded' }, dirty: true }),
+          url: get(k + '.url', ''), setUrl: (e) => this.setVal(k + '.url', e.target.value)
+        };
+      })
+    }));
+    const pend = s.resets.filter(r => r.status === 'pending');
+    const fmt = (p) => p.slice(0, 5) + ' ' + p.slice(5);
+    const ini = (n) => n.split(' ').map(x => x[0]).join('').slice(0, 2).toUpperCase();
+    const decorate = (r) => ({ ...r, ini: ini(r.name), phoneFmt: fmt(r.phone), stCls: r.status === 'done' ? 'done' : 'pend', stLabel: r.status === 'done' ? 'Done' : 'Waiting', cls: r.id === s.selId ? 'on' : '', open: () => this.setState({ view: 'resets', selId: r.id, tab: r.status === 'done' ? 'done' : 'pending' }) });
+    const rlist = s.resets.filter(r => (s.tab === 'done' ? r.status === 'done' : r.status === 'pending')).map(decorate);
+    const selR = s.resets.find(r => r.id === s.selId);
+    const sel = selR ? decorate(selR) : { name: '', ini: '', phoneFmt: '', stCls: '', stLabel: '' };
+    const pw = selR ? (s.pw[selR.id] || '') : '';
+    const saved = selR ? !!s.pwSaved[selR.id] : false;
+    const sent = selR ? !!s.sent[selR.id] : false;
+    const isDone = selR ? selR.status === 'done' : false;
+    const msg = selR ? ('Hello ' + selR.name + ',\nyour RelaxPump password has been reset.\nNew password: ' + (pw || '••••••••') + '\nPlease sign in and change it in Account › Change password.\n— CINZO') : '';
+    const navItems = [
+      { id: 'dash', label: 'Dashboard', icon: IC.dash },
+      { id: 'site', label: 'Website', icon: IC.site },
+      { id: 'media', label: 'Media', icon: IC.media },
+      { id: 'resets', label: 'Password requests', icon: IC.key, cnt: pend.length }
+    ].map(n => ({ ...n, cls: s.view === n.id ? 'on' : '', cur: s.view === n.id ? 'page' : 'false', hasCnt: !!n.cnt, go: () => this.setState({ view: n.id }) }));
+    const TITLES = { dash: 'Dashboard', site: 'Website content', media: 'Media', resets: 'Password requests' };
+    const openSec = (id) => () => this.setState({ view: 'site', sec: id });
+    const ordering = get('store.0.0', false);
+    return {
+      navItems, title: TITLES[s.view],
+      isDash: s.view === 'dash', isSite: s.view === 'site', notSite: s.view !== 'site', isMedia: s.view === 'media', isResets: s.view === 'resets',
+      showUnsaved: s.view === 'site' && s.dirty, noChanges: !s.dirty, pubAt: s.pubAt,
+      publish: () => { const d = new Date(); this.setState({ dirty: false, pubAt: 'today, ' + d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) }); this.say('Published to the website'); },
+      discard: () => { this.setState({ vals: {}, dirty: false }); this.say('Changes discarded'); },
+      secList: SECS.map(x => ({ label: x.label, icon: x.icon, cls: x.id === cur.id ? 'on' : '', sel: x.id === cur.id ? 'true' : 'false', go: () => this.setState({ sec: x.id }) })),
+      secTitle: cur.label, secLink: cur.link, groups,
+      quick: [
+        { label: 'Hero text and image', icon: IC.hero, go: openSec('hero') },
+        { label: 'Install video', icon: IC.video, go: openSec('video') },
+        { label: 'App store links', icon: IC.dl, go: openSec('download') },
+        { label: 'Contact info', icon: IC.mail, go: openSec('contact') }
+      ],
+      orderState: ordering ? 'Open' : 'Closed',
+      media: s.media.map(m => ({ ...m, isVid: !m.isImg })), mediaCount: s.media.length,
+      addMedia: (e) => { const f = e.target.files && e.target.files[0]; if (!f) return; const img = f.type.indexOf('image') === 0; this.setState({ media: [{ name: f.name, src: img ? URL.createObjectURL(f) : '', use: 'Not used yet', isImg: img }].concat(this.state.media) }); this.say('Uploaded ' + f.name); },
+      pendingCount: pend.length, doneCount: s.resets.length - pend.length, noPending: pend.length === 0,
+      pendingTop: pend.slice(0, 3).map(decorate),
+      goResets: () => this.setState({ view: 'resets', tab: 'pending' }),
+      tabPendCls: s.tab === 'pending' ? 'on' : '', tabDoneCls: s.tab === 'done' ? 'on' : '',
+      tabPendSel: s.tab === 'pending' ? 'true' : 'false', tabDoneSel: s.tab === 'done' ? 'true' : 'false',
+      showPend: () => this.setState({ tab: 'pending' }), showDone: () => this.setState({ tab: 'done' }),
+      rlist, listEmpty: rlist.length === 0,
+      hasSel: !!selR, noSel: !selR, sel,
+      selPw: pw,
+      setPw: (e) => this.setState({ pw: { ...s.pw, [selR.id]: e.target.value }, pwSaved: { ...s.pwSaved, [selR.id]: false } }),
+      genPw: () => { const cs = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789'; let p = ''; for (let i = 0; i < 8; i++) p += cs[Math.floor(Math.random() * cs.length)]; this.setState({ pw: { ...s.pw, [selR.id]: p }, pwSaved: { ...s.pwSaved, [selR.id]: false } }); },
+      cantSave: !selR || pw.length < 6 || saved || isDone,
+      saveLabel: saved || isDone ? 'Password saved' : 'Save new password',
+      savePw: () => { this.setState({ pwSaved: { ...s.pwSaved, [selR.id]: true } }); this.say('New password saved for ' + selR.name); },
+      step1Cls: saved || isDone ? 'ok' : '', step2Cls: sent || isDone ? 'ok' : '', step3Cls: isDone ? 'ok' : '',
+      waText: msg,
+      waHref: selR ? 'https://wa.me/91' + selR.phone + '?text=' + encodeURIComponent(msg) : '#',
+      canSend: saved && !isDone, cantSend: !(saved && !isDone),
+      markSent: () => this.setState({ sent: { ...s.sent, [selR.id]: true } }),
+      cantDone: !selR || isDone || !saved,
+      doneLabel: isDone ? 'Done' : 'Mark as done',
+      markDone: () => { this.setState({ resets: s.resets.map(r => r.id === selR.id ? { ...r, status: 'done' } : r) }); this.say(selR.name + ' marked as done'); },
+      hasToast: !!s.toast, toast: s.toast
+    };
+  }
+}
+</script>
+</body>
+</html>

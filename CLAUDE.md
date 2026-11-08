@@ -193,3 +193,12 @@ local notification while the app is open.
    `eas login`), stop and give short numbered steps.
 6. Write `docs/SETUP.md`: install tools, Firebase console steps, run the app on an Android phone,
    flash the ESP32, first-time setup.
+
+---
+
+## 9. Website + admin panel (`web/`)
+
+The public website, store and admin panel are a separate part of this repo: a Next.js app on
+Cloudflare Workers (OpenNext) with Cloudflare D1 + R2. Everything about it — design files in
+`reference/website/`, theme, sections, data, admin, the forgot-password → WhatsApp flow and the
+milestones — is in **`docs/website-brief.md`**. Read it before touching `web/`.

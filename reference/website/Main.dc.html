@@ -1,0 +1,888 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RelaxPump — Home</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;family=Outfit:wght@300;400;500;600&amp;display=swap">
+<style>
+body{margin:0;background:#FFFFFF}
+a{color:#035360}a:hover{color:#037788}
+.site{container-type:inline-size;container-name:site;font-family:Inter,system-ui,sans-serif;color:#021A20;background:#FFFFFF;overflow:hidden;-webkit-font-smoothing:antialiased}
+.site *{box-sizing:border-box}
+.site h1,.site h2,.site h3{margin:0;font-family:Outfit,Inter,sans-serif}
+.site p{margin:0}
+.wrap{max-width:1240px;margin:0 auto;padding:0 40px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;height:52px;padding:0 26px;border-radius:999px;font:600 15px/1 Inter,sans-serif;text-decoration:none;border:0;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;transition:transform .16s cubic-bezier(.22,1,.36,1),box-shadow .25s,background-color .25s,color .25s}
+.btn:active{transform:scale(.96)}
+.btn-p{background:#035360;color:#FFFFFF;box-shadow:0 12px 26px -12px rgba(3,83,96,.7)}
+.btn-p:hover{background:#024450;color:#FFFFFF;box-shadow:0 16px 32px -12px rgba(3,83,96,.75)}
+.btn-s{background:#E3F5F7;color:#035360;box-shadow:inset 0 0 0 2px #035360}
+.btn-s:hover{background:#035360;color:#FFFFFF}
+.btn .ar{transition:transform .3s cubic-bezier(.22,1,.36,1)}
+.btn:hover .ar{transform:translateX(4px)}
+.ic{width:52px;height:52px;border-radius:50%;border:0;background:#035360;color:#FFFFFF;box-shadow:0 10px 22px -10px rgba(3,83,96,.7);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;touch-action:manipulation;transition:transform .16s cubic-bezier(.22,1,.36,1),background-color .25s,color .25s}
+.ic:hover{background:#021A20;color:#7FE3EC}
+.ic:active{transform:scale(.92)}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;height:32px;padding:0 14px;border-radius:999px;background:#E3F5F7;color:#035360;font:600 13px/1 Inter,sans-serif;letter-spacing:.02em}
+.kicker{font:600 12px/1 Inter,sans-serif;letter-spacing:.16em;text-transform:uppercase;color:#037788}
+.h2{font-size:52px;line-height:1.05;font-weight:500;letter-spacing:-.02em}
+.sub{font-size:18px;line-height:1.6;color:#48656A}
+.nav{position:sticky;top:0;z-index:60;background:rgba(255,255,255,.88);backdrop-filter:saturate(1.4) blur(14px);-webkit-backdrop-filter:saturate(1.4) blur(14px);border-bottom:1px solid #E3EEF0}
+.nav-in{position:relative;height:76px;display:flex;align-items:center;gap:28px}
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none;font-family:Outfit,sans-serif;font-size:24px;letter-spacing:-.3px;color:#021A20}
+.brand:hover{color:#021A20}
+.links{display:flex;gap:4px;margin-left:auto}
+.links a{padding:10px 16px;border-radius:999px;color:#2E4A50;text-decoration:none;font:500 15px/1 Inter,sans-serif;transition:background-color .2s,color .2s}
+.links a:hover{background:#ECF8FA;color:#035360}
+.burger{display:none;margin-left:auto;width:46px;height:46px;border-radius:14px;border:1.5px solid #CFE3E7;background:#FFFFFF;color:#035360;align-items:center;justify-content:center;cursor:pointer;touch-action:manipulation}
+.mm{position:absolute;left:0;right:0;top:72px;padding:10px;border-radius:22px;background:#FFFFFF;box-shadow:0 24px 50px -20px rgba(2,26,32,.35),0 0 0 1px #E3EEF0;display:flex;flex-direction:column;gap:2px;opacity:0;transform:translateY(-10px) scale(.98);transform-origin:top center;pointer-events:none;transition:opacity .22s,transform .3s cubic-bezier(.22,1,.36,1)}
+.mm.open{opacity:1;transform:none;pointer-events:auto}
+.mm a{padding:15px 16px;border-radius:14px;font:500 16px/1 Inter,sans-serif;color:#021A20;text-decoration:none}
+.mm a:hover{background:#ECF8FA}
+.hero{position:relative;width:100%;aspect-ratio:16/9;max-height:calc(100vh - 76px);min-height:600px;overflow:hidden;background:#FFFFFF;display:flex;align-items:flex-start;justify-content:center}
+.hbg{position:absolute;left:0;right:0;bottom:0;width:100%;height:72%;object-fit:cover;object-position:50% 70%;transform-origin:50% 80%;animation:kb 20s cubic-bezier(.22,1,.36,1) both}
+@keyframes kb{from{transform:scale(1.14)}to{transform:scale(1)}}
+.hfade{position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,#FFFFFF 0%,#FFFFFF 30%,rgba(255,255,255,.85) 42%,rgba(255,255,255,0) 62%),linear-gradient(90deg,rgba(255,255,255,.7) 0%,rgba(255,255,255,0) 45%)}
+.hcopy{position:relative;width:100%;padding-top:7%;display:flex;flex-direction:column;align-items:flex-start;text-align:left;gap:22px}
+.hpill{display:inline-flex;align-items:center;gap:10px;height:36px;padding:0 16px 0 12px;border-radius:999px;background:rgba(255,255,255,.8);box-shadow:0 0 0 1px #D5EAEE,0 8px 24px -14px rgba(3,83,96,.4);font:600 13px/1 Inter,sans-serif;color:#035360;letter-spacing:.02em;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.hdot{position:relative;width:8px;height:8px;border-radius:50%;background:#2FB6C6}
+.hdot::after{content:"";position:absolute;inset:-4px;border-radius:50%;border:2px solid #2FB6C6;animation:ring 2s ease-out infinite}
+@keyframes ring{from{transform:scale(.5);opacity:1}to{transform:scale(1.8);opacity:0}}
+.hero .h1{color:#021A20;font-size:84px;line-height:.98}
+.hero .h1 em{color:#037788}
+.hsub{font-size:19px;line-height:1.55;color:#3E5C62;max-width:520px}
+.hero-ctas{margin-top:6px;display:flex;flex-wrap:wrap;justify-content:flex-start;gap:14px}
+.hb{position:relative;display:inline-flex;align-items:center;gap:14px;height:62px;border-radius:999px;text-decoration:none;font:600 16px/1 Inter,sans-serif;overflow:hidden;isolation:isolate;touch-action:manipulation;-webkit-tap-highlight-color:transparent;transition:transform .18s cubic-bezier(.22,1,.36,1),box-shadow .35s,background-color .3s,color .3s}
+.hb:active{transform:scale(.96)}
+.hb-i{width:46px;height:46px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;transition:transform .45s cubic-bezier(.34,1.56,.64,1),background-color .3s,color .3s}
+.hb-main{padding:0 8px 0 28px;color:#021A20;background:rgba(255,255,255,.72);box-shadow:inset 0 0 0 1.5px #021A20;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+.hb-main .hb-i{background:#035360;color:#FFFFFF}
+.hb-main::after{content:"";position:absolute;top:0;bottom:0;left:-60%;width:45%;z-index:-1;background:linear-gradient(100deg,rgba(127,227,236,0),rgba(127,227,236,.45),rgba(127,227,236,0));transform:skewX(-20deg);animation:shine 3.6s cubic-bezier(.22,1,.36,1) 1.2s infinite}
+@keyframes shine{0%{left:-60%}45%,100%{left:130%}}
+.hb-main:hover{background:#021A20;color:#FFFFFF}
+.hb-main:hover .hb-i{background:#7FE3EC;color:#021A20}
+.hb-main:hover .hb-i{transform:rotate(-45deg)}
+.hb-alt{padding:0 28px 0 8px;color:#021A20;background:rgba(255,255,255,.72);box-shadow:inset 0 0 0 1.5px #021A20;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+.hb-alt .hb-i{background:#035360;color:#FFFFFF}
+.hb-alt:hover{background:#021A20;color:#FFFFFF}
+.hb-alt:hover .hb-i{background:#7FE3EC;color:#021A20;transform:scale(1.08)}
+.hchecks{display:flex;flex-wrap:wrap;justify-content:flex-start;gap:10px}
+.hchecks span{display:inline-flex;align-items:center;gap:7px;height:34px;padding:0 14px;border-radius:999px;background:rgba(255,255,255,.78);box-shadow:0 0 0 1px #D5EAEE;font:500 13px/1 Inter,sans-serif;color:#2E4A50;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.hero-grid{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:56px;align-items:center}
+.h1{font-size:72px;line-height:1;font-weight:600;letter-spacing:-.03em}
+.h1 em{font-style:normal;font-weight:300;color:#037788}
+.in{opacity:0;animation:up .9s cubic-bezier(.22,1,.36,1) forwards}
+.d1{animation-delay:.05s}.d2{animation-delay:.14s}.d3{animation-delay:.23s}.d4{animation-delay:.32s}.d5{animation-delay:.41s}
+@keyframes up{from{opacity:0;transform:translateY(28px)}to{opacity:1;transform:none}}
+.scene{position:relative;aspect-ratio:560/500;border-radius:36px;background:linear-gradient(160deg,#EAF8FA,#F7FDFD 60%,#E3F4F6);box-shadow:inset 0 0 0 1px #DCEEF1}
+.scene svg.art{position:absolute;inset:0;width:100%;height:100%}
+.water{transition:transform 2.6s cubic-bezier(.22,1,.36,1)}
+.water.off{transform:translateY(176px)}
+.water.on{transform:translateY(74px)}
+.wv{animation:wv 3.6s linear infinite}
+.wv.b{animation-duration:5.4s;animation-direction:reverse}
+@keyframes wv{to{transform:translateX(-120px)}}
+.flowg .flow{opacity:0;transition:opacity .4s}
+.flowg.on .flow{opacity:1;animation:dash .8s linear infinite}
+@keyframes dash{to{stroke-dashoffset:-24}}
+.fan{transform-box:fill-box;transform-origin:center}
+.flowg.on .fan{animation:spin .5s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.led{animation:blink 1.6s ease-in-out infinite}
+@keyframes blink{50%{opacity:.25}}
+.wifi path{animation:ping 2.4s ease-out infinite;opacity:0}
+.wifi path:nth-child(2){animation-delay:.3s}.wifi path:nth-child(3){animation-delay:.6s}
+@keyframes ping{0%{opacity:0}30%{opacity:1}100%{opacity:0}}
+.float{position:absolute;display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:18px;background:#FFFFFF;box-shadow:0 18px 40px -18px rgba(2,26,32,.35),0 0 0 1px rgba(3,83,96,.06);animation:bob 6s ease-in-out infinite}
+.float.f2{animation-delay:-3s}
+@keyframes bob{50%{transform:translateY(-8px)}}
+.ctl{position:absolute;left:5%;bottom:5%;width:min(300px,62%);padding:16px;border-radius:22px;background:#021A20;color:#E8F6F7;box-shadow:0 30px 60px -24px rgba(2,26,32,.6)}
+.tg{position:relative;width:60px;height:34px;flex-shrink:0;border-radius:999px;border:0;padding:0;background:#3A5459;cursor:pointer;touch-action:manipulation;transition:background-color .3s}
+.tg i{position:absolute;top:4px;left:4px;width:26px;height:26px;border-radius:50%;background:#FFFFFF;transition:transform .45s cubic-bezier(.34,1.56,.64,1)}
+.tg.on{background:#2FB6C6}
+.tg.on i{transform:translateX(26px)}
+.dot{width:8px;height:8px;border-radius:50%;background:#5E7C81;transition:background-color .3s,box-shadow .3s}
+.dot.on{background:#7FE3EC;box-shadow:0 0 10px #7FE3EC}
+.feat{padding:120px 0}
+.fhead{display:flex;align-items:flex-end;justify-content:space-between;gap:32px;flex-wrap:wrap}
+.fstage{margin-top:48px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:40px;align-items:stretch}
+.fstage>div:first-child{justify-content:center}
+.ftext{position:relative;min-height:230px}
+.ft{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:flex-end;gap:20px;opacity:0;transform:translateY(46px);pointer-events:none;transition:opacity .45s,transform .8s cubic-bezier(.22,1,.36,1)}
+.ft.on{opacity:1;transform:none;pointer-events:auto;transition-delay:.18s}
+.ft.was{opacity:0;transform:translateY(-46px);transition-delay:0s}
+.ft h3{font-size:56px;line-height:1.02;font-weight:500;letter-spacing:-.02em}
+.fnum{font:300 15px/1 Outfit,sans-serif;color:#037788;letter-spacing:.1em}
+.fpanel{position:relative;height:620px;border-radius:36px;overflow:hidden;background:#021A20}
+.fbg{position:absolute;inset:0;clip-path:inset(0 0 0 100%);transition:clip-path 1s cubic-bezier(.77,0,.18,1);z-index:0}
+.fbg.on{clip-path:inset(0 0 0 0);z-index:2}
+.fbg.was{clip-path:inset(0 0 0 0);z-index:1;transition:none}
+.fbig{position:absolute;left:28px;top:6px;font:600 210px/1 Outfit,sans-serif;color:transparent;-webkit-text-stroke:1.5px rgba(255,255,255,.28);letter-spacing:-.04em}
+.fph{position:absolute;left:50%;top:50%;opacity:0;transform:translate(-50%,-50%) translateX(140px) rotate(7deg) scale(.86);transition:transform 1.05s cubic-bezier(.22,1,.36,1),opacity .6s;will-change:transform;z-index:3}
+.fph.on{opacity:1;transform:translate(-50%,-50%) scale(.92);transition-delay:.22s}
+.fph.was{opacity:0;transform:translate(-50%,-50%) translateX(-140px) rotate(-7deg) scale(.86);transition-delay:0s}
+.ftabs{margin-top:32px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.tab{display:flex;flex-direction:column;align-items:flex-start;gap:10px;padding:0;border:0;background:none;text-align:left;cursor:pointer;touch-action:manipulation;font:600 14px/1.2 Inter,sans-serif;color:#5E777B;transition:color .3s}
+.tab:hover,.tab.on{color:#021A20}
+.pbar{width:100%;height:4px;border-radius:4px;background:#C9DDE0;overflow:hidden}
+.pbar i{display:block;height:100%;width:100%;background:#037788;transform:scaleX(0);transform-origin:left}
+.tab.on .pbar i{animation:prog 6s linear forwards}
+.tab.paused .pbar i{animation:none;transform:scaleX(1)}
+@keyframes prog{to{transform:scaleX(1)}}
+.gal{padding:110px 0 120px;background:linear-gradient(180deg,#FFFFFF,#F2FAFB 50%,#FFFFFF)}
+.chips{margin-top:36px;display:flex;flex-wrap:wrap;justify-content:center;gap:10px}
+.chip{height:44px;padding:0 20px;border-radius:999px;border:1.5px solid #8FB3B8;background:#EEF6F7;color:#021A20;font:500 14px/1 Inter,sans-serif;cursor:pointer;touch-action:manipulation;transition:background-color .25s,color .25s,border-color .25s,transform .16s}
+.chip:hover{border-color:#035360;background:#E1F1F3}
+.chip:active{transform:scale(.95)}
+.chip.on{background:#021A20;border-color:#021A20;color:#FFFFFF}
+.cf{--g1:290px;--g2:540px;--s0:1;--s1:.84;--s2:.7;position:relative;height:660px;margin-top:44px}
+.cfc{position:absolute;left:50%;top:20px;width:300px;height:620px;padding:0;border:0;background:none;cursor:pointer;border-radius:46px;transform-origin:50% 50%;transition:transform .75s cubic-bezier(.22,1,.36,1),opacity .5s;will-change:transform;touch-action:manipulation}
+.cfc .sh{position:absolute;inset:0;border-radius:46px;box-shadow:0 30px 60px -30px rgba(2,26,32,.45);transition:box-shadow .5s}
+.cfc.p0{transform:translateX(-50%) scale(var(--s0));z-index:5;cursor:default}
+.cfc.p0 .sh{box-shadow:0 50px 90px -30px rgba(2,26,32,.55),0 0 0 6px rgba(127,227,236,.25)}
+.cfc.p1{transform:translateX(calc(-50% + var(--g1))) scale(var(--s1));z-index:4}
+.cfc.pm1{transform:translateX(calc(-50% - var(--g1))) scale(var(--s1));z-index:4}
+.cfc.p2{transform:translateX(calc(-50% + var(--g2))) scale(var(--s2));z-index:3;opacity:.75}
+.cfc.pm2{transform:translateX(calc(-50% - var(--g2))) scale(var(--s2));z-index:3;opacity:.75}
+.cfc.ph{transform:translateX(-50%) scale(.55);opacity:0;z-index:1;pointer-events:none}
+.cap{margin-top:20px;text-align:center}
+.dl{padding:40px 0 96px}
+.dlcard{position:relative;display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:24px;align-items:center;padding:72px 64px;border-radius:40px;overflow:hidden;background:linear-gradient(135deg,#035360 0%,#037788 60%,#0A9AAE 100%);color:#FFFFFF}
+.dlcard .ring{position:absolute;border-radius:50%;border:1px solid rgba(255,255,255,.14)}
+.badge{position:relative;display:inline-flex;align-items:center;gap:12px;height:62px;padding:0 22px 0 18px;border-radius:16px;background:#021A20;color:#FFFFFF;text-decoration:none;box-shadow:0 0 0 1px rgba(255,255,255,.18);transition:transform .16s cubic-bezier(.22,1,.36,1),box-shadow .25s}
+.badge:hover{color:#FFFFFF;box-shadow:0 0 0 2px #7FE3EC}
+.badge:active{transform:scale(.96)}
+.badge small{display:block;font:500 11px/1 Inter,sans-serif;opacity:.8;letter-spacing:.02em}
+.badge b{display:block;margin-top:4px;font:600 20px/1 Outfit,sans-serif}
+.soon{position:absolute;top:-10px;right:-8px;height:22px;padding:0 9px;border-radius:999px;background:#7FE3EC;color:#021A20;font:700 10px/22px Inter,sans-serif;letter-spacing:.04em}
+.dlph{position:relative;height:460px}
+.dlph .a{position:absolute;left:8%;top:30px;transform:rotate(-8deg) scale(.74);transform-origin:top left}
+.dlph .b{position:absolute;right:4%;top:0;transform:rotate(6deg) scale(.8);transform-origin:top right}
+.store{padding:96px 0 120px;background:#F3F9FA}
+.pgrid{margin-top:44px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}
+.pc{display:flex;flex-direction:column;border-radius:28px;background:#FFFFFF;border:1.5px solid #BFD7DB;box-shadow:0 14px 34px -22px rgba(2,26,32,.35);overflow:hidden;transition:transform .35s cubic-bezier(.22,1,.36,1),box-shadow .35s}
+.pc:hover{transform:translateY(-6px);border-color:#037788;box-shadow:0 30px 50px -26px rgba(2,26,32,.45)}
+.pimg{position:relative;height:220px;border-bottom:1.5px solid #D3E6E9;background:linear-gradient(160deg,#DDF2F5,#EEF8F9);display:flex;align-items:center;justify-content:center}
+.ptag{position:absolute;top:16px;left:16px;height:26px;padding:0 10px;border-radius:999px;background:#035360;color:#FFFFFF;font:600 11px/26px Inter,sans-serif;box-shadow:0 0 0 1px #D5E8EB}
+.nb{height:44px;padding:0 18px;font-size:14px}
+.nb.done{background:#E3F5F7;color:#035360;box-shadow:none}
+.foot{background:#021A20;color:#E8F6F7;padding:88px 0 36px}
+.foot a{color:#E8F6F7;text-decoration:none}
+.foot a:hover{color:#7FE3EC}
+.fgrid{display:grid;grid-template-columns:minmax(0,1.3fr) repeat(3,minmax(0,1fr));gap:40px}
+.ci{display:flex;align-items:flex-start;gap:12px;font-size:15px;line-height:1.5}
+.ci span.i{width:36px;height:36px;flex-shrink:0;border-radius:12px;background:rgba(127,227,236,.1);display:flex;align-items:center;justify-content:center}
+.fl{display:flex;flex-direction:column;gap:12px;font-size:15px}
+.fh{font:600 12px/1 Inter,sans-serif;letter-spacing:.16em;text-transform:uppercase;color:#7FE3EC;margin-bottom:8px}
+.rv{opacity:1}
+@supports (animation-timeline: view()){.rv{animation:up linear both;animation-timeline:view();animation-range:entry 0% entry 45%}}
+@container site (max-width:1100px){.hero .h1{font-size:66px}.h2{font-size:44px}.ft h3{font-size:44px}.fgrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@container site (max-width:820px){
+.wrap{padding:0 20px}
+.links,.nav-cta{display:none}
+.burger{display:inline-flex}
+.nav-in{height:68px}
+.mm{top:64px}
+.hero{aspect-ratio:auto;min-height:760px;max-height:none}
+.hero .h1{font-size:46px}
+.hcopy{padding-top:40px;gap:18px}
+.hsub{font-size:16px}
+.hbg{height:46%;object-position:50% 60%}
+.hfade{background:linear-gradient(180deg,#FFFFFF 0%,#FFFFFF 50%,rgba(255,255,255,0) 66%)}
+.hero-ctas{width:100%;flex-direction:column;align-items:stretch}
+.hb{justify-content:space-between}
+.hero-grid{grid-template-columns:minmax(0,1fr);gap:36px}
+.h1{font-size:46px}
+.h2{font-size:36px}
+.sub{font-size:16px}
+.ctl{left:4%;bottom:4%;width:72%;padding:12px}
+.float{padding:9px 11px;border-radius:14px}
+.feat{padding:72px 0}
+.fstage{grid-template-columns:minmax(0,1fr);gap:24px;margin-top:28px}
+.fpanel{height:470px;order:-1;border-radius:28px}
+.fph.on{transform:translate(-50%,-50%) scale(.7)}
+.fph,.fph.was{transform:translate(-50%,-50%) translateX(100px) rotate(7deg) scale(.64)}
+.fph.was{transform:translate(-50%,-50%) translateX(-100px) rotate(-7deg) scale(.64)}
+.fbig{font-size:130px}
+.ftext{min-height:170px}
+.ft{justify-content:flex-start;gap:14px}
+.ft h3{font-size:32px}
+.ftabs{grid-template-columns:repeat(2,minmax(0,1fr));row-gap:18px}
+.gal{padding:72px 0}
+.chips{flex-wrap:nowrap;overflow-x:auto;justify-content:flex-start;padding:2px 20px 8px;margin-left:-20px;margin-right:-20px;scrollbar-width:none}
+.chip{flex-shrink:0}
+.cf{--g1:150px;--g2:250px;--s0:.74;--s1:.58;--s2:.46;height:500px;margin-top:20px}
+.cfc{top:-60px}
+.dl{padding:16px 0 72px}
+.dlcard{grid-template-columns:minmax(0,1fr);padding:40px 24px 0;border-radius:28px}
+.dlph{height:330px}
+.dlph .a{left:0;transform:rotate(-8deg) scale(.56)}
+.dlph .b{right:0;transform:rotate(6deg) scale(.6)}
+.store{padding:64px 0 72px}
+.pgrid{grid-template-columns:minmax(0,1fr);margin-top:28px}
+.foot{padding:56px 0 28px}
+.fgrid{grid-template-columns:minmax(0,1fr);gap:32px}
+}
+.nav-in>.btn-p{background:#7FE3EC;color:#021A20;box-shadow:0 0 0 0 rgba(127,227,236,0)}
+.nav-in>.btn-p:hover{background:#A8F3F8;color:#021A20;box-shadow:0 0 24px -4px rgba(127,227,236,.6)}
+.guide{padding:110px 0;background:#FFFFFF}
+.vid{margin-top:44px;display:grid;grid-template-columns:minmax(0,1.65fr) minmax(0,1fr);gap:24px;align-items:stretch}
+.player{position:relative;aspect-ratio:16/9;border-radius:28px;overflow:hidden;background:#021A20;box-shadow:0 30px 60px -30px rgba(2,26,32,.55)}
+.player img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transform:scale(1.04);transition:transform 1.2s cubic-bezier(.22,1,.36,1)}
+.player:hover img{transform:scale(1.08)}
+.pshade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(2,26,32,.35) 0%,rgba(2,26,32,.15) 40%,rgba(2,26,32,.85) 100%)}
+.ptop{position:absolute;left:24px;right:24px;top:22px;display:flex;justify-content:space-between;align-items:center;gap:12px}
+.soonc{height:30px;padding:0 12px;border-radius:999px;background:#F59E0B;color:#021A20;font:700 12px/30px Inter,sans-serif;letter-spacing:.04em}
+.pchip{height:30px;padding:0 12px;border-radius:999px;background:rgba(2,26,32,.55);color:#FFFFFF;font:600 12px/30px Inter,sans-serif;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.play{position:absolute;left:50%;top:50%;width:92px;height:92px;margin:-46px 0 0 -46px;border-radius:50%;border:0;background:rgba(255,255,255,.18);box-shadow:inset 0 0 0 2px rgba(255,255,255,.85);color:#FFFFFF;display:flex;align-items:center;justify-content:center;cursor:pointer;touch-action:manipulation;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);transition:transform .2s cubic-bezier(.22,1,.36,1),background-color .3s}
+.play::before{content:"";position:absolute;inset:-10px;border-radius:50%;border:2px solid rgba(127,227,236,.7);animation:ring 2.2s ease-out infinite}
+.play:hover{background:#7FE3EC;color:#021A20}
+.play:active{transform:scale(.92)}
+.pbot{position:absolute;left:24px;right:24px;bottom:22px;display:flex;flex-direction:column;gap:14px;color:#FFFFFF}
+.ptitle{font:500 30px/1.1 Outfit,sans-serif}
+.segs{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
+.seg{height:5px;border-radius:5px;background:rgba(255,255,255,.3);transition:background-color .4s}
+.seg.on{background:#7FE3EC}
+.vtoast{position:absolute;left:50%;top:50%;transform:translate(-50%,62px);padding:10px 16px;border-radius:999px;background:#FFFFFF;color:#021A20;font:600 14px/1 Inter,sans-serif;white-space:nowrap;animation:up .4s cubic-bezier(.22,1,.36,1) both}
+.chs{display:flex;flex-direction:column;gap:10px}
+.chb{display:flex;align-items:center;gap:14px;width:100%;padding:14px 16px;border-radius:20px;border:1.5px solid #BFD7DB;background:#FFFFFF;text-align:left;cursor:pointer;touch-action:manipulation;font:500 16px/1.2 Inter,sans-serif;color:#021A20;transition:border-color .25s,background-color .25s,transform .16s}
+.chb:hover{border-color:#037788}
+.chb:active{transform:scale(.98)}
+.chb.on{background:#021A20;border-color:#021A20;color:#FFFFFF}
+.chn{width:40px;height:40px;flex-shrink:0;border-radius:12px;background:#E3F5F7;color:#035360;display:flex;align-items:center;justify-content:center;font:600 14px/1 Outfit,sans-serif;transition:background-color .25s,color .25s}
+.chb.on .chn{background:#7FE3EC;color:#021A20}
+.chs-s{margin-left:auto;font-size:12px;font-weight:600;color:#5E777B}
+.chb.on .chs-s{color:#7FE3EC}
+.manual{padding:110px 0 120px;background:linear-gradient(180deg,#F3F9FA,#E8F4F6)}
+.bk{position:relative;height:600px;margin-top:36px;perspective:2200px}
+.sp{position:absolute;left:50%;top:40px;width:760px;height:480px;padding:0;border:0;border-radius:14px;background:none;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));text-align:left;font-family:Inter,sans-serif;color:#021A20;cursor:pointer;touch-action:manipulation;transition:transform .95s cubic-bezier(.22,1,.36,1),opacity .6s;will-change:transform;box-shadow:0 3px 0 -1px #DCE8EA,0 6px 0 -2px #CBDCDF,0 9px 0 -3px #BFD2D6,0 40px 60px -30px rgba(2,26,32,.5)}
+.sp.o{transform:translateX(-50%);z-index:20;cursor:default}
+.sp.l1{transform:translateX(calc(-50% - 480px)) rotateY(70deg);z-index:14}
+.sp.l2{transform:translateX(calc(-50% - 512px)) rotateY(72deg);z-index:13}
+.sp.l3{transform:translateX(calc(-50% - 540px)) rotateY(74deg);z-index:12}
+.sp.l4,.sp.l5{transform:translateX(calc(-50% - 564px)) rotateY(76deg);z-index:11}
+.sp.r1{transform:translateX(calc(-50% + 480px)) rotateY(-70deg);z-index:14}
+.sp.r2{transform:translateX(calc(-50% + 512px)) rotateY(-72deg);z-index:13}
+.sp.r3{transform:translateX(calc(-50% + 540px)) rotateY(-74deg);z-index:12}
+.sp.r4,.sp.r5{transform:translateX(calc(-50% + 564px)) rotateY(-76deg);z-index:11}
+.sp.l5,.sp.r5{opacity:0;pointer-events:none}
+.pg{position:relative;overflow:hidden;padding:34px 30px 40px;display:flex;flex-direction:column;gap:12px;font-size:14px;background-color:#FFFFFF;background-image:linear-gradient(rgba(3,119,136,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(3,119,136,.06) 1px,transparent 1px);background-size:22px 22px}
+.pl{border-radius:14px 0 0 14px;box-shadow:inset -26px 0 30px -24px rgba(2,26,32,.28)}
+.pr{border-radius:0 14px 14px 0;box-shadow:inset 26px 0 30px -24px rgba(2,26,32,.32)}
+.pk{font:600 11px/1 Inter,sans-serif;letter-spacing:.16em;text-transform:uppercase;color:#037788}
+.pt{margin:0;font:500 27px/1.08 Outfit,sans-serif;letter-spacing:-.01em}
+.ln{display:flex;gap:10px;align-items:flex-start;font-size:14px;line-height:1.45;color:#2E4A50}
+.dt{width:9px;height:9px;margin-top:5px;flex-shrink:0;border-radius:50%}
+.pn{position:absolute;bottom:14px;font:500 12px/1 Outfit,sans-serif;color:#5E777B}
+.pl .pn{left:30px}.pr .pn{right:30px}
+.pill{margin-top:auto;display:flex;justify-content:center}
+.cvl{background:linear-gradient(150deg,#037788,#035360 55%,#021A20)!important;color:#FFFFFF;justify-content:center}
+.cvr{justify-content:center;align-items:flex-start}
+.bnav{margin-top:8px;display:flex;align-items:center;justify-content:center;gap:16px}
+.bcount{min-width:150px;text-align:center;font:600 14px/1 Inter,sans-serif;color:#2E4A50}
+@container site (max-width:1100px){.sp.l1{transform:translateX(calc(-50% - 440px)) rotateY(72deg)}.sp.r1{transform:translateX(calc(-50% + 440px)) rotateY(-72deg)}}
+@container site (max-width:820px){
+.guide,.manual{padding:72px 0}
+.vid{grid-template-columns:minmax(0,1fr);margin-top:28px}
+.player{border-radius:20px}
+.ptitle{font-size:20px}
+.play{width:68px;height:68px;margin:-34px 0 0 -34px}
+.ptop{left:14px;right:14px;top:14px}.pbot{left:14px;right:14px;bottom:14px;gap:10px}
+.bk{height:700px;margin-top:20px;perspective:1600px}
+.sp{top:10px;width:340px;height:660px;grid-template-columns:minmax(0,1fr);grid-template-rows:repeat(2,minmax(0,1fr))}
+.pl{border-radius:14px 14px 0 0;box-shadow:inset 0 -26px 30px -24px rgba(2,26,32,.25)}
+.pr{border-radius:0 0 14px 14px;box-shadow:inset 0 26px 30px -24px rgba(2,26,32,.28)}
+.pg{padding:22px 20px 30px;gap:8px}
+.pt{font-size:21px}
+.ln{font-size:13px}
+.pill svg{height:76px;width:auto}
+.sp.l1,.sp.l2,.sp.l3,.sp.l4,.sp.l5{transform:translateX(calc(-50% - 380px)) rotateY(50deg);opacity:0;pointer-events:none}
+.sp.r1,.sp.r2,.sp.r3,.sp.r4,.sp.r5{transform:translateX(calc(-50% + 380px)) rotateY(-50deg);opacity:0;pointer-events:none}
+}
+/* tactile press buttons: same colour, physical press */
+.btn,.ic,.chip,.chb,.hb,.cartb,.xb,.play{transition:transform .12s cubic-bezier(.22,1,.36,1),box-shadow .12s cubic-bezier(.22,1,.36,1),border-color .2s}
+.btn-p,.btn-p:hover{background:#035360;color:#FFFFFF;box-shadow:0 4px 0 #012F37,0 12px 22px -12px rgba(3,83,96,.8)}
+.btn-s,.btn-s:hover{background:#E3F5F7;color:#035360;box-shadow:inset 0 0 0 2px #035360,0 4px 0 #8FB3B8}
+.btn:hover,.ic:hover,.chip:hover,.chb:hover,.hb:hover,.cartb:hover{transform:translateY(-1px)}
+.btn:active,.btn-p:active,.btn-s:active{transform:translateY(3px) scale(.99)}
+.btn-p:active{box-shadow:0 1px 0 #012F37,0 4px 10px -6px rgba(3,83,96,.8)}
+.btn-s:active{box-shadow:inset 0 0 0 2px #035360,0 1px 0 #8FB3B8}
+.ic,.ic:hover{background:#035360;color:#FFFFFF;box-shadow:0 4px 0 #012F37,0 10px 20px -10px rgba(3,83,96,.7)}
+.ic:active{transform:translateY(3px);box-shadow:0 1px 0 #012F37}
+.chip,.chip:hover{background:#FFFFFF;color:#021A20;border:1.5px solid #8FB3B8;box-shadow:0 3px 0 #B5CDD1}
+.chip:active{transform:translateY(2px);box-shadow:0 1px 0 #B5CDD1}
+.chip.on,.chip.on:hover{transform:translateY(2px);background:#D9EFF2;color:#021A20;border-color:#037788;box-shadow:inset 0 3px 7px rgba(2,26,32,.22),0 1px 0 #8FB3B8;font-weight:700}
+.vid{align-items:start}
+.player{width:100%}
+.chs{gap:12px}
+.chb,.chb:hover{background:#FFFFFF;color:#021A20;border:1.5px solid #BFD7DB;box-shadow:0 4px 0 #C6DADD}
+.chb:active{transform:translateY(3px);box-shadow:0 1px 0 #C6DADD}
+.chb.on,.chb.on:hover{transform:translateY(3px);background:#E3F5F7;color:#021A20;border-color:#037788;box-shadow:inset 0 4px 10px rgba(2,26,32,.2),0 1px 0 #8FB3B8}
+.chb.on .chn{background:#035360;color:#FFFFFF}
+.chb.on .chs-s{color:#035360}
+.hb-main,.hb-main:hover,.hb-alt,.hb-alt:hover{background:rgba(255,255,255,.78);color:#021A20;box-shadow:inset 0 0 0 1.5px #021A20,0 4px 0 #021A20,0 14px 26px -14px rgba(2,26,32,.5)}
+.hb-main:hover .hb-i,.hb-alt:hover .hb-i,.hb-main .hb-i,.hb-alt .hb-i{background:#035360;color:#FFFFFF}
+.hb-main:hover .hb-i{transform:translateX(3px)}
+.hb-alt:hover .hb-i{transform:none}
+.hb:active,.hb-main:active,.hb-alt:active{transform:translateY(4px);box-shadow:inset 0 0 0 1.5px #021A20,0 0 0 #021A20,0 4px 10px -6px rgba(2,26,32,.5)}
+.play:hover{background:rgba(255,255,255,.28);color:#FFFFFF;transform:scale(1.05)}
+.play:active{transform:scale(.92)}
+.nb.done,.nb.done:hover{transform:translateY(3px);background:#D9EFF2;color:#035360;box-shadow:inset 0 0 0 2px #037788,inset 0 3px 7px rgba(2,26,32,.18)}
+.nav-in>.btn-p,.nav-in>.btn-p:hover{background:#7FE3EC;color:#021A20;box-shadow:0 4px 0 #2FB6C6}
+.nav-in>.btn-p:active{transform:translateY(3px);box-shadow:0 1px 0 #2FB6C6}
+@container site (max-width:820px){.vid{align-items:stretch}}
+.bkw{position:relative;width:1040px;height:400px;margin:56px auto 0}
+.board{position:absolute;inset:-14px -16px;border-radius:16px;background:linear-gradient(135deg,#046270,#023E47);box-shadow:0 50px 80px -40px rgba(2,26,32,.65),inset 0 0 0 1px rgba(255,255,255,.08)}
+.dbook{position:absolute;inset:0;perspective:2600px}
+.base{position:absolute;top:0;width:50%;height:100%}
+.base.bl{left:0;box-shadow:-3px 3px 0 #E6EFF1,-6px 6px 0 #D5E3E6,-9px 9px 0 #C5D7DB;border-radius:10px 0 0 10px}
+.base.br{right:0;box-shadow:3px 3px 0 #E6EFF1,6px 6px 0 #D5E3E6,9px 9px 0 #C5D7DB;border-radius:0 10px 10px 0}
+.leaf{position:absolute;top:0;left:50%;width:50%;height:100%;padding:0;border:0;background:none;text-align:left;font-family:Inter,sans-serif;color:#021A20;transform-origin:left center;transform-style:preserve-3d;transition:transform 1.15s cubic-bezier(.645,.045,.355,1);cursor:pointer;touch-action:manipulation;will-change:transform}
+.leaf.turned{transform:rotateY(-180deg)}
+.face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden}
+.face.b{transform:rotateY(180deg)}
+.pg{position:absolute;inset:0;overflow:hidden;padding:30px 32px 38px;display:flex;flex-direction:column;justify-content:center;font-size:14px;background-color:#FFFFFF;background-image:linear-gradient(rgba(3,119,136,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(3,119,136,.06) 1px,transparent 1px);background-size:22px 22px}
+.pg.L{border-radius:10px 0 0 10px;box-shadow:inset -34px 0 40px -30px rgba(2,26,32,.34),inset -2px 0 0 rgba(2,26,32,.08)}
+.pg.R{border-radius:0 10px 10px 0;box-shadow:inset 34px 0 40px -30px rgba(2,26,32,.38),inset 2px 0 0 rgba(2,26,32,.08)}
+.pg.dark{background:linear-gradient(150deg,#037788,#035360 55%,#021A20);color:#FFFFFF}
+.pgc{display:flex;flex-direction:column;gap:14px;align-items:flex-start}
+.pgx{display:grid;grid-template-columns:minmax(0,1fr);gap:14px;align-items:center;height:100%}
+.pgx.two{grid-template-columns:minmax(0,1.2fr) minmax(0,.8fr)}
+.pgt{display:flex;flex-direction:column;gap:12px}
+.pgi{display:flex;justify-content:center;align-items:center}
+.pgi svg{max-width:100%;height:auto}
+.pk{font:600 11px/1 Inter,sans-serif;letter-spacing:.16em;text-transform:uppercase;color:#037788}
+.pt{display:block;font:500 27px/1.08 Outfit,sans-serif;letter-spacing:-.01em}
+.pn{position:absolute;bottom:14px;font:500 12px/1 Outfit,sans-serif;color:#5E777B}
+.pg.L .pn{left:32px}.pg.R .pn{right:32px}
+.mbook,.monly{display:none}
+.bnav{margin-top:44px}
+@container site (max-width:1100px){.bkw{transform:scale(.78);transform-origin:top center;margin-bottom:-60px}}
+@container site (max-width:820px){
+.bkw{width:330px;height:470px;transform:none;margin:40px auto 0}
+.board{inset:-10px -10px}
+.dbook,.donly{display:none}
+.mbook{display:block;position:absolute;inset:0;perspective:1600px}
+.monly{display:inline}
+.mleaf{position:absolute;inset:0;padding:0;border:0;background:none;text-align:left;font-family:Inter,sans-serif;color:#021A20;transform-origin:left center;transition:transform 1s cubic-bezier(.645,.045,.355,1),opacity .9s ease-in;cursor:pointer;touch-action:manipulation;will-change:transform;box-shadow:3px 3px 0 #E6EFF1,6px 6px 0 #D5E3E6;border-radius:10px}
+.mleaf.turned{transform:rotateY(-110deg);opacity:0;pointer-events:none}
+.mleaf .pg{border-radius:10px;box-shadow:inset 22px 0 30px -26px rgba(2,26,32,.35)}
+.pg{padding:26px 22px 36px}
+.pgx.two{grid-template-columns:minmax(0,1fr)}
+.pt{font-size:24px}
+.pgi svg{width:150px}
+.pg.L .pn,.pg.R .pn{left:auto;right:22px}
+.bnav{margin-top:36px}
+}
+/* flat white buttons, thin outline, no shadows */
+.nav{background:rgba(255,255,255,.97)!important;border-bottom:1px solid #CFE3E7!important;box-shadow:0 10px 28px -20px rgba(2,26,32,.35)}
+.btn,.btn:hover,.btn-p,.btn-p:hover,.btn-s,.btn-s:hover,.nav-in>.btn-p,.nav-in>.btn-p:hover{background:#FFFFFF!important;color:#035360!important;box-shadow:inset 0 0 0 1px #035360!important;transform:none!important}
+.btn:active,.btn-p:active,.btn-s:active,.nav-in>.btn-p:active{transform:scale(.96)!important;box-shadow:inset 0 0 0 1px #035360!important}
+.ic,.ic:hover,.cartb,.cartb:hover,.nav .cartb,.nav .cartb:hover{background:#FFFFFF!important;color:#035360!important;border:0!important;box-shadow:inset 0 0 0 1px #035360!important;transform:none!important}
+.ic:active,.cartb:active,.nav .cartb:active{transform:scale(.92)!important}
+.chip,.chip:hover{background:#FFFFFF!important;color:#021A20!important;border:1px solid #8FB3B8!important;box-shadow:none!important;transform:none!important}
+.chip:hover{border-color:#035360!important}
+.chip:active{transform:scale(.95)!important}
+.chip.on,.chip.on:hover{background:#E6F4F6!important;border-color:#035360!important;color:#021A20!important;font-weight:700;box-shadow:none!important;transform:none!important}
+.chb,.chb:hover{background:#FFFFFF!important;color:#021A20!important;border:1px solid #BFD7DB!important;box-shadow:none!important;transform:none!important}
+.chb:hover{border-color:#035360!important}
+.chb:active{transform:scale(.98)!important}
+.chb.on,.chb.on:hover{background:#E6F4F6!important;border-color:#035360!important;box-shadow:none!important;transform:none!important;font-weight:600}
+.hb,.hb:hover,.hb-main,.hb-main:hover,.hb-alt,.hb-alt:hover{height:48px;padding:0 24px!important;gap:0;font-size:15px;background:rgba(255,255,255,.88)!important;color:#021A20!important;box-shadow:inset 0 0 0 1px #021A20!important;transform:none!important}
+.hb-main::after{display:none}
+.hb:active,.hb-main:active,.hb-alt:active{transform:scale(.96)!important;box-shadow:inset 0 0 0 1px #021A20!important}
+.nb.done,.nb.done:hover{background:#E6F4F6!important;transform:none!important}
+.step{box-shadow:inset 0 0 0 1px #035360!important;background:#FFFFFF}
+.step button:active{box-shadow:none;background:#E6F4F6}
+.xb,.xb:hover{background:#FFFFFF!important;border:1px solid #8FB3B8!important;box-shadow:none!important;transform:none!important}
+.xb:active{transform:scale(.92)!important}
+.pay.on{box-shadow:inset 0 0 0 1px #035360!important;background:#E6F4F6}
+.btn[disabled],.btn[disabled]:hover,.btn[disabled]:active{background:#EEF3F4!important;color:#5E777B!important;box-shadow:inset 0 0 0 1px #C6D5D8!important;transform:none!important}
+.burger{border:1px solid #8FB3B8!important}
+@container site (max-width:820px){.hb{justify-content:center}}
+@media (prefers-reduced-motion: reduce){.site *,.site *::after{animation:none!important;transition-duration:.01ms!important}.in{opacity:1}}
+</style>
+</helmet>
+<div class="site" style="width: 100%">
+
+<header class="nav">
+<div class="wrap nav-in">
+<a class="brand" href="#top" aria-label="RelaxPump home">
+<svg width="38" height="38" viewBox="0 0 48 48" aria-hidden="true"><defs><linearGradient id="lgr" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#03606E"></stop><stop offset=".55" stop-color="#22B8C6"></stop><stop offset="1" stop-color="#9AF0F6"></stop></linearGradient><linearGradient id="lgw" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8CEBF2"></stop><stop offset="1" stop-color="#037788"></stop></linearGradient><clipPath id="lgc"><circle cx="24" cy="24" r="13.6"></circle></clipPath></defs><circle cx="24" cy="24" r="20.5" fill="none" stroke="rgba(3,83,96,0.08)" stroke-width="3.6"></circle><circle cx="24" cy="24" r="20.5" fill="none" stroke="url(#lgr)" stroke-width="3.6" stroke-linecap="round" stroke-dasharray="96.6 128.8" transform="rotate(128 24 24)"></circle><circle cx="24" cy="24" r="13.6" fill="#EAF7F9"></circle><g clip-path="url(#lgc)"><path d="M6 23.5q3.75-3.2 7.5 0t7.5 0t7.5 0t7.5 0t7.5 0V40H6Z" fill="#7FE3EC" opacity="0.45"></path><path d="M2 26q3.75-3.4 7.5 0t7.5 0t7.5 0t7.5 0t7.5 0t7.5 0V40H2Z" fill="url(#lgw)"></path></g></svg>
+<span><span style="font-weight: 300; color: #037788">Relax</span><span style="font-weight: 600">Pump</span></span>
+</a>
+<nav class="links" aria-label="Main">
+<a href="#how">How it works</a>
+<a href="#app">App</a>
+<a href="#guide">Guide</a>
+<a href="#download">Download</a>
+<a href="Shop.dc.html">Store</a>
+<a href="#contact">Contact</a>
+</nav>
+<a class="btn btn-p nav-cta" href="#download" style="height: 46px; padding: 0 20px; font-size: 14px">Get the app</a>
+<button class="burger" type="button" aria-label="Open menu" onClick="{{toggleMenu}}">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="{{burgerPath}}"></path></svg>
+</button>
+<div class="mm {{menuCls}}">
+<a href="#top" onClick="{{closeMenu}}">Home</a>
+<a href="#how" onClick="{{closeMenu}}">How it works</a>
+<a href="#app" onClick="{{closeMenu}}">App screens</a>
+<a href="#guide" onClick="{{closeMenu}}">Install guide</a>
+<a href="#manual" onClick="{{closeMenu}}">Manual</a>
+<a href="#download" onClick="{{closeMenu}}">Download</a>
+<a href="Shop.dc.html">Store</a>
+<a href="#contact" onClick="{{closeMenu}}">Contact</a>
+<a class="btn btn-p" href="#download" onClick="{{closeMenu}}" style="margin-top: 6px; color: #FFFFFF">Get the app</a>
+</div>
+</div>
+</header>
+
+<section class="hero" id="top">
+<img class="hbg" src="./assets/hero-water.jpg" alt="Water drop splashing on calm water">
+<div class="hfade"></div>
+<div class="wrap hcopy">
+<h1 class="h1 in d1">Smart water tank<br><em>automation</em></h1>
+<p class="hsub in d2">See every tank and run your pump from your phone — by hand or fully automatic.</p>
+<div class="hero-ctas in d3">
+<a class="hb hb-main" href="#download"><span class="hb-t">Get the app</span></a>
+<a class="hb hb-alt" href="Shop.dc.html"><span class="hb-t">Order the kit</span></a>
+</div>
+<div class="hchecks in d4"><span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#037788" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10"></path></svg>Up to 3 tanks</span><span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#037788" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10"></path></svg>Works anywhere</span><span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#037788" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10"></path></svg>Dry-run safe</span></div>
+</div>
+</section>
+
+<section class="feat" id="how">
+<div class="wrap">
+<div class="fhead rv">
+<div style="display: flex; flex-direction: column; gap: 16px; max-width: 640px">
+<span class="kicker">How it works</span>
+<h2 class="h2">Every tank, handled.</h2>
+</div>
+<div style="display: flex; gap: 10px">
+<button class="ic" type="button" aria-label="Previous" onClick="{{prevFeat}}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"></path></svg></button>
+<button class="ic" type="button" aria-label="Next" onClick="{{nextFeat}}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></button>
+</div>
+</div>
+<div class="fstage">
+<div style="display: flex; flex-direction: column">
+<div class="ftext">
+<sc-for list="{{feats}}" as="f" hint-placeholder-count="4">
+<div class="ft {{f.cls}}">
+<span class="fnum">{{f.n}} / 04</span>
+<h3>{{f.t}}</h3>
+<p class="sub" style="max-width: 460px">{{f.d}}</p>
+</div>
+</sc-for>
+</div>
+<div class="ftabs">
+<sc-for list="{{feats}}" as="f" hint-placeholder-count="4">
+<button class="tab {{f.tabCls}}" type="button" onClick="{{f.go}}"><span class="pbar"><i></i></span>{{f.k}}</button>
+</sc-for>
+</div>
+</div>
+<div class="fpanel">
+<sc-for list="{{feats}}" as="f" hint-placeholder-count="4">
+<div class="fbg {{f.cls}}" style="background: {{f.bg}}"><span class="fbig">{{f.n}}</span></div>
+</sc-for>
+<sc-for list="{{feats}}" as="f" hint-placeholder-count="4">
+<div class="fph {{f.cls}}"><dc-import name="AppScreen" screen="{{f.screen}}" hint-size="300px,620px"></dc-import></div>
+</sc-for>
+</div>
+</div>
+</div>
+</section>
+
+<section class="gal" id="app">
+<div class="wrap" style="text-align: center">
+<div class="rv" style="display: flex; flex-direction: column; align-items: center; gap: 14px">
+<span class="kicker">App screens</span>
+<h2 class="h2">The app</h2>
+</div>
+<div class="chips" role="tablist" aria-label="App screens">
+<sc-for list="{{shots}}" as="s" hint-placeholder-count="6">
+<button class="chip {{s.chip}}" type="button" role="tab" aria-selected="{{s.sel}}" onClick="{{s.go}}">{{s.label}}</button>
+</sc-for>
+</div>
+</div>
+<div class="cf">
+<sc-for list="{{shots}}" as="s" hint-placeholder-count="6">
+<button class="cfc {{s.pos}}" type="button" aria-label="{{s.label}} screen" onClick="{{s.go}}"><span class="sh"></span><dc-import name="AppScreen" screen="{{s.key}}" hint-size="300px,620px"></dc-import></button>
+</sc-for>
+</div>
+<div class="wrap cap">
+<div style="font-family: Outfit, sans-serif; font-size: 22px; font-weight: 500">{{shotTitle}}</div>
+<div style="margin-top: 22px; display: flex; justify-content: center; gap: 12px">
+<button class="ic" type="button" aria-label="Previous screen" onClick="{{prevShot}}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"></path></svg></button>
+<button class="ic" type="button" aria-label="Next screen" onClick="{{nextShot}}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></button>
+</div>
+</div>
+</section>
+
+<section class="guide" id="guide">
+<div class="wrap">
+<div class="fhead rv">
+<div style="display: flex; flex-direction: column; gap: 16px">
+<span class="kicker">Install guide</span>
+<h2 class="h2">Watch, then install</h2>
+</div>
+</div>
+<div class="vid">
+<div class="player">
+<img src="./assets/hero-water.jpg" alt="">
+<div class="pshade"></div>
+<div class="ptop"><span class="pchip">Chapter {{chN}} of 5</span><span class="soonc">VIDEO SOON</span></div>
+<button class="play" type="button" aria-label="Play video" onClick="{{playVid}}"><svg width="30" height="30" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13c0 .6.7 1 1.2.6l10-6.5c.5-.3.5-1 0-1.3l-10-6.5c-.5-.3-1.2 0-1.2.7z" fill="currentColor"></path></svg></button>
+<sc-if value="{{vtoast}}" hint-placeholder-val="{{ false }}"><span class="vtoast">Video coming soon</span></sc-if>
+<div class="pbot">
+<span class="ptitle">{{chTitle}}</span>
+<div class="segs"><sc-for list="{{chapters}}" as="c" hint-placeholder-count="5"><span class="seg {{c.seg}}"></span></sc-for></div>
+</div>
+</div>
+<div class="chs" role="list">
+<sc-for list="{{chapters}}" as="c" hint-placeholder-count="5">
+<button class="chb {{c.cls}}" type="button" onClick="{{c.go}}"><span class="chn">{{c.n}}</span><span>{{c.t}}</span><span class="chs-s">Soon</span></button>
+</sc-for>
+</div>
+</div>
+</div>
+</section>
+
+<section class="manual" id="manual">
+<div class="wrap">
+<div class="fhead rv">
+<div style="display: flex; flex-direction: column; gap: 16px">
+<span class="kicker">Manual</span>
+<h2 class="h2">The install manual</h2>
+</div>
+<a class="btn btn-s" href="#manual">Download PDF — soon</a>
+</div>
+</div>
+<div class="bkw">
+<div class="board"></div>
+<div class="dbook">
+<div class="base bl"><div class="pg {{bl.side}} {{bl.cls}}">
+<sc-if value="{{bl.isCoverL}}" hint-placeholder-val="{{ false }}"><div class="pgc"><span style="font-family: Outfit, sans-serif; font-size: 46px; letter-spacing: -0.5px; line-height: 1"><span style="font-weight: 300; color: #7FE3EC">Relax</span><span style="font-weight: 600">Pump</span></span><span style="width: 52px; height: 2px; background: #7FE3EC"></span><span style="font-family: Outfit, sans-serif; font-size: 15px; font-weight: 300; color: #CFE3E6">Engineered by <b style="font-weight: 600; letter-spacing: 1.5px; color: #FFFFFF">CINZO</b></span></div></sc-if>
+<sc-if value="{{bl.isTitle}}" hint-placeholder-val="{{ false }}"><div class="pgc"><svg width="58" height="58" viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="20.5" fill="none" stroke="#1FA9B9" stroke-width="3.6" stroke-linecap="round" stroke-dasharray="96.6 128.8" transform="rotate(128 24 24)"></circle><circle cx="24" cy="24" r="13.6" fill="#EAF7F9"></circle><path d="M10.4 26q3.4-3 6.8 0t6.8 0t6.8 0t6.8 0V38H10.4z" fill="#037788"></path></svg><span class="pk">Version 1.0</span><span class="pt" style="font-size: 40px">Install manual</span><span style="font-size: 15px; color: #48656A">Read before you install.</span></div></sc-if>
+<sc-if value="{{bl.isEnd}}" hint-placeholder-val="{{ false }}"><div class="pgc"><span class="pt" style="font-size: 34px; color: #FFFFFF">Enjoy tanks that<br>fill themselves.</span><span style="font-family: Outfit, sans-serif; font-size: 15px; font-weight: 300; color: #CFE3E6">Engineered by <b style="font-weight: 600; letter-spacing: 1.5px; color: #FFFFFF">CINZO</b></span></div></sc-if>
+<sc-if value="{{bl.isBack}}" hint-placeholder-val="{{ false }}"><div class="pgc" style="align-items: center; text-align: center"><svg width="58" height="58" viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="20.5" fill="none" stroke="#1FA9B9" stroke-width="3.6" stroke-linecap="round" stroke-dasharray="96.6 128.8" transform="rotate(128 24 24)"></circle><circle cx="24" cy="24" r="13.6" fill="#EAF7F9"></circle><path d="M10.4 26q3.4-3 6.8 0t6.8 0t6.8 0t6.8 0V38H10.4z" fill="#037788"></path></svg><span style="font-size: 14px; color: #CFE3E6">Chhinlung Zofa Technologies Private Limited</span><span style="font-size: 14px; font-weight: 600; color: #7FE3EC">cinzotechnologies.com</span></div></sc-if>
+<sc-if value="{{bl.isText}}" hint-placeholder-val="{{ true }}">
+<div class="pgx {{bl.lay}}">
+<div class="pgt"><span class="pk">{{bl.k}}</span><span class="pt">{{bl.t}}</span>
+<div style="display: flex; flex-direction: column; gap: 9px"><sc-for list="{{bl.lines}}" as="l" hint-placeholder-count="3"><div class="ln"><span class="dt" style="background: {{l.c}}"></span><span>{{l.t}}</span></div></sc-for></div>
+</div>
+<sc-if value="{{bl.isBox}}" hint-placeholder-val="{{ false }}"><div class="pgi"><svg width="190" height="130" viewBox="0 0 200 130" aria-hidden="true"><path d="M30 46l70-24 70 24v56l-70 18-70-18z" fill="#E3F5F7" stroke="#037788" stroke-width="2.5" stroke-linejoin="round"></path><path d="M30 46l70 18 70-18 M100 64v56" fill="none" stroke="#037788" stroke-width="2.5"></path><rect x="72" y="74" width="20" height="13" rx="3" fill="#035360"></rect></svg></div></sc-if><sc-if value="{{bl.isTank}}" hint-placeholder-val="{{ false }}"><div class="pgi"><svg width="190" height="150" viewBox="0 0 200 150" aria-hidden="true"><rect x="36" y="36" width="114" height="104" rx="18" fill="#FFFFFF" stroke="#8FB3B8" stroke-width="2.5"></rect><path d="M39 84q14-6 28 0t28 0t28 0t24 0V126a12 12 0 0 1-12 12H51a12 12 0 0 1-12-12z" fill="#7FE3EC"></path><rect x="78" y="22" width="30" height="16" rx="4" fill="#035360"></rect><path d="M93 40v40" stroke="#037788" stroke-width="2" stroke-dasharray="4 4"></path><path d="M164 38v44 M158 38h12 M158 82h12" stroke="#F59E0B" stroke-width="2.5" stroke-linecap="round"></path><text x="160" y="104" font-family="Inter" font-size="13" font-weight="700" fill="#B45309">30 cm</text></svg></div></sc-if><sc-if value="{{bl.isValve}}" hint-placeholder-val="{{ false }}"><div class="pgi"><svg width="190" height="120" viewBox="0 0 200 120" aria-hidden="true"><rect x="8" y="72" width="184" height="22" rx="11" fill="#D3E7EA"></rect><rect x="72" y="58" width="56" height="48" rx="11" fill="#035360"></rect><rect x="80" y="14" width="40" height="46" rx="10" fill="#021A20"></rect><circle cx="100" cy="82" r="9" fill="#7FE3EC"></circle><text x="130" y="36" font-family="Inter" font-size="13" font-weight="700" fill="#035360">12 V</text></svg></div></sc-if><sc-if value="{{bl.isShield}}" hint-placeholder-val="{{ false }}"><div class="pgi"><svg width="170" height="140" viewBox="0 0 200 140" aria-hidden="true"><path d="M100 10l52 18v34c0 32-22 50-52 60-30-10-52-28-52-60V28z" fill="#E3F5F7" stroke="#037788" stroke-width="2.5" stroke-linejoin="round"></path><path d="M78 66l16 16 30-34" fill="none" stroke="#035360" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"></path></svg></div></sc-if><sc-if value="{{bl.isPump}}" hint-placeholder-val="{{ false }}"><div class="pgi"><svg width="190" height="120" viewBox="0 0 200 120" aria-hidden="true"><rect x="12" y="20" width="66" height="80" rx="12" fill="#FFFFFF" stroke="#8FB3B8" stroke-width="2.5"></rect><rect x="24" y="36" width="17" height="24" rx="4" fill="#035360"></rect><rect x="48" y="36" width="17" height="24" rx="4" fill="#035360"></rect><path d="M78 60h38" stroke="#F59E0B" stroke-width="3" stroke-dasharray="5 4"></path><rect x="116" y="34" width="72" height="54" rx="12" fill="#035360"></rect><circle cx="142" cy="61" r="15" fill="#02434E"></circle><path d="M142 50v22 M131 61h22" stroke="#7FE3EC" stroke-width="3" stroke-linecap="round"></path></svg></div></sc-if><sc-if value="{{bl.isPhone}}" hint-placeholder-val="{{ false }}"><div class="pgi"><svg width="170" height="140" viewBox="0 0 200 140" aria-hidden="true"><rect x="68" y="6" width="64" height="128" rx="14" fill="#021A20"></rect><rect x="75" y="18" width="50" height="104" rx="8" fill="#0A242B"></rect><rect x="85" y="36" width="30" height="30" rx="4" fill="#FFFFFF"></rect><path d="M89 40h9v9h-9z M102 40h9v9h-9z M89 53h9v9h-9z M104 55h5v5h-5z" fill="#021A20"></path><rect x="82" y="86" width="36" height="13" rx="6.5" fill="#7FE3EC"></rect><path d="M28 60a32 32 0 0 1 32-32 M38 60a22 22 0 0 1 22-22 M172 60a32 32 0 0 0-32-32 M162 60a22 22 0 0 0-22-22" fill="none" stroke="#037788" stroke-width="3" stroke-linecap="round"></path></svg></div></sc-if>
+</div>
+</sc-if>
+<span class="pn">{{bl.n}}</span>
+</div></div>
+<div class="base br"><div class="pg {{br.side}} {{br.cls}}">
+<sc-if value="{{br.isCoverL}}" hint-placeholder-val="{{ false }}"><div class="pgc"><span style="font-family: Outfit, sans-serif; font-size: 46px; letter-spacing: -0.5px; line-height: 1"><span style="font-weight: 300; color: #7FE3EC">Relax</span><span style="font-weight: 600">Pump</span></span><span style="width: 52px; height: 2px; background: #7FE3EC"></span><span style="font-family: Outfit, sans-serif; font-size: 15px; font-weight: 300; color: #CFE3E6">Engineered by <b style="font-weight: 600; letter-spacing: 1.5px; color: #FFFFFF">CINZO</b></span></div></sc-if>
+<sc-if value="{{br.isTitle}}" hint-placeholder-val="{{ false }}"><div class="pgc"><svg width="58" height="58" viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="20.5" fill="none" stroke="#1FA9B9" stroke-width="3.6" stroke-linecap="round" stroke-dasharray="96.6 128.8" transform="rotate(128 24 24)"></circle><circle cx="24" cy="24" r="13.6" fill="#EAF7F9"></circle><path d="M10.4 26q3.4-3 6.8 0t6.8 0t6.8 0t6.8 0V38H10.4z" fill="#037788"></path></svg><span class="pk">Version 1.0</span><span class="pt" style="font-size: 40px">Install manual</span><span style="font-size: 15px; color: #48656A">Read before you install.</span></div></sc-if>
+<sc-if value="{{br.isEnd}}" hint-placeholder-val="{{ false }}"><div class="pgc"><span class="pt" style="font-size: 34px; color: #FFFFFF">Enjoy tanks that<br>fill themselves.</span><span style="font-family: Outfit, sans-serif; font-size: 15px; font-weight: 300; color: #CFE3E6">Engineered by <b style="font-weight: 600; letter-spacing: 1.5px; color: #FFFFFF">CINZO</b></span></div></sc-if>
+<sc-if value="{{br.isBack}}" hint-placeholder-val="{{ false }}"><div class="pgc" style="align-items: center; text-align: center"><svg width="58" height="58" viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="20.5" fill="none" stroke="#1FA9B9" stroke-width="3.6" stroke-linecap="round" stroke-dasharray="96.6 128.8" transform="rotate(128 24 24)"></circle><circle cx="24" cy="24" r="13.6" fill="#EAF7F9"></circle><path d="M10.4 26q3.4-3 6.8 0t6.8 0t6.8 0t6.8 0V38H10.4z" fill="#037788"></path></svg><span style="font-size: 14px; color: #CFE3E6">Chhinlung Zofa Technologies Private Limited</span><span style="font-size: 14px; font-weight: 600; color: #7FE3EC">cinzotechnologies.com</span></div></sc-if>
+<sc-if value="{{br.isText}}" hint-placeholder-val="{{ true }}">
+<div class="pgx {{br.lay}}">
+<div class="pgt"><span class="pk">{{br.k}}</span><span class="pt">{{br.t}}</span>
+<div style="display: flex; flex-direction: column; gap: 9px"><sc-for list="{{br.lines}}" as="l" hint-placeholder-count="3"><div class="ln"><span class="dt" style="background: {{l.c}}"></span><span>{{l.t}}</span></div></sc-for></div>
+</div>
+<sc-if value="{{br.isBox}}" hint-placeholder-val="{{ false }}"><div class="pgi"><svg width="190" height="130" viewBox="0 0 200 130" aria-hidden="true"><path d="M30 46l70-24 70 24v56l-70 18-70-18z" fill="#E3F5F7" stroke="#037788" stroke-width="2.5" stroke-linejoin="round"></path><path d="M30 46l70 18 70-18 M100 64v56" fill="none" stroke="#037788" stroke-width="2.5"></path><rect x="72" y="74" width="20" height="13" rx="3" fill="#035360"></rect></svg></div></sc-if><sc-if value="{{br.isTank}}" hint-placeholder-val="{{ false }}"><div class="pgi"><svg width="190" height="150" viewBox="0 0 200 150" aria-hidden="true"><rect x="36" y="36" width="114" height="104" rx="18" fill="#FFFFFF" stroke="#8FB3B8" stroke-width="2.5"></rect><path d="M39 84q14-6 28 0t28 0t28 0t24 0V126a12 12 0 0 1-12 12H51a12 12 0 0 1-12-12z" fill="#7FE3EC"></path><rect x="78" y="22" width="30" height="16" rx="4" fill="#035360"></rect><path d="M93 40v40" stroke="#037788" stroke-width="2" stroke-dasharray="4 4"></path><path d="M164 38v44 M158 38h12 M158 82h12" stroke="#F59E0B" stroke-width="2.5" stroke-linecap="round"></path><text x="160" y="104" font-family="Inter" font-size="13" font-weight="700" fill="#B45309">30 cm</text></svg></div></sc-if><sc-if value="{{br.isValve}}" hint-placeholder-val="{{ false }}"><div class="pgi"><svg width="190" height="120" viewBox="0 0 200 120" aria-hidden="true"><rect x="8" y="72" width="184" height="22" rx="11" fill="#D3E7EA"></rect><rect x="72" y="58" width="56" height="48" rx="11" fill="#035360"></rect><rect x="80" y="14" width="40" height="46" rx="10" fill="#021A20"></rect><circle cx="100" cy="82" r="9" fill="#7FE3EC"></circle><text x="130" y="36" font-family="Inter" font-size="13" font-weight="700" fill="#035360">12 V</text></svg></div></sc-if><sc-if value="{{br.isShield}}" hint-placeholder-val="{{ false }}"><div class="pgi"><svg width="170" height="140" viewBox="0 0 200 140" aria-hidden="true"><path d="M100 10l52 18v34c0 32-22 50-52 60-30-10-52-28-52-60V28z" fill="#E3F5F7" stroke="#037788" stroke-width="2.5" stroke-linejoin="round"></path><path d="M78 66l16 16 30-34" fill="none" stroke="#035360" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"></path></svg></div></sc-if><sc-if value="{{br.isPump}}" hint-placeholder-val="{{ false }}"><div class="pgi"><svg width="190" height="120" viewBox="0 0 200 120" aria-hidden="true"><rect x="12" y="20" width="66" height="80" rx="12" fill="#FFFFFF" stroke="#8FB3B8" stroke-width="2.5"></rect><rect x="24" y="36" width="17" height="24" rx="4" fill="#035360"></rect><rect x="48" y="36" width="17" height="24" rx="4" fill="#035360"></rect><path d="M78 60h38" stroke="#F59E0B" stroke-width="3" stroke-dasharray="5 4"></path><rect x="116" y="34" width="72" height="54" rx="12" fill="#035360"></rect><circle cx="142" cy="61" r="15" fill="#02434E"></circle><path d="M142 50v22 M131 61h22" stroke="#7FE3EC" stroke-width="3" stroke-linecap="round"></path></svg></div></sc-if><sc-if value="{{br.isPhone}}" hint-placeholder-val="{{ false }}"><div class="pgi"><svg width="170" height="140" viewBox="0 0 200 140" aria-hidden="true"><rect x="68" y="6" width="64" height="128" rx="14" fill="#021A20"></rect><rect x="75" y="18" width="50" height="104" rx="8" fill="#0A242B"></rect><rect x="85" y="36" width="30" height="30" rx="4" fill="#FFFFFF"></rect><path d="M89 40h9v9h-9z M102 40h9v9h-9z M89 53h9v9h-9z M104 55h5v5h-5z" fill="#021A20"></path><rect x="82" y="86" width="36" height="13" rx="6.5" fill="#7FE3EC"></rect><path d="M28 60a32 32 0 0 1 32-32 M38 60a22 22 0 0 1 22-22 M172 60a32 32 0 0 0-32-32 M162 60a22 22 0 0 0-22-22" fill="none" stroke="#037788" stroke-width="3" stroke-linecap="round"></path></svg></div></sc-if>
+</div>
+</sc-if>
+<span class="pn">{{br.n}}</span>
+</div></div>
+<sc-for list="{{leaves}}" as="lf" hint-placeholder-count="6">
+<button class="leaf {{lf.cls}}" type="button" style="z-index: {{lf.z}}" aria-label="{{lf.label}}" onClick="{{lf.go}}">
+<div class="face f"><div class="pg {{lf.front.side}} {{lf.front.cls}}">
+<sc-if value="{{lf.front.isCoverL}}" hint-placeholder-val="{{ false }}"><div class="pgc"><span style="font-family: Outfit, sans-serif; font-size: 46px; letter-spacing: -0.5px; line-height: 1"><span style="font-weight: 300; color: #7FE3EC">Relax</span><span style="font-weight: 600">Pump</span></span><span style="width: 52px; height: 2px; background: #7FE3EC"></span><span style="font-family: Outfit, sans-serif; font-size: 15px; font-weight: 300; color: #CFE3E6">Engineered by <b style="font-weight: 600; letter-spacing: 1.5px; color: #FFFFFF">CINZO</b></span></div></sc-if>
+<sc-if value="{{lf.front.isTitle}}" hint-placeholder-val="{{ false }}"><div class="pgc"><svg width="58" height="58" viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="20.5" fill="none" stroke="#1FA9B9" stroke-width="3.6" stroke-linecap="round" stroke-dasharray="96.6 128.8" transform="rotate(128 24 24)"></circle><circle cx="24" cy="24" r="13.6" fill="#EAF7F9"></circle><path d="M10.4 26q3.4-3 6.8 0t6.8 0t6.8 0t6.8 0V38H10.4z" fill="#037788"></path></svg><span class="pk">Version 1.0</span><span class="pt" style="font-size: 40px">Install manual</span><span style="font-size: 15px; color: #48656A">Read before you install.</span></div></sc-if>
+<sc-if value="{{lf.front.isEnd}}" hint-placeholder-val="{{ false }}"><div class="pgc"><span class="pt" style="font-size: 34px; color: #FFFFFF">Enjoy tanks that<br>fill themselves.</span><span style="font-family: Outfit, sans-serif; font-size: 15px; font-weight: 300; color: #CFE3E6">Engineered by <b style="font-weight: 600; letter-spacing: 1.5px; color: #FFFFFF">CINZO</b></span></div></sc-if>
+<sc-if value="{{lf.front.isBack}}" hint-placeholder-val="{{ false }}"><div class="pgc" style="align-items: center; text-align: center"><svg width="58" height="58" viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="20.5" fill="none" stroke="#1FA9B9" stroke-width="3.6" stroke-linecap="round" stroke-dasharray="96.6 128.8" transform="rotate(128 24 24)"></circle><circle cx="24" cy="24" r="13.6" fill="#EAF7F9"></circle><path d="M10.4 26q3.4-3 6.8 0t6.8 0t6.8 0t6.8 0V38H10.4z" fill="#037788"></path></svg><span style="font-size: 14px; color: #CFE3E6">Chhinlung Zofa Technologies Private Limited</span><span style="font-size: 14px; font-weight: 600; color: #7FE3EC">cinzotechnologies.com</span></div></sc-if>
+<sc-if value="{{lf.front.isText}}" hint-placeholder-val="{{ true }}">
+<div class="pgx {{lf.front.lay}}">
+<div class="pgt"><span class="pk">{{lf.front.k}}</span><span class="pt">{{lf.front.t}}</span>
+<div style="display: flex; flex-direction: column; gap: 9px"><sc-for list="{{lf.front.lines}}" as="l" hint-placeholder-count="3"><div class="ln"><span class="dt" style="background: {{l.c}}"></span><span>{{l.t}}</span></div></sc-for></div>
+</div>
+<sc-if value="{{lf.front.isBox}}" hint-placeholder-val="{{ false }}"><div class="pgi"><svg width="190" height="130" viewBox="0 0 200 130" aria-hidden="true"><path d="M30 46l70-24 70 24v56l-70 18-70-18z" fill="#E3F5F7" stroke="#037788" stroke-width="2.5" stroke-linejoin="round"></path><path d="M30 46l70 18 70-18 M100 64v56" fill="none" stroke="#037788" stroke-width="2.5"></path><rect x="72" y="74" width="20" height="13" rx="3" fill="#035360"></rect></svg></div></sc-if><sc-if value="{{lf.front.isTank}}" hint-placeholder-val="{{ false }}"><div class="pgi"><svg width="190" height="150" viewBox="0 0 200 150" aria-hidden="true"><rect x="36" y="36" width="114" height="104" rx="18" fill="#FFFFFF" stroke="#8FB3B8" stroke-width="2.5"></rect><path d="M39 84q14-6 28 0t28 0t28 0t24 0V126a12 12 0 0 1-12 12H51a12 12 0 0 1-12-12z" fill="#7FE3EC"></path><rect x="78" y="22" width="30" height="16" rx="4" fill="#035360"></rect><path d="M93 40v40" stroke="#037788" stroke-width="2" stroke-dasharray="4 4"></path><path d="M164 38v44 M158 38h12 M158 82h12" stroke="#F59E0B" stroke-width="2.5" stroke-linecap="round"></path><text x="160" y="104" font-family="Inter" font-size="13" font-weight="700" fill="#B45309">30 cm</text></svg></div></sc-if><sc-if value="{{lf.front.isValve}}" hint-placeholder-val="{{ false }}"><div class="pgi"><svg width="190" height="120" viewBox="0 0 200 120" aria-hidden="true"><rect x="8" y="72" width="184" height="22" rx="11" fill="#D3E7EA"></rect><rect x="72" y="58" width="56" height="48" rx="11" fill="#035360"></rect><rect x="80" y="14" width="40" height="46" rx="10" fill="#021A20"></rect><circle cx="100" cy="82" r="9" fill="#7FE3EC"></circle><text x="130" y="36" font-family="Inter" font-size="13" font-weight="700" fill="#035360">12 V</text></svg></div></sc-if><sc-if value="{{lf.front.isShield}}" hint-placeholder-val="{{ false }}"><div class="pgi"><svg width="170" height="140" viewBox="0 0 200 140" aria-hidden="true"><path d="M100 10l52 18v34c0 32-22 50-52 60-30-10-52-28-52-60V28z" fill="#E3F5F7" stroke="#037788" stroke-width="2.5" stroke-linejoin="round"></path><path d="M78 66l16 16 30-34" fill="none" stroke="#035360" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"></path></svg></div></sc-if><sc-if value="{{lf.front.isPump}}" hint-placeholder-val="{{ false }}"><div class="pgi"><svg width="190" height="120" viewBox="0 0 200 120" aria-hidden="true"><rect x="12" y="20" width="66" height="80" rx="12" fill="#FFFFFF" stroke="#8FB3B8" stroke-width="2.5"></rect><rect x="24" y="36" width="17" height="24" rx="4" fill="#035360"></rect><rect x="48" y="36" width="17" height="24" rx="4" fill="#035360"></rect><path d="M78 60h38" stroke="#F59E0B" stroke-width="3" stroke-dasharray="5 4"></path><rect x="116" y="34" width="72" height="54" rx="12" fill="#035360"></rect><circle cx="142" cy="61" r="15" fill="#02434E"></circle><path d="M142 50v22 M131 61h22" stroke="#7FE3EC" stroke-width="3" stroke-linecap="round"></path></svg></div></sc-if><sc-if value="{{lf.front.isPhone}}" hint-placeholder-val="{{ false }}"><div class="pgi"><svg width="170" height="140" viewBox="0 0 200 140" aria-hidden="true"><rect x="68" y="6" width="64" height="128" rx="14" fill="#021A20"></rect><rect x="75" y="18" width="50" height="104" rx="8" fill="#0A242B"></rect><rect x="85" y="36" width="30" height="30" rx="4" fill="#FFFFFF"></rect><path d="M89 40h9v9h-9z M102 40h9v9h-9z M89 53h9v9h-9z M104 55h5v5h-5z" fill="#021A20"></path><rect x="82" y="86" width="36" height="13" rx="6.5" fill="#7FE3EC"></rect><path d="M28 60a32 32 0 0 1 32-32 M38 60a22 22 0 0 1 22-22 M172 60a32 32 0 0 0-32-32 M162 60a22 22 0 0 0-22-22" fill="none" stroke="#037788" stroke-width="3" stroke-linecap="round"></path></svg></div></sc-if>
+</div>
+</sc-if>
+<span class="pn">{{lf.front.n}}</span>
+</div></div>
+<div class="face b"><div class="pg {{lf.back.side}} {{lf.back.cls}}">
+<sc-if value="{{lf.back.isCoverL}}" hint-placeholder-val="{{ false }}"><div class="pgc"><span style="font-family: Outfit, sans-serif; font-size: 46px; letter-spacing: -0.5px; line-height: 1"><span style="font-weight: 300; color: #7FE3EC">Relax</span><span style="font-weight: 600">Pump</span></span><span style="width: 52px; height: 2px; background: #7FE3EC"></span><span style="font-family: Outfit, sans-serif; font-size: 15px; font-weight: 300; color: #CFE3E6">Engineered by <b style="font-weight: 600; letter-spacing: 1.5px; color: #FFFFFF">CINZO</b></span></div></sc-if>
+<sc-if value="{{lf.back.isTitle}}" hint-placeholder-val="{{ false }}"><div class="pgc"><svg width="58" height="58" viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="20.5" fill="none" stroke="#1FA9B9" stroke-width="3.6" stroke-linecap="round" stroke-dasharray="96.6 128.8" transform="rotate(128 24 24)"></circle><circle cx="24" cy="24" r="13.6" fill="#EAF7F9"></circle><path d="M10.4 26q3.4-3 6.8 0t6.8 0t6.8 0t6.8 0V38H10.4z" fill="#037788"></path></svg><span class="pk">Version 1.0</span><span class="pt" style="font-size: 40px">Install manual</span><span style="font-size: 15px; color: #48656A">Read before you install.</span></div></sc-if>
+<sc-if value="{{lf.back.isEnd}}" hint-placeholder-val="{{ false }}"><div class="pgc"><span class="pt" style="font-size: 34px; color: #FFFFFF">Enjoy tanks that<br>fill themselves.</span><span style="font-family: Outfit, sans-serif; font-size: 15px; font-weight: 300; color: #CFE3E6">Engineered by <b style="font-weight: 600; letter-spacing: 1.5px; color: #FFFFFF">CINZO</b></span></div></sc-if>
+<sc-if value="{{lf.back.isBack}}" hint-placeholder-val="{{ false }}"><div class="pgc" style="align-items: center; text-align: center"><svg width="58" height="58" viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="20.5" fill="none" stroke="#1FA9B9" stroke-width="3.6" stroke-linecap="round" stroke-dasharray="96.6 128.8" transform="rotate(128 24 24)"></circle><circle cx="24" cy="24" r="13.6" fill="#EAF7F9"></circle><path d="M10.4 26q3.4-3 6.8 0t6.8 0t6.8 0t6.8 0V38H10.4z" fill="#037788"></path></svg><span style="font-size: 14px; color: #CFE3E6">Chhinlung Zofa Technologies Private Limited</span><span style="font-size: 14px; font-weight: 600; color: #7FE3EC">cinzotechnologies.com</span></div></sc-if>
+<sc-if value="{{lf.back.isText}}" hint-placeholder-val="{{ true }}">
+<div class="pgx {{lf.back.lay}}">
+<div class="pgt"><span class="pk">{{lf.back.k}}</span><span class="pt">{{lf.back.t}}</span>
+<div style="display: flex; flex-direction: column; gap: 9px"><sc-for list="{{lf.back.lines}}" as="l" hint-placeholder-count="3"><div class="ln"><span class="dt" style="background: {{l.c}}"></span><span>{{l.t}}</span></div></sc-for></div>
+</div>
+<sc-if value="{{lf.back.isBox}}" hint-placeholder-val="{{ false }}"><div class="pgi"><svg width="190" height="130" viewBox="0 0 200 130" aria-hidden="true"><path d="M30 46l70-24 70 24v56l-70 18-70-18z" fill="#E3F5F7" stroke="#037788" stroke-width="2.5" stroke-linejoin="round"></path><path d="M30 46l70 18 70-18 M100 64v56" fill="none" stroke="#037788" stroke-width="2.5"></path><rect x="72" y="74" width="20" height="13" rx="3" fill="#035360"></rect></svg></div></sc-if><sc-if value="{{lf.back.isTank}}" hint-placeholder-val="{{ false }}"><div class="pgi"><svg width="190" height="150" viewBox="0 0 200 150" aria-hidden="true"><rect x="36" y="36" width="114" height="104" rx="18" fill="#FFFFFF" stroke="#8FB3B8" stroke-width="2.5"></rect><path d="M39 84q14-6 28 0t28 0t28 0t24 0V126a12 12 0 0 1-12 12H51a12 12 0 0 1-12-12z" fill="#7FE3EC"></path><rect x="78" y="22" width="30" height="16" rx="4" fill="#035360"></rect><path d="M93 40v40" stroke="#037788" stroke-width="2" stroke-dasharray="4 4"></path><path d="M164 38v44 M158 38h12 M158 82h12" stroke="#F59E0B" stroke-width="2.5" stroke-linecap="round"></path><text x="160" y="104" font-family="Inter" font-size="13" font-weight="700" fill="#B45309">30 cm</text></svg></div></sc-if><sc-if value="{{lf.back.isValve}}" hint-placeholder-val="{{ false }}"><div class="pgi"><svg width="190" height="120" viewBox="0 0 200 120" aria-hidden="true"><rect x="8" y="72" width="184" height="22" rx="11" fill="#D3E7EA"></rect><rect x="72" y="58" width="56" height="48" rx="11" fill="#035360"></rect><rect x="80" y="14" width="40" height="46" rx="10" fill="#021A20"></rect><circle cx="100" cy="82" r="9" fill="#7FE3EC"></circle><text x="130" y="36" font-family="Inter" font-size="13" font-weight="700" fill="#035360">12 V</text></svg></div></sc-if><sc-if value="{{lf.back.isShield}}" hint-placeholder-val="{{ false }}"><div class="pgi"><svg width="170" height="140" viewBox="0 0 200 140" aria-hidden="true"><path d="M100 10l52 18v34c0 32-22 50-52 60-30-10-52-28-52-60V28z" fill="#E3F5F7" stroke="#037788" stroke-width="2.5" stroke-linejoin="round"></path><path d="M78 66l16 16 30-34" fill="none" stroke="#035360" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"></path></svg></div></sc-if><sc-if value="{{lf.back.isPump}}" hint-placeholder-val="{{ false }}"><div class="pgi"><svg width="190" height="120" viewBox="0 0 200 120" aria-hidden="true"><rect x="12" y="20" width="66" height="80" rx="12" fill="#FFFFFF" stroke="#8FB3B8" stroke-width="2.5"></rect><rect x="24" y="36" width="17" height="24" rx="4" fill="#035360"></rect><rect x="48" y="36" width="17" height="24" rx="4" fill="#035360"></rect><path d="M78 60h38" stroke="#F59E0B" stroke-width="3" stroke-dasharray="5 4"></path><rect x="116" y="34" width="72" height="54" rx="12" fill="#035360"></rect><circle cx="142" cy="61" r="15" fill="#02434E"></circle><path d="M142 50v22 M131 61h22" stroke="#7FE3EC" stroke-width="3" stroke-linecap="round"></path></svg></div></sc-if><sc-if value="{{lf.back.isPhone}}" hint-placeholder-val="{{ false }}"><div class="pgi"><svg width="170" height="140" viewBox="0 0 200 140" aria-hidden="true"><rect x="68" y="6" width="64" height="128" rx="14" fill="#021A20"></rect><rect x="75" y="18" width="50" height="104" rx="8" fill="#0A242B"></rect><rect x="85" y="36" width="30" height="30" rx="4" fill="#FFFFFF"></rect><path d="M89 40h9v9h-9z M102 40h9v9h-9z M89 53h9v9h-9z M104 55h5v5h-5z" fill="#021A20"></path><rect x="82" y="86" width="36" height="13" rx="6.5" fill="#7FE3EC"></rect><path d="M28 60a32 32 0 0 1 32-32 M38 60a22 22 0 0 1 22-22 M172 60a32 32 0 0 0-32-32 M162 60a22 22 0 0 0-22-22" fill="none" stroke="#037788" stroke-width="3" stroke-linecap="round"></path></svg></div></sc-if>
+</div>
+</sc-if>
+<span class="pn">{{lf.back.n}}</span>
+</div></div>
+</button>
+</sc-for>
+</div>
+<div class="mbook">
+<sc-for list="{{mpages}}" as="mp" hint-placeholder-count="4">
+<button class="mleaf {{mp.cls}}" type="button" style="z-index: {{mp.z}}" aria-label="Next page" onClick="{{mp.go}}"><div class="pg {{mp.side}} {{mp.cls}}">
+<sc-if value="{{mp.isCoverL}}" hint-placeholder-val="{{ false }}"><div class="pgc"><span style="font-family: Outfit, sans-serif; font-size: 46px; letter-spacing: -0.5px; line-height: 1"><span style="font-weight: 300; color: #7FE3EC">Relax</span><span style="font-weight: 600">Pump</span></span><span style="width: 52px; height: 2px; background: #7FE3EC"></span><span style="font-family: Outfit, sans-serif; font-size: 15px; font-weight: 300; color: #CFE3E6">Engineered by <b style="font-weight: 600; letter-spacing: 1.5px; color: #FFFFFF">CINZO</b></span></div></sc-if>
+<sc-if value="{{mp.isTitle}}" hint-placeholder-val="{{ false }}"><div class="pgc"><svg width="58" height="58" viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="20.5" fill="none" stroke="#1FA9B9" stroke-width="3.6" stroke-linecap="round" stroke-dasharray="96.6 128.8" transform="rotate(128 24 24)"></circle><circle cx="24" cy="24" r="13.6" fill="#EAF7F9"></circle><path d="M10.4 26q3.4-3 6.8 0t6.8 0t6.8 0t6.8 0V38H10.4z" fill="#037788"></path></svg><span class="pk">Version 1.0</span><span class="pt" style="font-size: 40px">Install manual</span><span style="font-size: 15px; color: #48656A">Read before you install.</span></div></sc-if>
+<sc-if value="{{mp.isEnd}}" hint-placeholder-val="{{ false }}"><div class="pgc"><span class="pt" style="font-size: 34px; color: #FFFFFF">Enjoy tanks that<br>fill themselves.</span><span style="font-family: Outfit, sans-serif; font-size: 15px; font-weight: 300; color: #CFE3E6">Engineered by <b style="font-weight: 600; letter-spacing: 1.5px; color: #FFFFFF">CINZO</b></span></div></sc-if>
+<sc-if value="{{mp.isBack}}" hint-placeholder-val="{{ false }}"><div class="pgc" style="align-items: center; text-align: center"><svg width="58" height="58" viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="20.5" fill="none" stroke="#1FA9B9" stroke-width="3.6" stroke-linecap="round" stroke-dasharray="96.6 128.8" transform="rotate(128 24 24)"></circle><circle cx="24" cy="24" r="13.6" fill="#EAF7F9"></circle><path d="M10.4 26q3.4-3 6.8 0t6.8 0t6.8 0t6.8 0V38H10.4z" fill="#037788"></path></svg><span style="font-size: 14px; color: #CFE3E6">Chhinlung Zofa Technologies Private Limited</span><span style="font-size: 14px; font-weight: 600; color: #7FE3EC">cinzotechnologies.com</span></div></sc-if>
+<sc-if value="{{mp.isText}}" hint-placeholder-val="{{ true }}">
+<div class="pgx {{mp.lay}}">
+<div class="pgt"><span class="pk">{{mp.k}}</span><span class="pt">{{mp.t}}</span>
+<div style="display: flex; flex-direction: column; gap: 9px"><sc-for list="{{mp.lines}}" as="l" hint-placeholder-count="3"><div class="ln"><span class="dt" style="background: {{l.c}}"></span><span>{{l.t}}</span></div></sc-for></div>
+</div>
+<sc-if value="{{mp.isBox}}" hint-placeholder-val="{{ false }}"><div class="pgi"><svg width="190" height="130" viewBox="0 0 200 130" aria-hidden="true"><path d="M30 46l70-24 70 24v56l-70 18-70-18z" fill="#E3F5F7" stroke="#037788" stroke-width="2.5" stroke-linejoin="round"></path><path d="M30 46l70 18 70-18 M100 64v56" fill="none" stroke="#037788" stroke-width="2.5"></path><rect x="72" y="74" width="20" height="13" rx="3" fill="#035360"></rect></svg></div></sc-if><sc-if value="{{mp.isTank}}" hint-placeholder-val="{{ false }}"><div class="pgi"><svg width="190" height="150" viewBox="0 0 200 150" aria-hidden="true"><rect x="36" y="36" width="114" height="104" rx="18" fill="#FFFFFF" stroke="#8FB3B8" stroke-width="2.5"></rect><path d="M39 84q14-6 28 0t28 0t28 0t24 0V126a12 12 0 0 1-12 12H51a12 12 0 0 1-12-12z" fill="#7FE3EC"></path><rect x="78" y="22" width="30" height="16" rx="4" fill="#035360"></rect><path d="M93 40v40" stroke="#037788" stroke-width="2" stroke-dasharray="4 4"></path><path d="M164 38v44 M158 38h12 M158 82h12" stroke="#F59E0B" stroke-width="2.5" stroke-linecap="round"></path><text x="160" y="104" font-family="Inter" font-size="13" font-weight="700" fill="#B45309">30 cm</text></svg></div></sc-if><sc-if value="{{mp.isValve}}" hint-placeholder-val="{{ false }}"><div class="pgi"><svg width="190" height="120" viewBox="0 0 200 120" aria-hidden="true"><rect x="8" y="72" width="184" height="22" rx="11" fill="#D3E7EA"></rect><rect x="72" y="58" width="56" height="48" rx="11" fill="#035360"></rect><rect x="80" y="14" width="40" height="46" rx="10" fill="#021A20"></rect><circle cx="100" cy="82" r="9" fill="#7FE3EC"></circle><text x="130" y="36" font-family="Inter" font-size="13" font-weight="700" fill="#035360">12 V</text></svg></div></sc-if><sc-if value="{{mp.isShield}}" hint-placeholder-val="{{ false }}"><div class="pgi"><svg width="170" height="140" viewBox="0 0 200 140" aria-hidden="true"><path d="M100 10l52 18v34c0 32-22 50-52 60-30-10-52-28-52-60V28z" fill="#E3F5F7" stroke="#037788" stroke-width="2.5" stroke-linejoin="round"></path><path d="M78 66l16 16 30-34" fill="none" stroke="#035360" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"></path></svg></div></sc-if><sc-if value="{{mp.isPump}}" hint-placeholder-val="{{ false }}"><div class="pgi"><svg width="190" height="120" viewBox="0 0 200 120" aria-hidden="true"><rect x="12" y="20" width="66" height="80" rx="12" fill="#FFFFFF" stroke="#8FB3B8" stroke-width="2.5"></rect><rect x="24" y="36" width="17" height="24" rx="4" fill="#035360"></rect><rect x="48" y="36" width="17" height="24" rx="4" fill="#035360"></rect><path d="M78 60h38" stroke="#F59E0B" stroke-width="3" stroke-dasharray="5 4"></path><rect x="116" y="34" width="72" height="54" rx="12" fill="#035360"></rect><circle cx="142" cy="61" r="15" fill="#02434E"></circle><path d="M142 50v22 M131 61h22" stroke="#7FE3EC" stroke-width="3" stroke-linecap="round"></path></svg></div></sc-if><sc-if value="{{mp.isPhone}}" hint-placeholder-val="{{ false }}"><div class="pgi"><svg width="170" height="140" viewBox="0 0 200 140" aria-hidden="true"><rect x="68" y="6" width="64" height="128" rx="14" fill="#021A20"></rect><rect x="75" y="18" width="50" height="104" rx="8" fill="#0A242B"></rect><rect x="85" y="36" width="30" height="30" rx="4" fill="#FFFFFF"></rect><path d="M89 40h9v9h-9z M102 40h9v9h-9z M89 53h9v9h-9z M104 55h5v5h-5z" fill="#021A20"></path><rect x="82" y="86" width="36" height="13" rx="6.5" fill="#7FE3EC"></rect><path d="M28 60a32 32 0 0 1 32-32 M38 60a22 22 0 0 1 22-22 M172 60a32 32 0 0 0-32-32 M162 60a22 22 0 0 0-22-22" fill="none" stroke="#037788" stroke-width="3" stroke-linecap="round"></path></svg></div></sc-if>
+</div>
+</sc-if>
+<span class="pn">{{mp.n}}</span>
+</div></button>
+</sc-for>
+</div>
+</div>
+<div class="bnav">
+<button class="ic" type="button" aria-label="Previous page" onClick="{{prevBk}}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"></path></svg></button>
+<span class="bcount"><span class="donly">{{bkCount}}</span><span class="monly">{{mpCount}}</span></span>
+<button class="ic" type="button" aria-label="Next page" onClick="{{nextBk}}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></button>
+</div>
+</section>
+
+<section class="dl" id="download">
+<div class="wrap">
+<div class="dlcard rv">
+<span class="ring" style="width: 520px; height: 520px; right: -140px; top: -160px"></span>
+<span class="ring" style="width: 760px; height: 760px; right: -260px; top: -280px"></span>
+<div style="position: relative; display: flex; flex-direction: column; gap: 20px; align-items: flex-start">
+<span class="kicker" style="color: #B5F4F8">Download</span>
+<h2 class="h2" style="color: #FFFFFF">Get the app</h2>
+<div style="display: flex; flex-wrap: wrap; gap: 16px; margin-top: 8px">
+<a class="badge" href="https://play.google.com/store/apps/details?id=com.cinzo.relaxpump" aria-label="Get it on Google Play (coming soon)">
+<svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3.2v17.6c0 .5.5.8.9.6l15-8.8c.4-.3.4-.9 0-1.2l-15-8.8c-.4-.2-.9.1-.9.6z" fill="#7FE3EC"></path></svg>
+<span><small>GET IT ON</small><b>Google Play</b></span><span class="soon">SOON</span>
+</a>
+<a class="badge" href="#download" aria-label="Download on the App Store (coming soon)">
+<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#7FE3EC" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="6" y="2.5" width="12" height="19" rx="3"></rect><path d="M11 18h2"></path></svg>
+<span><small>Download on the</small><b>App Store</b></span><span class="soon">SOON</span>
+</a>
+</div>
+</div>
+<div class="dlph" aria-hidden="true">
+<div class="a"><dc-import name="AppScreen" screen="welcome" hint-size="300px,620px"></dc-import></div>
+<div class="b"><dc-import name="AppScreen" screen="home" hint-size="300px,620px"></dc-import></div>
+</div>
+</div>
+</div>
+</section>
+
+<section class="store" id="store">
+<div class="wrap">
+<div class="fhead rv">
+<div style="display: flex; flex-direction: column; gap: 16px; max-width: 640px">
+<span class="kicker">RelaxPump Store</span>
+<h2 class="h2">Order the kit</h2>
+</div>
+<span class="eyebrow" style="background: #FFF4DB; color: #8A5300">Coming soon</span>
+</div>
+<div class="pgrid">
+<sc-for list="{{products}}" as="p" hint-placeholder-count="3">
+<article class="pc rv">
+<div class="pimg">
+<span class="ptag">{{p.tag}}</span>
+<sc-if value="{{p.isCtrl}}" hint-placeholder-val="{{ true }}">
+<svg width="170" height="150" viewBox="0 0 170 150" aria-hidden="true"><rect x="30" y="24" width="110" height="104" rx="22" fill="#021A20"></rect><rect x="46" y="42" width="48" height="32" rx="7" fill="#0A242B" stroke="#1F4A52"></rect><circle cx="118" cy="50" r="6" fill="#7FE3EC"></circle><circle cx="118" cy="68" r="6" fill="#2FB6C6" opacity=".6"></circle><path d="M46 92h78 M46 108h50" stroke="#1F4A52" stroke-width="5" stroke-linecap="round"></path><path d="M66 16a26 26 0 0 1 38 0 M74 8a40 40 0 0 0 0 0" fill="none" stroke="#037788" stroke-width="4" stroke-linecap="round"></path></svg>
+</sc-if>
+<sc-if value="{{p.isSensor}}" hint-placeholder-val="{{ false }}">
+<svg width="170" height="150" viewBox="0 0 170 150" aria-hidden="true"><rect x="38" y="44" width="94" height="54" rx="14" fill="#035360"></rect><circle cx="66" cy="71" r="16" fill="#021A20"></circle><circle cx="104" cy="71" r="16" fill="#021A20"></circle><circle cx="66" cy="71" r="8" fill="#7FE3EC"></circle><circle cx="104" cy="71" r="8" fill="#7FE3EC"></circle><path d="M85 98v30" stroke="#9CC3C9" stroke-width="4" stroke-linecap="round"></path><path d="M54 116q12 8 24 0 M92 116q12 8 24 0" fill="none" stroke="#2FB6C6" stroke-width="3" stroke-linecap="round" opacity=".7"></path></svg>
+</sc-if>
+<sc-if value="{{p.isInstall}}" hint-placeholder-val="{{ false }}">
+<svg width="170" height="150" viewBox="0 0 170 150" aria-hidden="true"><path d="M30 70l55-42 55 42v52a6 6 0 0 1-6 6H36a6 6 0 0 1-6-6z" fill="#FFFFFF" stroke="#BFDDE2" stroke-width="3"></path><rect x="62" y="72" width="46" height="56" rx="10" fill="#E3F5F7"></rect><rect x="62" y="98" width="46" height="30" rx="0" fill="#7FE3EC" opacity=".8"></rect><circle cx="128" cy="40" r="20" fill="#035360"></circle><path d="M120 40l6 6 10-12" fill="none" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+</sc-if>
+</div>
+<div style="padding: 22px 24px 24px; display: flex; flex-direction: column; gap: 10px; flex-grow: 1">
+<h3 style="font-size: 22px; font-weight: 500">{{p.name}}</h3>
+<div style="margin-top: auto; padding-top: 14px; display: flex; align-items: center; justify-content: space-between; gap: 12px">
+<span style="font-size: 14px; font-weight: 600; color: #48656A">Price soon</span>
+<button class="btn btn-s nb {{p.nbCls}}" type="button" onClick="{{p.notify}}">{{p.nbText}}</button>
+</div>
+</div>
+</article>
+</sc-for>
+</div>
+<div style="margin-top: 32px; display: flex; justify-content: center">
+<a class="btn btn-p" href="Shop.dc.html">Open the store<svg class="ar" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></a>
+</div>
+</div>
+</section>
+
+<footer class="foot" id="contact">
+<div class="wrap">
+<div class="fgrid">
+<div style="display: flex; flex-direction: column; gap: 18px">
+<div style="display: flex; align-items: center; gap: 10px; font-family: Outfit, sans-serif; font-size: 26px"><span style="width: 44px; height: 44px; border-radius: 14px; background: linear-gradient(180deg, #FFFFFF, #E3F7F9); display: flex; align-items: center; justify-content: center"><svg width="32" height="32" viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="20.5" fill="none" stroke="#1FA9B9" stroke-width="3.6" stroke-linecap="round" stroke-dasharray="96.6 128.8" transform="rotate(128 24 24)"></circle><circle cx="24" cy="24" r="13.6" fill="#EAF7F9"></circle><path d="M10.4 26q3.4-3 6.8 0t6.8 0t6.8 0t6.8 0V38H10.4z" fill="#037788"></path></svg></span><span><span style="font-weight: 300; color: #7FE3EC">Relax</span><span style="font-weight: 600">Pump</span></span></div>
+<p style="font-size: 15px; line-height: 1.6; color: #8FB3B8; max-width: 340px">Chhinlung Zofa Technologies Private Limited</p>
+<a class="btn" href="tel:+919863262589" style="align-self: flex-start; background: #7FE3EC; color: #021A20; height: 48px">Call us now</a>
+</div>
+<div class="fl">
+<span class="fh">Contact</span>
+<a class="ci" href="tel:+919863262589"><span class="i"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#7FE3EC" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"></path></svg></span><span>+91 98632 62589</span></a>
+<a class="ci" href="mailto:cinzotechnologies@gmail.com"><span class="i"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#7FE3EC" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"></rect><path d="M3 7l9 6 9-6"></path></svg></span><span style="word-break: break-all">cinzotechnologies@gmail.com</span></a>
+<div class="ci"><span class="i"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#7FE3EC" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"></path><circle cx="12" cy="10" r="2.5"></circle></svg></span><span>Chala Road, Luangmual</span></div>
+<a class="ci" href="https://cinzotechnologies.com"><span class="i"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#7FE3EC" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M3 12h18 M12 3a14 14 0 0 1 0 18 M12 3a14 14 0 0 0 0 18"></path></svg></span><span>cinzotechnologies.com</span></a>
+</div>
+<div class="fl">
+<span class="fh">Product</span>
+<a href="#how">How it works</a>
+<a href="#app">App screens</a>
+<a href="#guide">Install video</a>
+<a href="#manual">Manual</a>
+<a href="#download">Download the app</a>
+<a href="Shop.dc.html">Store</a>
+</div>
+<div class="fl">
+<span class="fh">App</span>
+<a href="https://play.google.com/store/apps/details?id=com.cinzo.relaxpump">Google Play</a>
+<a href="#download">App Store</a>
+</div>
+</div>
+<div style="margin-top: 64px; padding-top: 24px; border-top: 1px solid rgba(127,227,236,0.14); display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; font-size: 13px; color: #8FB3B8">
+<span>© 2026 Chhinlung Zofa Technologies Private Limited</span>
+<span>Developed by <b style="color: #FFFFFF; letter-spacing: 1px">CINZO</b></span>
+</div>
+</div>
+</footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":5800}}'>
+class Component extends DCLogic {
+  constructor(p) {
+    super(p);
+    this.state = { pump: false, feat: 0, prevFeat: -1, shot: 1, menu: false, notified: {}, bk: 0, lastLeaf: -1, mp: 0, ch: 0, vtoast: false };
+  }
+  componentDidMount() { this.startAuto(); }
+  componentWillUnmount() { clearInterval(this.timer); clearTimeout(this.vt); }
+  startAuto() {
+    clearInterval(this.timer);
+    this.timer = setInterval(() => this.goFeat((this.state.feat + 1) % 4, true), 6000);
+  }
+  goFeat(i, auto) {
+    if (i === this.state.feat) return;
+    this.setState({ prevFeat: this.state.feat, feat: i });
+    if (!auto) this.startAuto();
+  }
+  renderVals() {
+    const s = this.state;
+    const F = [
+      { n: '01', k: 'Levels', t: 'Live levels', d: 'Every tank on your phone, anywhere.', screen: 'home', bg: 'linear-gradient(150deg, #0A9AAE, #037788 55%, #035360)' },
+      { n: '02', k: 'Auto', t: 'Auto fill', d: 'Set start and stop. It does the rest.', screen: 'tanks', bg: 'linear-gradient(150deg, #035360, #02343C 60%, #021A20)' },
+      { n: '03', k: 'Alerts', t: 'Usage & alerts', d: 'Litres, pump time, and dry-run alerts.', screen: 'usage', bg: 'linear-gradient(150deg, #2FB6C6, #037788 60%, #035360)' },
+      { n: '04', k: 'Setup', t: '1-minute setup', d: 'Scan, connect Wi-Fi, done.', screen: 'ble', bg: 'linear-gradient(150deg, #044753, #035360 50%, #037788)' }
+    ];
+    const feats = F.map((f, i) => ({
+      ...f,
+      cls: i === s.feat ? 'on' : (i === s.prevFeat ? 'was' : ''),
+      tabCls: i === s.feat ? 'on' : '',
+      go: () => this.goFeat(i, false)
+    }));
+    const SH = [
+      { key: 'welcome', label: 'Welcome', d: 'A calm start — your tanks, one tap away.' },
+      { key: 'home', label: 'Home', d: 'Average level, pump status and every tank at a glance.' },
+      { key: 'tanks', label: 'Tanks', d: 'Valves, live fills and auto start/stop levels.' },
+      { key: 'usage', label: 'Usage', d: 'Litres and pump minutes for the last 7 days.' },
+      { key: 'ble', label: 'Bluetooth setup', d: 'First-time setup: send your Wi-Fi to the controller.' },
+      { key: 'account', label: 'Account', d: 'Profile, password, tanks and sign out.' }
+    ];
+    const n = SH.length;
+    const posName = { '-2': 'pm2', '-1': 'pm1', '0': 'p0', '1': 'p1', '2': 'p2' };
+    const shots = SH.map((x, i) => {
+      const rel = ((i - s.shot + n + 3) % n) - 3;
+      return { ...x, pos: posName[String(rel)] || 'ph', chip: i === s.shot ? 'on' : '', sel: i === s.shot ? 'true' : 'false', go: () => this.setState({ shot: i }) };
+    });
+    const P = [
+      { id: 'kit', name: 'RelaxPump Controller Kit', desc: 'The ESP32 controller that runs your pump and up to 3 tanks.', tag: 'Start here', isCtrl: true },
+      { id: 'sensor', name: 'Ultrasonic Level Sensor', desc: 'Add one sensor per tank to see its level live.', tag: 'Add-on', isSensor: true },
+      { id: 'install', name: 'Home Installation', desc: 'Our team fits the kit, wires the pump and sets up the app with you.', tag: 'Service', isInstall: true }
+    ];
+    const products = P.map(p => {
+      const on = !!s.notified[p.id];
+      return { isCtrl: false, isSensor: false, isInstall: false, ...p, nbCls: on ? 'done' : '', nbText: on ? 'We will tell you' : 'Notify me', notify: () => this.setState({ notified: { ...s.notified, [p.id]: !on } }) };
+    });
+
+    const L = (arr, cols) => arr.map((t, i) => ({ t, c: (cols && cols[i]) || '#037788' }));
+    const blank = { isText: false, isCoverL: false, isTitle: false, isEnd: false, isBack: false, isBox: false, isTank: false, isValve: false, isShield: false, isPump: false, isPhone: false, cls: '', lay: '', k: '', t: '', lines: [], n: '' };
+    const T = (k, t, lines, ill) => ({ ...blank, isText: true, k, t, lines, lay: ill ? 'two' : '', ...(ill ? { [ill]: true } : {}) });
+    const PG = [
+      { ...blank, isCoverL: true, cls: 'dark' },
+      { ...blank, isTitle: true },
+      T('Start here', 'In the box', L(['ESP32 controller', 'Ultrasonic sensor — one per tank', '12 V solenoid valve — one per tank', 'Relay module + pump contactor', '5 V power supply']), 'isBox'),
+      T('Before you start', 'Stay safe', L(['Switch off the pump at the MCB.', 'Pump wiring must be done by an electrician.', 'Keep your Wi-Fi password ready.'], ['#F59E0B', '#F59E0B', '#037788'])),
+      T('Step 1', 'Mount the sensors', L(['Fix the probe on the tank lid.', 'Keep it at least 30 cm above the full level.']), 'isTank'),
+      T('Step 1 · cable', 'One cable per tank', L(['Brown — 5 V', 'Brown-white — GND', 'Blue — Trig', 'Green — Echo'], ['#8B5A2B', '#C9A27A', '#2563EB', '#16A34A'])),
+      T('Step 2', 'Fit the valves', L(['One 12 V solenoid valve on each tank inlet.', 'Relay IN1–IN3 switch valves 1–3.']), 'isValve'),
+      T('Step 3', 'Wire the pump', L(['Relay IN4 drives the contactor coil.', 'Use an MCB on the pump line.', 'Electrician only.'], ['#037788', '#037788', '#F59E0B']), 'isPump'),
+      T('Step 4', 'Power on', L(['Slow blink — waiting for setup', 'Fast blink — connecting', 'Steady — online', 'Double blink — safety stop'], ['#7FE3EC', '#2FB6C6', '#035360', '#F59E0B'])),
+      T('Step 5', 'Set up in the app', L(['1. Sign up with your phone number.', '2. Scan the QR on the box.', '3. Pick your Wi-Fi and connect.', '4. Set your tank sizes.']), 'isPhone'),
+      T('Built in', 'Safety', L(['Valve opens 2 s before the pump.', 'Stops on a dry run.', 'Max run time — 30 min.', '60 s rest before restart.']), 'isShield'),
+      T('Help', 'Need help?', L(['New router? Hold BOOT 5 s, then set up again.', 'Call +91 98632 62589', 'cinzotechnologies@gmail.com', 'Chala Road, Luangmual'])),
+      { ...blank, isEnd: true, cls: 'dark' },
+      { ...blank, isBack: true, cls: 'dark' }
+    ].map((pg, i) => ({ ...pg, n: (i >= 2 && i <= 11) ? String(i - 1) : '' }));
+    const NL = 6;
+    const side = (pg, sd) => ({ ...pg, side: sd });
+    const leaves = Array.from({ length: NL }, (_, i) => {
+      const turned = i < s.bk;
+      return {
+        cls: turned ? 'turned' : '',
+        z: i === s.lastLeaf ? 60 : (turned ? 10 + i : 10 + NL - i),
+        label: turned ? 'Turn back' : 'Turn page',
+        front: side(PG[2 * i + 1], 'R'), back: side(PG[2 * i + 2], 'L'),
+        go: () => this.setState(turned ? { bk: i, lastLeaf: i } : { bk: i + 1, lastLeaf: i })
+      };
+    });
+    const NM = PG.length;
+    const mpages = PG.map((pg, i) => ({ ...side(pg, 'R'), cls: i < s.mp ? 'turned' : '', z: NM - i, go: () => this.setState({ mp: Math.min(NM - 1, i + 1) }) }));
+    const pairLabel = (b) => b === 0 ? 'Cover' : (b === NL ? 'End' : 'Pages ' + (2 * b - 1) + '–' + (2 * b) + ' of 10');
+    const CH = ['Unboxing', 'Mount the sensors', 'Fit the valves', 'Wire the pump', 'Set up in the app'];
+    const chapters = CH.map((t, i) => ({ t, n: '0' + (i + 1), cls: i === s.ch ? 'on' : '', seg: i <= s.ch ? 'on' : '', go: () => this.setState({ ch: i, vtoast: false }) }));
+    const cur = SH[s.shot];
+    return {
+      feats, shots, products, leaves, mpages, chapters, bl: side(PG[0], 'L'), br: side(PG[13], 'R'),
+      chN: s.ch + 1, chTitle: CH[s.ch], vtoast: s.vtoast,
+      playVid: () => { this.setState({ vtoast: true }); clearTimeout(this.vt); this.vt = setTimeout(() => this.setState({ vtoast: false }), 1800); },
+      bkCount: pairLabel(s.bk),
+      mpCount: (s.mp + 1) + ' / ' + NM,
+      prevBk: () => this.setState({ bk: Math.max(0, s.bk - 1), lastLeaf: Math.max(0, s.bk - 1), mp: Math.max(0, s.mp - 1) }),
+      nextBk: () => this.setState({ bk: Math.min(NL, s.bk + 1), lastLeaf: Math.min(NL - 1, s.bk), mp: Math.min(NM - 1, s.mp + 1) }),
+      shotTitle: cur.label, shotDesc: cur.d,
+      prevFeat: () => this.goFeat((s.feat + 3) % 4, false),
+      nextFeat: () => this.goFeat((s.feat + 1) % 4, false),
+      prevShot: () => this.setState({ shot: (s.shot + n - 1) % n }),
+      nextShot: () => this.setState({ shot: (s.shot + 1) % n }),
+      pumpCls: s.pump ? 'on' : 'off',
+      pumpOn: s.pump ? 'true' : 'false',
+      pumpStatus: s.pump ? 'On · Filling roof tank' : 'Off · Idle',
+      lvl: s.pump ? 92 : 38,
+      lvlNote: s.pump ? 'Filling…' : 'Below start level',
+      valveCol: s.pump ? '#7FE3EC' : '#5E7C81',
+      ledCol: s.pump ? '#7FE3EC' : '#2A4A50',
+      togglePump: () => this.setState({ pump: !s.pump }),
+      menuCls: s.menu ? 'open' : '',
+      burgerPath: s.menu ? 'M6 6l12 12M18 6L6 18' : 'M4 7h16M4 12h16M4 17h16',
+      toggleMenu: () => this.setState({ menu: !s.menu }),
+      closeMenu: () => this.setState({ menu: false })
+    };
+  }
+}
+</script>
+</body>
+</html>

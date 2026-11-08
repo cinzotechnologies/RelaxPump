@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RelaxPump Admin — Sign in</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Outfit:wght@300;500;600&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#035360}a:hover{color:#037788}
+.lg{container-type:inline-size;position:relative;min-height:820px;display:flex;align-items:center;justify-content:center;padding:40px 20px;overflow:hidden;font-family:Inter,system-ui,sans-serif;color:#021A20;background:#FFFFFF}
+.lg *{box-sizing:border-box}
+.lg img{position:absolute;left:0;right:0;bottom:0;width:100%;height:55%;object-fit:cover;object-position:50% 70%}
+.fade{position:absolute;inset:0;background:linear-gradient(180deg,#FFFFFF 0%,#FFFFFF 40%,rgba(255,255,255,.6) 62%,rgba(255,255,255,.2) 100%)}
+.box{position:relative;width:100%;max-width:420px;padding:36px 32px;border-radius:24px;background:rgba(255,255,255,.94);border:1px solid #CFE3E7;box-shadow:0 30px 60px -36px rgba(2,26,32,.45);display:flex;flex-direction:column;gap:18px;animation:up .6s cubic-bezier(.22,1,.36,1) both}
+@keyframes up{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}
+.fld{display:flex;flex-direction:column;gap:7px;font:600 13px/1.2 Inter,sans-serif;color:#2E4A50}
+.inp{height:48px;width:100%;border-radius:12px;border:1px solid #9DBFC4;padding:0 14px;font:400 16px Inter,sans-serif;color:#021A20;background:#FFFFFF}
+.inp:focus{outline:none;border-color:#037788;box-shadow:0 0 0 4px rgba(127,227,236,.35)}
+.btn{display:inline-flex;align-items:center;justify-content:center;height:48px;border-radius:999px;background:#FFFFFF;color:#035360;box-shadow:inset 0 0 0 1.5px #035360;font:700 15px/1 Inter,sans-serif;text-decoration:none;transition:transform .12s cubic-bezier(.22,1,.36,1)}
+.btn:active{transform:scale(.97)}
+</style>
+</helmet>
+<div class="lg" style="width: 100%">
+<img src="./assets/hero-water.jpg" alt="">
+<div class="fade"></div>
+<form class="box" onSubmit="{{noop}}">
+<div style="display: flex; align-items: center; gap: 10px; font-family: Outfit, sans-serif; font-size: 24px">
+<svg width="40" height="40" viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="20.5" fill="none" stroke="#1FA9B9" stroke-width="3.6" stroke-linecap="round" stroke-dasharray="96.6 128.8" transform="rotate(128 24 24)"></circle><circle cx="24" cy="24" r="13.6" fill="#EAF7F9"></circle><path d="M10.4 26q3.4-3 6.8 0t6.8 0t6.8 0t6.8 0V38H10.4z" fill="#037788"></path></svg>
+<span><span style="font-weight: 300; color: #037788">Relax</span><span style="font-weight: 600">Pump</span> <span style="font-family: Inter, sans-serif; font-size: 12px; font-weight: 600; letter-spacing: 0.14em; color: #037788">ADMIN</span></span>
+</div>
+<h1 style="margin: 0; font-family: Outfit, sans-serif; font-size: 30px; font-weight: 500">Sign in</h1>
+<label class="fld" for="ae">Email<input class="inp" id="ae" type="email" autocomplete="username" placeholder="you@cinzotechnologies.com"></label>
+<label class="fld" for="ap">Password<input class="inp" id="ap" type="password" autocomplete="current-password" placeholder="Password"></label>
+<a class="btn" href="Admin.dc.html">Sign in</a>
+<p style="margin: 0; font-size: 13px; color: #48656A; text-align: center">For CINZO staff only.</p>
+</form>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":820}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return { noop: (e) => { if (e && e.preventDefault) e.preventDefault(); } };
+  }
+}
+</script>
+</body>
+</html>
