@@ -16,6 +16,9 @@
             ".validate": "newData.val() === true && newData.parent().parent().parent().parent().child('devices').child($deviceId).child('info/ownerUid').val() === auth.uid"
           }
         },
+        "fcm": {
+          "$token": { ".validate": "newData.val() === true && $token.length <= 300" }
+        },
         "$other": { ".validate": false }
       }
     },

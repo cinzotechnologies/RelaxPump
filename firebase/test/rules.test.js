@@ -66,6 +66,14 @@ describe('users', () => {
     await assertFails(set(ref(user('alice'), 'users/alice/phone'), '12345'));
     await assertFails(set(ref(user('alice'), 'users/alice/name'), 'x'.repeat(41)));
   });
+
+  it('saves and removes own push tokens only', async () => {
+    const tok = 'fAbc123:APA91b-xyz_9';
+    await assertSucceeds(set(ref(user('alice'), `users/alice/fcm/${tok}`), true));
+    await assertFails(set(ref(user('alice'), `users/alice/fcm/${tok}`), 'yes'));
+    await assertFails(set(ref(user('bob'), `users/alice/fcm/${tok}`), true));
+    await assertSucceeds(set(ref(user('alice'), `users/alice/fcm/${tok}`), null));
+  });
   it('cannot list a device it does not own', async () => {
     await assertFails(set(ref(user('alice'), `users/alice/devices/${ID}`), true));
   });

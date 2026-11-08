@@ -219,6 +219,7 @@ export function createMockBackend(): Backend {
       user = null;
       auth.emit();
     },
+    registerPush: () => () => {},
     onServerOffset: (cb) => {
       cb(0);
       return () => {};

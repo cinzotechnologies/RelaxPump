@@ -23,8 +23,10 @@ import {
   ref,
   serverTimestamp,
   set,
+  remove,
   update,
 } from '@react-native-firebase/database';
+import { getMessaging, getToken, onTokenRefresh } from '@react-native-firebase/messaging';
 import Constants from 'expo-constants';
 
 import { claimHash } from '@/logic/claim';
@@ -37,6 +39,8 @@ const USER_DOMAIN = 'users.relaxpump.app';
 export const phoneEmail = (phone: string) => `91${phone}@${USER_DOMAIN}`;
 
 const extra = (Constants.expoConfig?.extra ?? {}) as { firebaseDatabaseURL?: string };
+
+let pushToken: string | null = null;
 
 function mapAuthError(e: unknown, signingUp = false): AuthError {
   const code = (e as { code?: string })?.code ?? '';
@@ -149,7 +153,31 @@ export function createFirebaseBackend(): Backend {
       });
     },
 
-    signOut: () => signOut(auth),
+    registerPush(uid) {
+      // Push token at users/{uid}/fcm/{token}. The Cloud Function (Blaze) sends to these.
+      const save = (token: string) => {
+        if (!token) return;
+        pushToken = token;
+        set(ref(db, `users/${uid}/fcm/${token}`), true).catch(() => {});
+      };
+      let stop: (() => void) | undefined;
+      try {
+        const m = getMessaging();
+        getToken(m).then(save, () => {}); // iOS without APNs set up: no token, no crash
+        stop = onTokenRefresh(m, save);
+      } catch {
+        // Messaging not available in this build.
+      }
+      return () => stop?.();
+    },
+
+    async signOut() {
+      // Stop pushes to this phone for the account that is leaving.
+      const u = auth.currentUser;
+      if (u && pushToken) await remove(ref(db, `users/${u.uid}/fcm/${pushToken}`)).catch(() => {});
+      pushToken = null;
+      await signOut(auth);
+    },
 
     async changePassword(current, next) {
       const u = auth.currentUser;

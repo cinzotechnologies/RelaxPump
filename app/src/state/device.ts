@@ -143,8 +143,12 @@ export const useDevice = create<DeviceStore>((set, get) => {
           const names = get().config.tanks.map((t) => t.name);
           const text = fresh[0] && eventToast(fresh[0], names);
           if (text) useUi.getState().showToast(text);
-          // Real controllers only; the simulator would fire one every minute.
-          if (fresh[0] && b.kind !== 'mock' && fresh[0].type !== 'pump_on' && fresh[0].type !== 'pump_off') {
+          // Notify for everything the controller did by itself (auto start/stop, full, low, faults);
+          // skip pump on/off the user just tapped. Real controllers only: the simulator would
+          // fire one every minute.
+          const e = fresh[0];
+          const manualPump = !!e && (e.type === 'pump_on' || e.type === 'pump_off') && !e.auto;
+          if (e && b.kind !== 'mock' && !manualPump) {
             const row = eventRow(fresh[0], get().config.low, Date.now(), names);
             void notify(row.title, row.sub);
           }

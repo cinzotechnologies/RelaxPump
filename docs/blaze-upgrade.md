@@ -5,7 +5,7 @@ project moves to Blaze. Ask before upgrading — Blaze needs a billing account.
 
 | Feature | Why Blaze | Where | Switch on |
 |---|---|---|---|
-| Push notifications when the app is closed | Cloud Functions | `firebase/functions/src/index.ts` (`onDeviceEvent`) | deploy functions; app registers its FCM token |
+| Push notifications when the app is closed | Cloud Functions | `firebase/functions/src/index.ts` (`onDeviceEvent`) | deploy functions (the app already saves each phone's FCM token at `users/{uid}/fcm`; iOS also needs an APNs key in Firebase) |
 | Daily usage roll-up / cleanup of old events | Cloud Functions (scheduled) | `firebase/functions/src/index.ts` (`dailyCleanup`) | deploy functions |
 | SMS "Forgot password" and phone verification | Firebase Phone Auth sends SMS (charged per SMS) | app `ForgotSheet`, flag `ENABLE_PHONE_OTP` in `app/app.config.ts` | add SHA-1/SHA-256 of the signing key in the console, set the flag `true`, build the OTP screen |
 

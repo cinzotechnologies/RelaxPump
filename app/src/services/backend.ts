@@ -42,6 +42,9 @@ export interface Backend {
   /** Store requirement: delete the account, release its controllers, then sign out. */
   deleteAccount(password: string): Promise<void>;
 
+  /** Save this phone's push token for the signed-in user (and keep it fresh). */
+  registerPush(uid: string): Unsub;
+
   /** Server clock minus phone clock, in ms, so a wrong phone clock can't fake "online". */
   onServerOffset(cb: (ms: number) => void): Unsub;
 
