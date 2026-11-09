@@ -79,7 +79,7 @@ export function PasswordSheet() {
         style={{ alignSelf: 'flex-start', paddingVertical: s(2) }}
       >
         <Txt size={13} color={colors.glow}>
-          Forgot it? Send a reset code
+          Forgot it? Get a new one
         </Txt>
       </Press>
       <PrimaryButton label="Save" loading={busy} onPress={save} />

@@ -73,6 +73,8 @@ const config: ExpoConfig = {
     // Feature flags (see CLAUDE.md §5)
     ENABLE_PHONE_OTP: false,
     SUPPORT_WHATSAPP: 'https://wa.me/910000000000',
+    // Website API for Forgot password requests (web/). Domain set at deploy (W10).
+    WEB_API: process.env.EXPO_PUBLIC_WEB_API ?? 'https://relaxpump.cinzotechnologies.com',
     firebaseDatabaseURL: 'https://iotcinzo-default-rtdb.asia-southeast1.firebasedatabase.app',
   },
 };
