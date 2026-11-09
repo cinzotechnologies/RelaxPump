@@ -13,7 +13,7 @@ import { PrimaryButton } from '@/components/PrimaryButton';
 import { Screen } from '@/components/Screen';
 import { Segmented } from '@/components/Segmented';
 import { TextField, type TextFieldRef } from '@/components/TextField';
-import { backend } from '@/services';
+import { backend, mockMode } from '@/services';
 import { AuthError } from '@/services/backend';
 import { go } from '@/state/nav';
 import { useUi } from '@/state/ui';
@@ -236,6 +236,12 @@ export default function Auth() {
               loading={isSubmitting}
               onPress={() => submit()}
             />
+            {mockMode ? (
+              <Txt size={12} color={colors.dim} style={{ textAlign: 'center', marginTop: s(10) }}>
+                Demo mode (Expo Go): accounts stay on this phone only. Install the RelaxPump app for real
+                accounts.
+              </Txt>
+            ) : null}
           </FadeUp>
         </ScrollView>
       </KeyboardAvoidingView>

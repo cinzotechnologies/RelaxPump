@@ -1,6 +1,8 @@
 // In-memory backend that behaves like the design prototype's simulator (Main.dc.html `tick()`).
 // Used for UI work without Firebase or a controller: EXPO_PUBLIC_BACKEND=mock.
 
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 import { activeTank, pickLowest } from '@/logic/pump';
 import {
   DEFAULT_CONFIG,
@@ -35,6 +37,13 @@ class Channel<T> {
 const DEMO_ID = 'RP-3F2A9C';
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
+/** Demo accounts survive app restarts (Expo Go has no Firebase; this is the simulator's own store). */
+const STORE_KEY = 'rp.mock.accounts.v1';
+type Saved = {
+  accounts: [string, { password: string; uid: string }][];
+  profiles: [string, Profile][];
+};
+
 export function createMockBackend(): Backend {
   let user: SessionUser | null = null;
   const accounts = new Map<string, { password: string; uid: string }>([
@@ -43,6 +52,18 @@ export function createMockBackend(): Backend {
   const profiles = new Map<string, Profile>([
     ['demo', { name: 'My Home', phone: '9876543210', devices: { [DEMO_ID]: true }, createdAt: Date.now() }],
   ]);
+  const ready = AsyncStorage.getItem(STORE_KEY)
+    .then((raw) => {
+      if (!raw) return;
+      const s = JSON.parse(raw) as Saved;
+      s.accounts.forEach(([k, v]) => accounts.set(k, v));
+      s.profiles.forEach(([k, v]) => profiles.set(k, v));
+    })
+    .catch(() => {});
+  const save = () => {
+    const s: Saved = { accounts: [...accounts.entries()], profiles: [...profiles.entries()] };
+    AsyncStorage.setItem(STORE_KEY, JSON.stringify(s)).catch(() => {});
+  };
 
   const info: DeviceInfo = { name: 'RelaxPump Controller', fw: '1.0.0', maxTanks: 3, ownerUid: 'demo' };
   const config: DeviceConfig = {
@@ -188,7 +209,7 @@ export function createMockBackend(): Backend {
     kind: 'mock',
     onAuth: (cb) => auth.sub(cb),
     async signIn(phone, password) {
-      await wait(900);
+      await Promise.all([wait(900), ready]);
       const a = accounts.get(phone);
       if (!a) throw new AuthError('no-account', 'No account with this number');
       if (a.password !== password) throw new AuthError('wrong-password', 'Wrong password');
@@ -196,11 +217,12 @@ export function createMockBackend(): Backend {
       auth.emit();
     },
     async signUp(name, phone, password) {
-      await wait(900);
+      await Promise.all([wait(900), ready]);
       if (accounts.has(phone)) throw new AuthError('phone-taken', 'This number already has an account');
-      const uid = `u${accounts.size + 1}`;
+      const uid = `u${Date.now().toString(36)}`;
       accounts.set(phone, { password, uid });
       profiles.set(uid, { name: name || 'My Home', phone, devices: {}, createdAt: Date.now() });
+      save();
       user = { uid };
       auth.emit();
     },
@@ -216,6 +238,7 @@ export function createMockBackend(): Backend {
         throw new AuthError('wrong-password', 'Password is wrong');
       accounts.delete(phone);
       profiles.delete(entry.uid);
+      save();
       user = null;
       auth.emit();
     },
@@ -230,6 +253,7 @@ export function createMockBackend(): Backend {
       if (!entry || entry.password !== current)
         throw new AuthError('wrong-password', 'Current password is wrong');
       entry.password = next;
+      save();
     },
     onProfile: (uid, cb) => profileCh(uid).sub(cb),
     onInfo: (_id, cb) => infoCh.sub(cb),
@@ -261,6 +285,7 @@ export function createMockBackend(): Backend {
       const p = user && profiles.get(user.uid);
       if (p) {
         p.devices = { ...p.devices, [deviceId]: true };
+        save();
         profileCh(user!.uid).emit();
       }
     },
