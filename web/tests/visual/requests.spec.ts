@@ -50,9 +50,8 @@ test('forgot password: request → new password → WhatsApp → done', async ({
   const pw = await page.getByLabel('New password').inputValue();
   expect(pw).toMatch(/^[A-HJ-NP-Za-km-z2-9]{8}$/);
   await page.getByRole('button', { name: 'Save new password' }).click();
-  await expect(
-    page.getByRole('status').filter({ hasText: 'New password saved for Test Ruati' }),
-  ).toBeVisible();
+  // first call compiles the route in dev — wait for the lasting state, not the 2.4 s toast
+  await expect(page.getByRole('button', { name: 'Password saved' })).toBeVisible({ timeout: 30_000 });
   await expect(page.locator('.amsg')).toContainText(`New password: ${pw}`);
 
   const wa = page.getByRole('link', { name: 'Open WhatsApp' });
@@ -86,7 +85,9 @@ test('a phone with no account can be closed', async ({ page, request }, info) =>
   await page.getByRole('button', { name: new RegExp(`No Account.*${phone.slice(0, 5)}`) }).click();
   await page.getByLabel('New password').fill('Ab3dEf7h');
   await page.getByRole('button', { name: 'Save new password' }).click();
-  await expect(page.locator('.aerr')).toContainText('No RelaxPump account uses this phone number.');
+  await expect(page.locator('.aerr')).toContainText('No RelaxPump account uses this phone number.', {
+    timeout: 30_000,
+  });
   await expect(page.getByRole('button', { name: 'Open WhatsApp' })).toBeDisabled();
   await page.getByRole('button', { name: 'Mark as done' }).click();
   await expect(page.getByRole('status').filter({ hasText: 'No Account marked as done' })).toBeVisible();

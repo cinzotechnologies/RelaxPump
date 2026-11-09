@@ -1,8 +1,9 @@
 import type { Metadata } from 'next';
-import { redirect } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 
 import { DevLoginForm } from '@/components/admin/DevLoginForm';
 import { currentAdmin, usesAccess } from '@/lib/admin/auth';
+import { hostKind } from '@/lib/host';
 
 import '@/components/admin/admin.css';
 
@@ -14,6 +15,7 @@ export const dynamic = 'force-dynamic';
  * own email one-time-PIN screen before the request ever reaches the Worker.
  */
 export default async function AdminLogin() {
+  if ((await hostKind()) === 'site') notFound();
   if (await currentAdmin()) redirect('/admin');
   if (await usesAccess()) redirect('/admin');
   return (

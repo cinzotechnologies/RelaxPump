@@ -6,6 +6,11 @@
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
   "assets": { "directory": ".open-next/assets", "binding": "ASSETS" },
   "observability": { "enabled": true },
+  // Public site + admin panel: one Worker, two hostnames (lib/host.ts, docs/website-setup.md).
+  "routes": [
+    { "pattern": "relaxpump.cinzotechnologies.com", "custom_domain": true },
+    { "pattern": "relaxpumpadmin.cinzotechnologies.com", "custom_domain": true },
+  ],
   "d1_databases": [
     {
       "binding": "DB",
@@ -17,10 +22,12 @@
   ],
   "r2_buckets": [{ "binding": "MEDIA", "bucket_name": "relaxpump-media" }],
   "vars": {
-    // Comma-separated emails allowed into /admin (Cloudflare Access checks them first).
+    // Comma-separated emails allowed into the admin (Cloudflare Access checks them first).
     "ADMIN_EMAILS": "cinzotechnologies@gmail.com,hacheh976@gmail.com",
-    // Cloudflare Access team domain and application AUD tag (set after Access is set up).
-    "ACCESS_TEAM_DOMAIN": "",
-    "ACCESS_AUD": "",
+    // Hostnames. On localhost both are ignored and everything runs on one host.
+    "SITE_URL": "https://relaxpump.cinzotechnologies.com",
+    "ADMIN_HOST": "relaxpumpadmin.cinzotechnologies.com",
+    // ACCESS_TEAM_DOMAIN and ACCESS_AUD are secrets (`wrangler secret put`), so `next dev`
+    // keeps the local sign-in.
   },
 }

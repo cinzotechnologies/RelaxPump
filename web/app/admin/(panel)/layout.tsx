@@ -1,9 +1,10 @@
 import type { Metadata } from 'next';
-import { redirect } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 
 import { Sidebar } from '@/components/admin/Sidebar';
 import { currentAdmin, usesAccess } from '@/lib/admin/auth';
 import { waitingCount } from '@/lib/admin/data';
+import { hostKind, siteUrl } from '@/lib/host';
 
 import '@/components/admin/admin.css';
 
@@ -12,6 +13,7 @@ export const dynamic = 'force-dynamic';
 
 /** Admin shell. Every page and /api/admin route re-checks the admin; this is the first gate. */
 export default async function PanelLayout({ children }: LayoutProps<'/admin'>) {
+  if ((await hostKind()) === 'site') notFound(); // admin lives on its own host
   const admin = await currentAdmin();
   if (!admin) {
     if (!(await usesAccess())) redirect('/admin/login');
@@ -26,11 +28,11 @@ export default async function PanelLayout({ children }: LayoutProps<'/admin'>) {
       </div>
     );
   }
-  const waiting = await waitingCount().catch(() => 0);
+  const [waiting, site] = await Promise.all([waitingCount().catch(() => 0), siteUrl()]);
   return (
     <div className="adm">
       <div className="shell">
-        <Sidebar waiting={waiting} email={admin.email} name={admin.name} />
+        <Sidebar waiting={waiting} email={admin.email} name={admin.name} siteHref={site || '/'} />
         <div className="amain">{children}</div>
       </div>
     </div>

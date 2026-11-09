@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { AdminTop } from '@/components/admin/Sidebar';
 import { AIcon, IC, ago, initials, phoneFmt } from '@/components/admin/icons';
 import { currentAdmin } from '@/lib/admin/auth';
+import { siteUrl } from '@/lib/host';
 import { resetRequests, setting, whenLabel } from '@/lib/admin/data';
 import { SECTIONS } from '@/lib/content/sections';
 
@@ -26,7 +27,7 @@ export default async function Dashboard() {
   return (
     <>
       <AdminTop title="Dashboard">
-        <a className="abtn" href="/" target="_blank" rel="noopener">
+        <a className="abtn" href={(await siteUrl()) || '/'} target="_blank" rel="noopener">
           View website
         </a>
       </AdminTop>

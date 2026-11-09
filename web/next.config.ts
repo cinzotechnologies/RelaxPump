@@ -10,6 +10,8 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   devIndicators: false,
   images: { unoptimized: true },
+  // dev only: 127.0.0.1 stands in for the admin host when ADMIN_HOST is tried locally
+  allowedDevOrigins: ['127.0.0.1'],
 };
 
 export default nextConfig;

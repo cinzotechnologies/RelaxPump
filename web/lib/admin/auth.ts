@@ -7,6 +7,7 @@ import { createRemoteJWKSet, jwtVerify } from 'jose';
 import { cookies, headers } from 'next/headers';
 
 import { envAsync } from '@/lib/env';
+import { hostKind } from '@/lib/host';
 
 export const DEV_COOKIE = 'rp_dev_admin';
 
@@ -55,6 +56,8 @@ export async function currentAdmin(): Promise<Admin | null> {
   const env = await envAsync();
   const allowed = allowList(env.ADMIN_EMAILS);
   const h = await headers();
+  // with a separate admin host, the public host never has an admin
+  if ((await hostKind()) === 'site') return null;
 
   if (env.ACCESS_TEAM_DOMAIN && env.ACCESS_AUD) {
     const token = h.get('cf-access-jwt-assertion');

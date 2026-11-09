@@ -15,7 +15,17 @@ const NAV = [
 ];
 
 /** Left sidebar (phone: horizontal strip). Badge = password requests waiting. */
-export function Sidebar({ waiting, email, name }: { waiting: number; email: string; name: string }) {
+export function Sidebar({
+  waiting,
+  email,
+  name,
+  siteHref,
+}: {
+  waiting: number;
+  email: string;
+  name: string;
+  siteHref: string;
+}) {
   const path = usePathname();
   const isOn = (href: string) => (href === '/admin' ? path === '/admin' : path.startsWith(href));
   return (
@@ -43,7 +53,7 @@ export function Sidebar({ waiting, email, name }: { waiting: number; email: stri
         </Link>
       ))}
       <div className="sfoot">
-        <a className="navi" href="/" target="_blank" rel="noopener">
+        <a className="navi" href={siteHref} target="_blank" rel="noopener">
           <AIcon d={IC.ext} />
           <span>View website</span>
         </a>
