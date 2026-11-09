@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
-    "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
+    "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy && opennextjs-cloudflare deploy --env admin",
     "cf-typegen": "wrangler types --env-interface CloudflareEnv --strict-vars=false cloudflare-env.d.ts",
     "db:migrate": "wrangler d1 migrations apply relaxpump-web --local",
     "db:migrate:remote": "wrangler d1 migrations apply relaxpump-web --remote",

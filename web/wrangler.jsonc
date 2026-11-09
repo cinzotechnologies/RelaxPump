@@ -1,21 +1,22 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "relaxpump-web",
+  // Two Workers from the same build, sharing D1 + R2 (docs/website-setup.md):
+  //   relaxpump      → https://relaxpump.cinzotechnologies.workers.dev       (public site)
+  //   relaxpumpadmin → https://relaxpumpadmin.cinzotechnologies.workers.dev  (admin, behind Access)
+  // The CINZO account (cinzotechnologies@gmail.com) — deploys never go to another account.
+  "account_id": "4e6a5508dbcbc6f1f79f5fd2753995ed",
+  "name": "relaxpump",
   "main": ".open-next/worker.js",
   "compatibility_date": "2026-10-01",
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
   "assets": { "directory": ".open-next/assets", "binding": "ASSETS" },
   "observability": { "enabled": true },
-  // Public site + admin panel: one Worker, two hostnames (lib/host.ts, docs/website-setup.md).
-  "routes": [
-    { "pattern": "relaxpump.cinzotechnologies.com", "custom_domain": true },
-    { "pattern": "relaxpumpadmin.cinzotechnologies.com", "custom_domain": true },
-  ],
+  "workers_dev": true,
   "d1_databases": [
     {
       "binding": "DB",
       "database_name": "relaxpump-web",
-      // Replace with the id from `wrangler d1 create relaxpump-web` (docs/website-setup.md).
+      // Replace with the id from `wrangler d1 create relaxpump-web` (here and in env.admin).
       "database_id": "00000000-0000-0000-0000-000000000000",
       "migrations_dir": "migrations",
     },
@@ -24,10 +25,31 @@
   "vars": {
     // Comma-separated emails allowed into the admin (Cloudflare Access checks them first).
     "ADMIN_EMAILS": "cinzotechnologies@gmail.com,hacheh976@gmail.com",
-    // Hostnames. On localhost both are ignored and everything runs on one host.
-    "SITE_URL": "https://relaxpump.cinzotechnologies.com",
-    "ADMIN_HOST": "relaxpumpadmin.cinzotechnologies.com",
-    // ACCESS_TEAM_DOMAIN and ACCESS_AUD are secrets (`wrangler secret put`), so `next dev`
-    // keeps the local sign-in.
+    // Hostnames (lib/host.ts). On localhost both are ignored and everything runs on one host.
+    "SITE_URL": "https://relaxpump.cinzotechnologies.workers.dev",
+    "ADMIN_HOST": "relaxpumpadmin.cinzotechnologies.workers.dev",
+    // ACCESS_TEAM_DOMAIN, ACCESS_AUD and FIREBASE_SERVICE_ACCOUNT are secrets of the admin
+    // Worker (`wrangler secret put … --env admin`), so `next dev` keeps the local sign-in.
+  },
+  "env": {
+    // Environments do not inherit bindings or vars — keep these in step with the top level.
+    "admin": {
+      "name": "relaxpumpadmin",
+      "workers_dev": true,
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "relaxpump-web",
+          "database_id": "00000000-0000-0000-0000-000000000000",
+          "migrations_dir": "migrations",
+        },
+      ],
+      "r2_buckets": [{ "binding": "MEDIA", "bucket_name": "relaxpump-media" }],
+      "vars": {
+        "ADMIN_EMAILS": "cinzotechnologies@gmail.com,hacheh976@gmail.com",
+        "SITE_URL": "https://relaxpump.cinzotechnologies.workers.dev",
+        "ADMIN_HOST": "relaxpumpadmin.cinzotechnologies.workers.dev",
+      },
+    },
   },
 }

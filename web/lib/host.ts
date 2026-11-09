@@ -1,5 +1,5 @@
-// Two hostnames, one Worker: the public site (SITE_URL, e.g. relaxpump.cinzotechnologies.com)
-// and the admin panel (ADMIN_HOST, e.g. relaxpumpadmin.cinzotechnologies.com). On localhost, or
+// Two hostnames, one Worker: the public site (SITE_URL, e.g. relaxpump.cinzotechnologies.workers.dev)
+// and the admin panel (ADMIN_HOST, e.g. relaxpumpadmin.cinzotechnologies.workers.dev). On localhost, or
 // with ADMIN_HOST unset, both live on one host (local dev keeps working with production vars).
 import 'server-only';
 
