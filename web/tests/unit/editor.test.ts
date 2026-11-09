@@ -125,7 +125,7 @@ describe('cleanShop', () => {
 
 describe('conform (deep content check)', () => {
   it('fills new fields on old rows and drops wrong types inside arrays', () => {
-    const oldShots = DEFAULT_SITE.gallery.shots.map(({ imageUrl: _i, ...s }) => s);
+    const oldShots = DEFAULT_SITE.gallery.shots.map((s) => ({ key: s.key, label: s.label, d: s.d }));
     const merged = mergeContent([{ section: 'gallery', key: 'shots', value: JSON.stringify(oldShots) }]);
     expect(merged.gallery.shots[0].imageUrl).toBeNull();
     const bad = [{ ...DEFAULT_SITE.how.feats[0], t: 42 }];

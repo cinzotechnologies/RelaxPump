@@ -8,6 +8,8 @@ export default defineConfig({
   use: { baseURL: 'http://localhost:3000' },
   webServer: {
     command: 'npm run dev',
+    // admin password resets pretend to reach Firebase (lib/admin/resets.ts, localhost + dev only)
+    env: { RP_FAKE_FIREBASE: '1' },
     url: 'http://localhost:3000',
     reuseExistingServer: true,
     timeout: 180_000,
