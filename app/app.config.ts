@@ -35,6 +35,9 @@ const config: ExpoConfig = {
     predictiveBackGestureEnabled: false,
   },
   plugins: [
+    // expo-notifications vs RN Firebase messaging: same FCM meta-data (see the plugin).
+    // Listed first on purpose: mods run last-to-first, so this sees expo-notifications' entries.
+    './plugins/withFcmManifestFix',
     'expo-router',
     // Android app shortcuts + Google Assistant App Actions (pump on/off, auto on/off)
     './plugins/withVoiceShortcuts',
