@@ -78,3 +78,20 @@ notifications with the app closed, Account › Delete account.
 - iOS (needs an Apple developer account and `GoogleService-Info.plist`).
 - SMS OTP for Forgot password (needs Blaze) — the admin + WhatsApp flow replaces it.
 - Custom domain (`cinzotechnologies.com` is in another Cloudflare account).
+
+## Voice control (no fees)
+
+The app runs these links without a tap (signed in + controller online; commands older than
+2 minutes are dropped): `relaxpump://do/pump-on`, `pump-off`, `auto-on`, `auto-off`.
+"Pump on" uses the open valve, or opens the emptiest tank's valve first, then starts the pump.
+
+- **Android app shortcuts:** long-press the RelaxPump icon → Pump on / Pump off / Auto on / Auto off
+  (works in the preview APK). Drag one to the home screen for one-tap control.
+- **Google Assistant (App Actions):** "Hey Google, turn on the pump in RelaxPump", "… stop the
+  pump in RelaxPump", "… turn on auto in RelaxPump" (phrases in `app/plugins/withVoiceShortcuts.js`).
+  Google only enables App Actions for apps **installed from Google Play**; on phones where Gemini
+  replaced Assistant, support depends on Google. Before release, test with Android Studio's
+  "App Actions Test Tool" (Google Assistant plugin).
+- **Siri (iPhone, once the iOS app exists):** Shortcuts app → New shortcut → *Open URLs* →
+  `relaxpump://do/pump-on` → name it "Pump on". Then "Hey Siri, Pump on". Native Siri App Intents
+  need the iOS build (Apple developer account).

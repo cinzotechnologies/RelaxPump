@@ -42,6 +42,8 @@ const STORE_KEY = 'rp.mock.accounts.v1';
 type Saved = {
   accounts: [string, { password: string; uid: string }][];
   profiles: [string, Profile][];
+  /** Signed-in uid, so the demo stays signed in like Firebase does. */
+  session?: string | null;
 };
 
 export function createMockBackend(): Backend {
@@ -58,10 +60,18 @@ export function createMockBackend(): Backend {
       const s = JSON.parse(raw) as Saved;
       s.accounts.forEach(([k, v]) => accounts.set(k, v));
       s.profiles.forEach(([k, v]) => profiles.set(k, v));
+      if (s.session && profiles.has(s.session) && !user) {
+        user = { uid: s.session };
+        auth.emit();
+      }
     })
     .catch(() => {});
   const save = () => {
-    const s: Saved = { accounts: [...accounts.entries()], profiles: [...profiles.entries()] };
+    const s: Saved = {
+      accounts: [...accounts.entries()],
+      profiles: [...profiles.entries()],
+      session: user?.uid ?? null,
+    };
     AsyncStorage.setItem(STORE_KEY, JSON.stringify(s)).catch(() => {});
   };
 
@@ -214,6 +224,7 @@ export function createMockBackend(): Backend {
       if (!a) throw new AuthError('no-account', 'No account with this number');
       if (a.password !== password) throw new AuthError('wrong-password', 'Wrong password');
       user = { uid: a.uid };
+      save();
       auth.emit();
     },
     async signUp(name, phone, password) {
@@ -222,12 +233,13 @@ export function createMockBackend(): Backend {
       const uid = `u${Date.now().toString(36)}`;
       accounts.set(phone, { password, uid });
       profiles.set(uid, { name: name || 'My Home', phone, devices: {}, createdAt: Date.now() });
-      save();
       user = { uid };
+      save();
       auth.emit();
     },
     async signOut() {
       user = null;
+      save();
       auth.emit();
     },
     async deleteAccount(password) {
@@ -238,8 +250,8 @@ export function createMockBackend(): Backend {
         throw new AuthError('wrong-password', 'Password is wrong');
       accounts.delete(phone);
       profiles.delete(entry.uid);
-      save();
       user = null;
+      save();
       auth.emit();
     },
     registerPush: () => () => {},

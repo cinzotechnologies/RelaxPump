@@ -36,6 +36,8 @@ const config: ExpoConfig = {
   },
   plugins: [
     'expo-router',
+    // Android app shortcuts + Google Assistant App Actions (pump on/off, auto on/off)
+    './plugins/withVoiceShortcuts',
     [
       'expo-splash-screen',
       { backgroundColor: '#021A20', image: './assets/images/splash-icon.png', imageWidth: 96 },
@@ -53,7 +55,7 @@ const config: ExpoConfig = {
         recordAudioAndroid: false,
       },
     ],
-    ['expo-notifications', { color: '#7FE3EC' }],
+    ['expo-notifications', { color: '#7FE3EC', icon: './assets/images/android-icon-monochrome.png' }],
     [
       '@orbital-systems/react-native-esp-idf-provisioning',
       {

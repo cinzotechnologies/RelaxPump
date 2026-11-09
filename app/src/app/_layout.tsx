@@ -21,6 +21,7 @@ import { prepareNotifications } from '@/services/notify';
 import { useDevice } from '@/state/device';
 import { useSession } from '@/state/session';
 import { useUi } from '@/state/ui';
+import { useVoice, VOICE_MAX_AGE_MS } from '@/state/voice';
 import { colors } from '@/theme';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
@@ -58,6 +59,32 @@ export default function RootLayout() {
       router.replace('/auth');
     }
   }, [status]);
+
+  // Voice / shortcut command: run once signed in and the controller is online (no tap).
+  const pending = useVoice((st) => st.pending);
+  const hasState = useDevice((st) => !!st.state);
+  const online = useDevice((st) => st.online);
+  useEffect(() => {
+    const v = useVoice.getState();
+    if (!pending || status !== 'in') return;
+    if (Date.now() - v.at > VOICE_MAX_AGE_MS) return v.clear();
+    if (!deviceId) {
+      v.clear();
+      useUi.getState().showToast('Set up your controller first');
+      return;
+    }
+    if (hasState && online) {
+      v.clear();
+      useDevice.getState().voice(pending);
+      return;
+    }
+    const t = setTimeout(() => {
+      if (!useVoice.getState().pending) return;
+      useVoice.getState().clear();
+      useUi.getState().showToast('Controller is offline');
+    }, 12_000);
+    return () => clearTimeout(t);
+  }, [pending, status, deviceId, hasState, online]);
 
   const ready = fontsLoaded && status !== 'loading';
   useEffect(() => {

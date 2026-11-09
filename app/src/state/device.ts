@@ -3,6 +3,7 @@ import { create } from 'zustand';
 import { eventRow, eventToast } from '@/logic/events';
 import { dayKey, parseTankName } from '@/logic/format';
 import { decidePump, decideValve, parseLitres, resizeConfig, setHigh, setLow } from '@/logic/pump';
+import { planPumpOn, type VoiceAction } from '@/logic/voice';
 import {
   DEFAULT_CONFIG,
   type DeviceConfig,
@@ -43,12 +44,17 @@ type DeviceStore = {
   togglePump: () => void;
   toggleValve: (i: number) => void;
   setAuto: (on: boolean) => void;
+  /** Voice / shortcut command (relaxpump://do/...), no tap. */
+  voice: (a: VoiceAction) => void;
   setLow: (v: number) => void;
   setHigh: (v: number) => void;
   setCount: (n: number) => void;
   setLitres: (i: number, text: string) => void;
   setTankName: (i: number, text: string) => void;
 };
+
+/** Time for the controller to apply the valve command before the pump command overwrites it. */
+const VOICE_PUMP_DELAY_MS = 4000;
 
 let unsubs: Unsub[] = [];
 let configTimer: ReturnType<typeof setTimeout> | undefined;
@@ -192,6 +198,45 @@ export const useDevice = create<DeviceStore>((set, get) => {
       patch({ auto: on });
       useUi.getState().showToast(on ? 'Auto on' : 'Auto off');
       send({ auto: on });
+    },
+    voice: (a) => {
+      const s = get().state;
+      const ui = useUi.getState();
+      if (!s || !reachable()) return;
+      if (a === 'auto-on' || a === 'auto-off') {
+        get().setAuto(a === 'auto-on');
+        return;
+      }
+      if (a === 'pump-off') {
+        if (!s.pump) {
+          ui.showToast('Pump is already off');
+          return;
+        }
+        patch({ pump: false, auto: false });
+        ui.showToast('Pump off');
+        send({ pump: false });
+        return;
+      }
+      const plan = planPumpOn(s.pump, s.tanks);
+      if (plan.kind === 'already') ui.showToast('Pump is already on');
+      else if (plan.kind === 'full') ui.showToast('All tanks are full');
+      else if (plan.kind === 'pump') {
+        patch({ pump: true, auto: false });
+        ui.showToast('Pump on');
+        send({ pump: true });
+      } else {
+        // the controller applies one command at a time: open the valve, then start the pump
+        const i = plan.tank;
+        const name = get().config.tanks[i]?.name?.trim() || `Tank ${i + 1}`;
+        patch({ auto: false, tanks: s.tanks.map((t, j) => (j === i ? { ...t, valve: true } : t)) });
+        ui.showToast(`Filling ${name}`);
+        send({ valve: { i, open: true } });
+        setTimeout(() => {
+          if (!get().online) return;
+          patch({ pump: true });
+          send({ pump: true });
+        }, VOICE_PUMP_DELAY_MS);
+      }
     },
     setLow: (v) => {
       const c = get().config;
