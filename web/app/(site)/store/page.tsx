@@ -4,7 +4,7 @@ import { Footer } from '@/components/site/Footer';
 import { TopBar } from '@/components/site/TopBar';
 import { CartProvider } from '@/components/store/cart';
 import { CartButton, CartDrawer, Catalogue, StoreHead } from '@/components/store/StoreView';
-import { getProducts, getSite, orderingOpen } from '@/lib/content/load';
+import { getProducts, getSite, isPreview, orderingOpen } from '@/lib/content/load';
 
 import '@/components/store/products.css';
 import '@/components/store/store.css';
@@ -17,7 +17,8 @@ export const metadata: Metadata = {
 export const dynamic = 'force-dynamic';
 
 export default async function StorePage() {
-  const [site, products, open] = await Promise.all([getSite(), getProducts(), orderingOpen()]);
+  const preview = await isPreview();
+  const [site, products, open] = await Promise.all([getSite(), getProducts(preview), orderingOpen(preview)]);
   const contact = site.contact;
   return (
     <CartProvider ids={products.map((p) => p.id)}>

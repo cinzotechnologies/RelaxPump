@@ -514,3 +514,21 @@ a:hover {
     opacity: 1;
   }
 }
+
+/* admin Preview (draft mode) */
+.preview-bar {
+  position: sticky;
+  top: 0;
+  z-index: 200;
+  padding: 10px 16px;
+  background: var(--soon-bg);
+  color: var(--soon-text);
+  font:
+    600 13px/1.4 var(--font-inter),
+    sans-serif;
+  text-align: center;
+}
+.preview-bar a {
+  color: inherit;
+  text-decoration: underline;
+}

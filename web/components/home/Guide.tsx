@@ -4,11 +4,12 @@ import { useEffect, useRef, useState } from 'react';
 
 import { Play } from '@/components/ui/icons';
 import type { HomeContent } from '@/lib/content/home';
+import { youtubeId } from '@/lib/content/youtube';
 
 /** YouTube watch/short/embed URL → embed URL, else null. */
 export function youtubeEmbed(url: string): string | null {
-  const m = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([\w-]{11})/);
-  return m ? `https://www.youtube-nocookie.com/embed/${m[1]}?autoplay=1&rel=0` : null;
+  const id = youtubeId(url);
+  return id ? `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0` : null;
 }
 
 /** Install video: 16:9 player with chapters. Until a video exists, play says "Video coming soon". */

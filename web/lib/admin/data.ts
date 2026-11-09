@@ -59,13 +59,4 @@ export async function setSetting(key: string, value: string) {
     .onConflictDoUpdate({ target: schema.settings.key, set: { value } });
 }
 
-/** "today, 9:30 PM" / "8 Nov, 9:30 PM" in India time. */
-export function whenLabel(ts: number | null, now = Date.now()): string {
-  if (!ts) return 'never';
-  const tz = 'Asia/Kolkata';
-  const day = (t: number) => new Date(t).toLocaleDateString('en-IN', { timeZone: tz });
-  const time = new Date(ts).toLocaleTimeString('en-US', { timeZone: tz, hour: 'numeric', minute: '2-digit' });
-  if (day(ts) === day(now)) return `today, ${time}`;
-  const d = new Date(ts).toLocaleDateString('en-IN', { timeZone: tz, day: 'numeric', month: 'short' });
-  return `${d}, ${time}`;
-}
+export { whenLabel } from '@/components/admin/icons';

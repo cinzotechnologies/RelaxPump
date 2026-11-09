@@ -2,7 +2,8 @@
 import type { ScreenKey } from '@/components/app-screen/AppScreen';
 
 export type Feature = { n: string; k: string; t: string; d: string; screen: ScreenKey; tone: 1 | 2 | 3 | 4 };
-export type Shot = { key: ScreenKey; label: string; d: string };
+/** imageUrl: an uploaded screenshot; null = the built-in drawing of that screen. */
+export type Shot = { key: ScreenKey; label: string; d: string; imageUrl: string | null };
 /** Dot colour = a token name (styles/tokens.ts). */
 export type DotColor =
   'teal2' | 'teal' | 'glow' | 'aqua' | 'warning' | 'wireBrown' | 'wireBrownWhite' | 'wireBlue' | 'wireGreen';
@@ -88,12 +89,22 @@ export const DEFAULT_HOME: HomeContent = {
     kicker: 'App screens',
     title: 'The app',
     shots: [
-      { key: 'welcome', label: 'Welcome', d: 'A calm start — your tanks, one tap away.' },
-      { key: 'home', label: 'Home', d: 'Average level, pump status and every tank at a glance.' },
-      { key: 'tanks', label: 'Tanks', d: 'Valves, live fills and auto start/stop levels.' },
-      { key: 'usage', label: 'Usage', d: 'Litres and pump minutes for the last 7 days.' },
-      { key: 'ble', label: 'Bluetooth setup', d: 'First-time setup: send your Wi-Fi to the controller.' },
-      { key: 'account', label: 'Account', d: 'Profile, password, tanks and sign out.' },
+      { key: 'welcome', label: 'Welcome', d: 'A calm start — your tanks, one tap away.', imageUrl: null },
+      {
+        key: 'home',
+        label: 'Home',
+        d: 'Average level, pump status and every tank at a glance.',
+        imageUrl: null,
+      },
+      { key: 'tanks', label: 'Tanks', d: 'Valves, live fills and auto start/stop levels.', imageUrl: null },
+      { key: 'usage', label: 'Usage', d: 'Litres and pump minutes for the last 7 days.', imageUrl: null },
+      {
+        key: 'ble',
+        label: 'Bluetooth setup',
+        d: 'First-time setup: send your Wi-Fi to the controller.',
+        imageUrl: null,
+      },
+      { key: 'account', label: 'Account', d: 'Profile, password, tanks and sign out.', imageUrl: null },
     ],
   },
   guide: {

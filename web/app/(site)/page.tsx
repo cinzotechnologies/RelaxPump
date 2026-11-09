@@ -7,7 +7,7 @@ import { Manual } from '@/components/home/Manual';
 import { StoreTeaser } from '@/components/home/StoreTeaser';
 import { Footer } from '@/components/site/Footer';
 import { TopBar } from '@/components/site/TopBar';
-import { getProducts, getSite } from '@/lib/content/load';
+import { getProducts, getSite, isPreview } from '@/lib/content/load';
 
 import '@/components/home/home.css';
 import '@/components/store/products.css';
@@ -16,7 +16,8 @@ import '@/components/store/products.css';
 export const dynamic = 'force-dynamic';
 
 export default async function Home() {
-  const [c, products] = await Promise.all([getSite(), getProducts()]);
+  const preview = await isPreview();
+  const [c, products] = await Promise.all([getSite(), getProducts(preview)]);
   return (
     <>
       <TopBar />

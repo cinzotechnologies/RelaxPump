@@ -47,7 +47,16 @@ export function Gallery({ c }: { c: HomeContent['gallery'] }) {
             onClick={() => setShot(i)}
           >
             <span className="sh" />
-            <AppScreen screen={s.key} />
+            {s.imageUrl ? (
+              <div className="as" aria-hidden>
+                <div className="as-screen">
+                  {/* eslint-disable-next-line @next/next/no-img-element -- R2/media URL, no optimizer on Workers */}
+                  <img className="as-shot" src={s.imageUrl} alt="" loading="lazy" />
+                </div>
+              </div>
+            ) : (
+              <AppScreen screen={s.key} />
+            )}
           </button>
         ))}
       </div>

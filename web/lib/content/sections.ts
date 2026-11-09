@@ -22,14 +22,34 @@ export const SECTIONS: { id: SectionId; label: string }[] = [
 
 export type ContentRow = { section: string; key: string; value: string | null };
 
-/** Same JSON "shape" (string/number/boolean/null/array/object) — guards against bad edits. */
-function sameKind(a: unknown, b: unknown): boolean {
-  const kind = (v: unknown) => (v === null ? 'null' : Array.isArray(v) ? 'array' : typeof v);
-  const ka = kind(a);
-  const kb = kind(b);
-  // nullable fields (videoUrl, pdfUrl) may switch between null and string
-  if ((ka === 'null' && kb === 'string') || (ka === 'string' && kb === 'null')) return true;
-  return ka === kb;
+const kind = (v: unknown) => (v === null ? 'null' : Array.isArray(v) ? 'array' : typeof v);
+
+/**
+ * Fit a stored value to the default's shape, all the way down — guards against bad edits.
+ * Wrong types fall back to the default; missing object keys get the default (so new fields work
+ * with old rows); array items are checked against the default item at the same index (or the
+ * first). Nullable fields (videoUrl, pdfUrl, imageUrl) may switch between null and string.
+ */
+export function conform(v: unknown, d: unknown): unknown {
+  const kv = kind(v);
+  const kd = kind(d);
+  if ((kv === 'null' && kd === 'string') || (kv === 'string' && kd === 'null')) return v;
+  if (kv !== kd) return structuredClone(d);
+  if (kd === 'array') {
+    const da = d as unknown[];
+    return (v as unknown[]).map((x, i) => (da.length ? conform(x, da[i] ?? da[0]) : x));
+  }
+  if (kd === 'object') {
+    const vo = v as Record<string, unknown>;
+    const dobj = d as Record<string, unknown>;
+    // another variant of a union (manual pages, by `kind`) is kept as stored
+    if ('kind' in dobj && vo.kind !== dobj.kind) return v;
+    const out: Record<string, unknown> = {};
+    for (const k of Object.keys(dobj)) out[k] = k in vo ? conform(vo[k], dobj[k]) : structuredClone(dobj[k]);
+    for (const k of Object.keys(vo)) if (!(k in dobj)) out[k] = vo[k]; // optional keys (line colour)
+    return out;
+  }
+  return v;
 }
 
 /** Merge stored rows over the defaults. Unknown sections/keys and wrong types are ignored. */
@@ -44,7 +64,7 @@ export function mergeContent(rows: ContentRow[], base: SiteContent = DEFAULT_SIT
     } catch {
       continue;
     }
-    if (sameKind(v, sec[r.key])) sec[r.key] = v;
+    sec[r.key] = conform(v, sec[r.key]);
   }
   return out as unknown as SiteContent;
 }

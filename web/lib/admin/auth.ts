@@ -80,3 +80,21 @@ export async function adminOr401(): Promise<Admin | Response> {
   const a = await currentAdmin();
   return a ?? Response.json({ error: 'Not signed in' }, { status: 401 });
 }
+
+/** A browser request sent by our own pages (Origin matches Host) — blocks cross-site posts. */
+export function sameOrigin(req: Request): boolean {
+  const origin = req.headers.get('origin');
+  const host = req.headers.get('host');
+  if (!origin || !host) return false;
+  try {
+    return new URL(origin).host === host;
+  } catch {
+    return false;
+  }
+}
+
+/** For changing API routes: same-origin check, then the admin. */
+export async function adminForChange(req: Request): Promise<Admin | Response> {
+  if (!sameOrigin(req)) return Response.json({ error: 'Bad origin' }, { status: 403 });
+  return adminOr401();
+}
