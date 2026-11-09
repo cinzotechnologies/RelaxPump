@@ -73,6 +73,8 @@ export function Footer({ c, variant = 'home' }: { c: Contact; variant?: 'home' |
             <span className="fh">App</span>
             <a href={c.playUrl}>Google Play</a>
             <a href={c.appStoreUrl}>App Store</a>
+            <Link href="/privacy">Privacy policy</Link>
+            <Link href="/delete-account">Delete account</Link>
           </div>
         </div>
         <div className="fbar">

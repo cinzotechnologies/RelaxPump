@@ -28,6 +28,8 @@
     // Hostnames (lib/host.ts). On localhost both are ignored and everything runs on one host.
     "SITE_URL": "https://relaxpump.cinzotechnologies.workers.dev",
     "ADMIN_HOST": "relaxpumpadmin.cinzotechnologies.workers.dev",
+    // Firebase Realtime Database (public URL). The web API key is a secret: FIREBASE_WEB_API_KEY.
+    "FIREBASE_DB_URL": "https://iotcinzo-default-rtdb.asia-southeast1.firebasedatabase.app",
     // ACCESS_TEAM_DOMAIN, ACCESS_AUD and FIREBASE_SERVICE_ACCOUNT are secrets of the admin
     // Worker (`wrangler secret put … --env admin`), so `next dev` keeps the local sign-in.
   },
@@ -49,6 +51,9 @@
         "ADMIN_EMAILS": "cinzotechnologies@gmail.com,hacheh976@gmail.com",
         "SITE_URL": "https://relaxpump.cinzotechnologies.workers.dev",
         "ADMIN_HOST": "relaxpumpadmin.cinzotechnologies.workers.dev",
+        "FIREBASE_DB_URL": "https://iotcinzo-default-rtdb.asia-southeast1.firebasedatabase.app",
+    // Firebase Realtime Database (public URL). The web API key is a secret: FIREBASE_WEB_API_KEY.
+    "FIREBASE_DB_URL": "https://iotcinzo-default-rtdb.asia-southeast1.firebasedatabase.app",
       },
     },
   },

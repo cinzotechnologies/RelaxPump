@@ -1,0 +1,117 @@
+/* Privacy policy and Delete account pages. Colours only via var(--…). */
+.legal {
+  padding: 120px 0 80px;
+  background: var(--tint);
+}
+.legal .wrap {
+  max-width: 820px;
+}
+.legal-card {
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  padding: 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  color: var(--slate);
+  font-size: 16px;
+  line-height: 1.65;
+}
+.legal h1 {
+  margin: 0;
+  font-family: var(--font-outfit), sans-serif;
+  font-weight: 500;
+  font-size: 40px;
+  line-height: 1.15;
+  color: var(--ink);
+}
+.legal h2 {
+  margin: 14px 0 0;
+  font-family: var(--font-outfit), sans-serif;
+  font-weight: 500;
+  font-size: 22px;
+  color: var(--ink);
+}
+.legal ul {
+  margin: 0;
+  padding-left: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.legal a {
+  color: var(--teal);
+}
+.legal .updated {
+  font-size: 14px;
+  color: var(--muted);
+}
+.legal .note {
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: var(--soon-bg);
+  color: var(--soon-text);
+  font-size: 14px;
+  line-height: 1.5;
+}
+.legal form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.lfld {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font:
+    600 13px/1 var(--font-inter),
+    sans-serif;
+  color: var(--slate);
+}
+.linp {
+  height: 50px;
+  width: 100%;
+  border-radius: 14px;
+  border: 1.5px solid var(--sage);
+  padding: 0 14px;
+  font:
+    400 16px var(--font-inter),
+    sans-serif;
+  color: var(--ink);
+  background: var(--white);
+}
+.linp:focus {
+  outline: none;
+  border-color: var(--teal-2);
+  box-shadow: 0 0 0 4px rgb(var(--glow-rgb) / 0.35);
+}
+.lerr2 {
+  font-size: 14px;
+  color: var(--amber);
+}
+.lok {
+  padding: 16px;
+  border-radius: 14px;
+  background: var(--ok-bg);
+  color: var(--ok-text);
+  font-weight: 600;
+}
+.legal .btn[disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+@container site (max-width: 760px) {
+  .legal {
+    padding: 96px 0 56px;
+  }
+  .legal .wrap {
+    padding: 0 16px;
+  }
+  .legal-card {
+    padding: 24px 20px;
+  }
+  .legal h1 {
+    font-size: 30px;
+  }
+}

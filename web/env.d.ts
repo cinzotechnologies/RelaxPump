@@ -8,4 +8,6 @@ interface CloudflareEnv {
   ACCESS_TEAM_DOMAIN?: string;
   /** Cloudflare Access application AUD tag (secret, production only). */
   ACCESS_AUD?: string;
+  /** Firebase Web API key (from google-services.json) — website account deletion. Secret to keep it out of git. */
+  FIREBASE_WEB_API_KEY?: string;
 }
