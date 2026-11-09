@@ -16,7 +16,8 @@
     "test:visual": "playwright test",
     "format": "prettier --write .",
     "check": "npm run typecheck && npm run lint && npm test",
-    "db:seed-file": "tsx scripts/gen-seed.ts"
+    "db:seed-file": "tsx scripts/gen-seed.ts",
+    "deploy:jobs": "wrangler deploy -c jobs/wrangler.jsonc"
   },
   "dependencies": {
     "@opennextjs/cloudflare": "^1.20.16",

@@ -1,0 +1,22 @@
+{
+  "$schema": "../node_modules/wrangler/config-schema.json",
+  // Push notifications + daily cleanup for the app, on cron (no Firebase Blaze plan needed).
+  // Deploy: `npm run deploy:jobs` in web/. Secret: FIREBASE_SERVICE_ACCOUNT (see docs/release.md).
+  "account_id": "4e6a5508dbcbc6f1f79f5fd2753995ed",
+  "name": "relaxpump-jobs",
+  "main": "index.ts",
+  "compatibility_date": "2026-10-01",
+  "workers_dev": false,
+  "observability": { "enabled": true },
+  "triggers": { "crons": ["* * * * *", "30 21 * * *"] },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "relaxpump-web",
+      "database_id": "859ab1d3-e950-42d3-b1ed-635aa84080dd",
+    },
+  ],
+  "vars": {
+    "FIREBASE_DB_URL": "https://iotcinzo-default-rtdb.asia-southeast1.firebasedatabase.app",
+  },
+}

@@ -72,7 +72,7 @@ const config: ExpoConfig = {
     eas: { projectId: EAS_PROJECT_ID },
     // Feature flags (see CLAUDE.md §5)
     ENABLE_PHONE_OTP: false,
-    SUPPORT_WHATSAPP: 'https://wa.me/910000000000',
+    SUPPORT_WHATSAPP: 'https://wa.me/919863262589',
     // Website API for Forgot password requests (web/, docs/website-setup.md).
     WEB_API: process.env.EXPO_PUBLIC_WEB_API ?? 'https://relaxpump.cinzotechnologies.workers.dev',
     firebaseDatabaseURL: 'https://iotcinzo-default-rtdb.asia-southeast1.firebasedatabase.app',

@@ -23,7 +23,9 @@ export type IconName =
   | 'down'
   | 'chip'
   | 'wifi'
-  | 'trash';
+  | 'trash'
+  | 'help'
+  | 'shield';
 
 type Props = { name: IconName; size?: number; color: string; strokeWidth?: number };
 
@@ -85,6 +87,15 @@ function render(name: IconName, p: Record<string, unknown>, color: string) {
       return <Path d="M7 7l10 10-5 4.5V2.5L17 7 7 17" {...p} />;
     case 'plus':
       return <Path d="M12 5v14M5 12h14" {...p} />;
+    case 'help':
+      return (
+        <Path
+          d="M4 20l1.5-4A8 8 0 1 1 9 19.5z M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .8-1 1.5 M12 16h.01"
+          {...p}
+        />
+      );
+    case 'shield':
+      return <Path d="M12 3l7 3v5c0 4.5-3 8.5-7 10-4-1.5-7-5.5-7-10V6z M9 12l2 2 4-4" {...p} />;
     case 'lock':
       return (
         <>

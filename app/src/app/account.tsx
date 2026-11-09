@@ -1,6 +1,7 @@
 import * as Application from 'expo-application';
+import Constants from 'expo-constants';
 import { useCallback, type ReactNode } from 'react';
-import { View } from 'react-native';
+import { Linking, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BackButton } from '@/components/BackButton';
@@ -15,6 +16,8 @@ import { go } from '@/state/nav';
 import { useSession } from '@/state/session';
 import { useUi } from '@/state/ui';
 import { alpha, colors, s, Txt } from '@/theme';
+
+const extra = (Constants.expoConfig?.extra ?? {}) as { SUPPORT_WHATSAPP?: string; WEB_API?: string };
 
 function Row({
   icon,
@@ -123,6 +126,22 @@ export default function Account() {
               {count}
             </Txt>
           }
+        />
+        <View style={{ height: 1, marginLeft: s(60), backgroundColor: alpha(colors.glow, 0.08) }} />
+        <Row
+          icon="help"
+          label="Help & support"
+          onPress={() => {
+            if (extra.SUPPORT_WHATSAPP) Linking.openURL(extra.SUPPORT_WHATSAPP).catch(() => {});
+          }}
+        />
+        <View style={{ height: 1, marginLeft: s(60), backgroundColor: alpha(colors.glow, 0.08) }} />
+        <Row
+          icon="shield"
+          label="Privacy policy"
+          onPress={() => {
+            if (extra.WEB_API) Linking.openURL(`${extra.WEB_API}/privacy`).catch(() => {});
+          }}
         />
       </FadeUp>
       <FadeUp step={2} style={{ borderRadius: s(20), backgroundColor: colors.card, overflow: 'hidden' }}>

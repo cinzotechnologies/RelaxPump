@@ -1,5 +1,8 @@
 # Things that need the Blaze (pay-as-you-go) plan
 
+> **Update 2026-11-09:** push notifications and the daily cleanup now run on the Cloudflare cron
+> Worker `relaxpump-jobs` (`web/jobs/`), so Blaze is only needed for SMS OTP. See `docs/release.md`.
+
 The project runs on **Spark (free)**. These parts are written or stubbed but switched off until the
 project moves to Blaze. Ask before upgrading — Blaze needs a billing account.
 

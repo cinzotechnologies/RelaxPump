@@ -26,14 +26,20 @@ export function parseServiceAccount(json: string | undefined): ServiceAccount | 
   }
 }
 
-let cached: { email: string; token: string; exp: number } | null = null;
+let cached: { email: string; scope: string; token: string; exp: number } | null = null;
 
 /** OAuth access token for the service account (cached until 5 min before it expires). */
-export async function accessToken(sa: ServiceAccount, f: typeof fetch = fetch): Promise<string> {
+export async function accessToken(
+  sa: ServiceAccount,
+  f: typeof fetch = fetch,
+  scope: string = SCOPE,
+): Promise<string> {
   const now = Math.floor(Date.now() / 1000);
-  if (cached && cached.email === sa.client_email && cached.exp - 300 > now) return cached.token;
+  if (cached && cached.email === sa.client_email && cached.scope === scope && cached.exp - 300 > now) {
+    return cached.token;
+  }
   const key = await importPKCS8(sa.private_key.replace(/\\n/g, '\n'), 'RS256');
-  const assertion = await new SignJWT({ scope: SCOPE })
+  const assertion = await new SignJWT({ scope })
     .setProtectedHeader({ alg: 'RS256', typ: 'JWT' })
     .setIssuer(sa.client_email)
     .setSubject(sa.client_email)
@@ -48,7 +54,7 @@ export async function accessToken(sa: ServiceAccount, f: typeof fetch = fetch): 
   });
   const b = (await r.json().catch(() => null)) as { access_token?: string; expires_in?: number } | null;
   if (!r.ok || !b?.access_token) throw new Error(`Google sign-in failed (${r.status})`);
-  cached = { email: sa.client_email, token: b.access_token, exp: now + (b.expires_in ?? 3600) };
+  cached = { email: sa.client_email, scope, token: b.access_token, exp: now + (b.expires_in ?? 3600) };
   return b.access_token;
 }
 
