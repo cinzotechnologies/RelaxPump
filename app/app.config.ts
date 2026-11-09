@@ -38,6 +38,8 @@ const config: ExpoConfig = {
     'expo-router',
     // Android app shortcuts + Google Assistant App Actions (pump on/off, auto on/off)
     './plugins/withVoiceShortcuts',
+    // Firebase BoM 35 needs Kotlin metadata 2.4 (see the plugin)
+    './plugins/withKotlinMetadataCheck',
     [
       'expo-splash-screen',
       { backgroundColor: '#021A20', image: './assets/images/splash-icon.png', imageWidth: 96 },
