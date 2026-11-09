@@ -16,8 +16,8 @@
     {
       "binding": "DB",
       "database_name": "relaxpump-web",
-      // Replace with the id from `wrangler d1 create relaxpump-web` (here and in env.admin).
-      "database_id": "00000000-0000-0000-0000-000000000000",
+      // `wrangler d1 create relaxpump-web` — same id in env.admin.
+      "database_id": "859ab1d3-e950-42d3-b1ed-635aa84080dd",
       "migrations_dir": "migrations",
     },
   ],
@@ -40,7 +40,7 @@
         {
           "binding": "DB",
           "database_name": "relaxpump-web",
-          "database_id": "00000000-0000-0000-0000-000000000000",
+          "database_id": "859ab1d3-e950-42d3-b1ed-635aa84080dd",
           "migrations_dir": "migrations",
         },
       ],
