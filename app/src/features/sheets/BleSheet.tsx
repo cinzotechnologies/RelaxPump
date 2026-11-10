@@ -1,3 +1,4 @@
+import * as Updates from 'expo-updates';
 import { useEffect, useRef, useState } from 'react';
 import { View } from 'react-native';
 
@@ -232,6 +233,10 @@ export function BleSheet() {
             </View>
           ) : null}
           <PrimaryButton label={online ? 'Change Wi-Fi' : 'Set up device'} onPress={search} />
+          {/* Which app update is running, for support (e.g. "app 2f76f635"). */}
+          <Txt size={11} color={colors.faint} style={{ textAlign: 'center' }}>
+            app {Updates.updateId ? Updates.updateId.slice(0, 8) : 'built-in'}
+          </Txt>
         </Fade>
       ) : null}
 

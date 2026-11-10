@@ -28,6 +28,9 @@ export function Sheet({
 }) {
   const ref = useRef<BottomSheetModal>(null);
   const openRef = useRef(open);
+  // Set when the user starts closing (swipe/backdrop). The store is told right away, so a tap on
+  // the button during the close animation opens the sheet again instead of being lost.
+  const userClosing = useRef(false);
   const insets = useSafeAreaInsets();
   const reduce = useReducedMotion();
   const timing = useBottomSheetTimingConfigs({
@@ -57,9 +60,20 @@ export function Sheet({
   return (
     <BottomSheetModal
       ref={ref}
-      // Only report a close the user made (swipe/backdrop); switching to another sheet already set `open` false.
+      onAnimate={(_from, to) => {
+        if (to === -1 && openRef.current) {
+          userClosing.current = true;
+          onClose();
+        }
+      }}
+      // Only report a close the user made; switching to another sheet already set `open` false.
       onDismiss={() => {
-        if (openRef.current) onClose();
+        if (openRef.current) {
+          // Reopened while closing: show it again. Otherwise a close onAnimate missed.
+          if (userClosing.current) ref.current?.present();
+          else onClose();
+        }
+        userClosing.current = false;
       }}
       animationConfigs={timing}
       backdropComponent={backdrop}
