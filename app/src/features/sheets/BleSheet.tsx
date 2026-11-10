@@ -98,9 +98,13 @@ export function BleSheet() {
   };
 
   const pickDevice = async (c: FoundController) => {
+    // Which step failed tells old firmware (no shared PoP / no identity endpoint) from a bad link.
+    let stage: 'connect' | 'identity' | 'wifi' = 'connect';
     try {
       await provisioner().connect(c.name);
+      stage = 'identity';
       const identity = await provisioner().readIdentity();
+      stage = 'wifi';
       const list = await provisioner().scanWifi();
       if (!alive.current) return;
       setController(identity);
@@ -109,8 +113,15 @@ export function BleSheet() {
       setPass('');
       setErr('');
       setStep('nets');
-    } catch {
-      fail('Could not connect to the controller');
+    } catch (e) {
+      const detail = e instanceof Error ? ` (${e.message.slice(0, 90)})` : '';
+      fail(
+        stage === 'connect'
+          ? `Could not connect. Is the controller on firmware 2.2.0?${detail}`
+          : stage === 'identity'
+            ? `Controller firmware is too old: upload 2.2.0${detail}`
+            : `Could not list Wi-Fi networks${detail}`,
+      );
     }
   };
 
