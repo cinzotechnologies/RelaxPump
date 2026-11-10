@@ -3,13 +3,15 @@ import { useCallback } from 'react';
 
 import { useUi, type Route } from './ui';
 
-const PATH: Record<Route, '/' | '/auth' | '/home' | '/tanks' | '/usage' | '/account'> = {
+const PATH: Record<Route, '/' | '/auth' | '/home' | '/tanks' | '/usage' | '/account' | '/check' | '/setup'> = {
   welcome: '/',
   auth: '/auth',
   home: '/home',
   tanks: '/tanks',
   usage: '/usage',
   account: '/account',
+  check: '/check',
+  setup: '/setup',
 };
 
 /** Navigate like the design: one screen at a time, slide direction from screen rank. */

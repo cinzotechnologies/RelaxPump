@@ -1,19 +1,31 @@
-// In-memory backend that behaves like the design prototype's simulator (Main.dc.html `tick()`).
-// Used for UI work without Firebase or a controller: EXPO_PUBLIC_BACKEND=mock.
+// In-memory backend that behaves like a v2 controller (fill engine in miniature): 1–8 tanks,
+// optional sensor/valve per tank, PHE line, main tank, Auto, timer fills, pump check, installer PIN.
+// Used for UI work without Firebase or a controller (Expo Go, or EXPO_PUBLIC_BACKEND=mock).
+//
+// Pick the demo layout with EXPO_PUBLIC_MOCK_LAYOUT, e.g. "8", "5,phe", "3,main,ns2", "1,ns1":
+//   <tanks>[,phe][,main][,ns<n> = tank n has no sensor]. Default "4,phe,main,ns3".
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import { activeTank, pickLowest } from '@/logic/pump';
+import { pickLowest } from '@/logic/pump';
 import {
-  DEFAULT_CONFIG,
-  type DeviceCommand,
-  type DeviceConfig,
-  type DeviceEvent,
-  type DeviceInfo,
-  type DeviceState,
-  type Profile,
-  type SessionUser,
-  type UsageDay,
+  DEFAULT_LAYOUT,
+  DEFAULT_SEMI,
+  V2_PORTS,
+  autoCapable,
+  firstSource,
+  type LayoutConfig,
+  type Source,
+} from '@/model/layout';
+import type {
+  CheckRow,
+  DeviceCommand,
+  DeviceEvent,
+  DeviceInfo,
+  DeviceState,
+  Profile,
+  SessionUser,
+  UsageDay,
 } from '@/model/types';
 
 import { AuthError, ClaimError, type Backend, type Unsub } from './backend';
@@ -36,6 +48,35 @@ class Channel<T> {
 
 const DEMO_ID = 'RP-3F2A9C';
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
+const NAMES = ['Roof', 'Kitchen', 'Bathroom', 'Garden', 'Guest', 'Office', 'Store', 'Terrace'];
+const PCTS = [82, 46, 18, 64, 90, 35, 55, 27];
+const LITRES = [1000, 500, 500, 1000, 500, 1000, 1000, 500];
+
+/** Demo layouts for the simulator and the tests: "5,phe,main,ns3". */
+export function mockLayout(spec = '4,phe,main,ns3'): LayoutConfig {
+  const parts = spec.split(',').map((p) => p.trim());
+  const n = Math.max(1, Math.min(8, parseInt(parts[0], 10) || 4));
+  const ns = parts.find((p) => /^ns\d$/.test(p));
+  const noSensor = ns ? parseInt(ns.slice(2), 10) - 1 : -1;
+  const phe = parts.includes('phe');
+  const main = parts.includes('main');
+  return {
+    ...DEFAULT_LAYOUT,
+    semi: Array.from({ length: n }, (_, i) => ({
+      ...DEFAULT_SEMI,
+      name: NAMES[i],
+      litres: LITRES[i],
+      sensor: i !== noSensor,
+      valve: n > 1 || i !== noSensor,
+      fillMin: i === noSensor ? 10 : null,
+    })),
+    main: { ...DEFAULT_LAYOUT.main, enabled: main, sensor: main, litres: main ? 5000 : null },
+    phe: { ...DEFAULT_LAYOUT.phe, enabled: phe },
+    mode: phe ? 'auto' : 'pump',
+    low: 30,
+    high: 95,
+  };
+}
 
 /** Demo accounts survive app restarts (Expo Go has no Firebase; this is the simulator's own store). */
 const STORE_KEY = 'rp.mock.accounts.v1';
@@ -46,7 +87,11 @@ type Saved = {
   session?: string | null;
 };
 
-export function createMockBackend(): Backend {
+/** Seconds of simulator time per real tick: timer fills of 10 min end in about a minute. */
+const TICK_MS = 700;
+const TIMER_SPEED = 10;
+
+export function createMockBackend(spec = process.env.EXPO_PUBLIC_MOCK_LAYOUT): Backend {
   let user: SessionUser | null = null;
   const accounts = new Map<string, { password: string; uid: string }>([
     ['9876543210', { password: 'relax123', uid: 'demo' }],
@@ -75,48 +120,64 @@ export function createMockBackend(): Backend {
     AsyncStorage.setItem(STORE_KEY, JSON.stringify(s)).catch(() => {});
   };
 
-  const info: DeviceInfo = { name: 'RelaxPump Controller', fw: '1.0.0', maxTanks: 3, ownerUid: 'demo' };
-  const config: DeviceConfig = {
-    ...DEFAULT_CONFIG,
-    tanks: [
-      { emptyCm: 120, fullCm: 30, litres: 1000 },
-      { emptyCm: 120, fullCm: 30, litres: 500 },
-      { emptyCm: 120, fullCm: 30, litres: null },
-    ],
+  const info: DeviceInfo = {
+    name: 'RelaxPump Controller',
+    fw: '2.0.0',
+    board: 'v2',
+    maxTanks: 8,
+    ports: V2_PORTS,
+    ownerUid: 'demo',
   };
-  const levels = [75, 40, 90];
-  const state: DeviceState = {
+  let config: LayoutConfig = mockLayout(spec || undefined);
+  const levels = PCTS.slice();
+  let mainPct = 72;
+  let pin: string | null = null;
+  let pinOk = false;
+
+  // Live controller state
+  let src: Source | null = null;
+  let active = -1;
+  let timedLeft = 0; // seconds left on a timer fill
+  let runAuto = false;
+  let autoMode = true;
+  let msg = '';
+  const valves = new Array<boolean>(8).fill(false);
+  let check: { run: boolean; rows: CheckRow[] } | null = null;
+
+  const now = Date.now();
+  const events: DeviceEvent[] = [
+    { id: 'e3', type: 'full', tank: 0, ts: now - 10 * 60000 },
+    { id: 'e2', type: 'low', tank: 2, ts: now - 60 * 60000 },
+    { id: 'e1', type: 'pump_off', tank: 1, ts: new Date().setHours(6, 40, 0, 0), min: 25, auto: true },
+  ];
+  let evSeq = 4;
+  let runStart = Date.now();
+
+  const n = () => config.semi.length;
+  const snapshot = (): DeviceState => ({
     online: true,
     lastSeen: Date.now(),
     rssi: -55,
     ssid: 'Home_WiFi',
-    pump: true,
-    auto: true,
-    msg: '',
-    tanks: [
-      { pct: 75, valve: false, ok: true },
-      { pct: 40, valve: true, ok: true },
-      { pct: 90, valve: false, ok: true },
-    ],
-  };
-  const now = Date.now();
-  const events: DeviceEvent[] = [
-    { id: 'e3', type: 'full', tank: 2, ts: now - 10 * 60000 },
-    { id: 'e2', type: 'low', tank: 1, ts: now - 60 * 60000 },
-    { id: 'e1', type: 'pump_off', tank: 0, ts: new Date().setHours(6, 40, 0, 0), min: 25, auto: true },
-  ];
-  let evSeq = 4;
-  let pumpStart = Date.now();
+    pump: src === 'pump',
+    phe: src === 'phe',
+    auto: autoMode,
+    msg,
+    src,
+    active: active >= 0 ? active : null,
+    semi: config.semi.map((t, i) => ({
+      pct: t.sensor ? Math.round(levels[i]) : null,
+      valve: valves[i],
+      ok: true,
+    })),
+    main: config.main.enabled && config.main.sensor ? { pct: Math.round(mainPct), ok: true } : null,
+    detected: { s: Array.from({ length: 8 }, (_, i) => i < 6), main: true },
+    check,
+  });
 
   const auth = new Channel<SessionUser | null>(() => user);
-  const stateCh = new Channel<DeviceState | null>(() => ({
-    ...state,
-    tanks: state.tanks.map((t) => ({ ...t })),
-  }));
-  const configCh = new Channel<DeviceConfig | null>(() => ({
-    ...config,
-    tanks: config.tanks.map((t) => ({ ...t })),
-  }));
+  const stateCh = new Channel<DeviceState | null>(snapshot);
+  const configCh = new Channel<LayoutConfig | null>(() => JSON.parse(JSON.stringify(config)) as LayoutConfig);
   const infoCh = new Channel<DeviceInfo | null>(() => ({ ...info }));
   const eventsCh = new Channel<DeviceEvent[]>(() => events.slice(0, 30));
   const profileChs = new Map<string, Channel<Profile | null>>();
@@ -134,69 +195,149 @@ export function createMockBackend(): Backend {
     eventsCh.emit();
   };
 
-  const setPump = (on: boolean, auto: boolean) => {
-    if (on === state.pump) return;
-    state.pump = on;
-    const t = state.tanks.findIndex((x) => x.valve);
-    if (on) {
-      pumpStart = Date.now();
-      addEvent({ type: 'pump_on', tank: Math.max(0, t), auto });
-    } else {
-      addEvent({ type: 'pump_off', tank: Math.max(0, t), auto, min: (Date.now() - pumpStart) / 60000 });
+  const fillable = (i: number) => i >= 0 && i < n() && (n() === 1 || config.semi[i].valve);
+
+  const start = (i: number, s: Source, auto: boolean) => {
+    if (!fillable(i)) {
+      msg = `Tank ${i + 1} needs a valve.`;
+      return;
     }
+    if (s === 'pump' && config.mode === 'phe') s = 'phe';
+    if (s === 'phe' && (!config.phe.enabled || config.mode === 'pump')) s = 'pump';
+    if (s === 'pump' && config.main.enabled && config.main.sensor && mainPct < config.main.minPct) {
+      msg = 'Main tank is low. The pump will not start.';
+      return;
+    }
+    valves.fill(false);
+    if (config.semi[i].valve) valves[i] = true;
+    active = i;
+    src = s;
+    runAuto = auto;
+    runStart = Date.now();
+    timedLeft = config.semi[i].sensor ? 0 : (config.semi[i].fillMin ?? 10) * 60;
+    msg = '';
+    addEvent({ type: s === 'pump' ? 'pump_on' : 'phe_on', tank: i, auto });
   };
 
-  // Simulation loop (700 ms, like the prototype).
+  const stop = (stopped = true) => {
+    if (src && stopped)
+      addEvent({
+        type: src === 'pump' ? 'pump_off' : 'phe_off',
+        tank: Math.max(0, active),
+        auto: runAuto,
+        min: (Date.now() - runStart) / 60000,
+      });
+    src = null;
+    active = -1;
+    timedLeft = 0;
+    setTimeout(() => {
+      if (!src) valves.fill(false);
+      stateCh.emit();
+    }, 1200);
+  };
+
+  const autoPick = (except = -1) =>
+    pickLowest(
+      config.semi.map((t, i) => ({
+        pct: autoCapable(config, i) ? levels[i] : null,
+        ok: true,
+      })),
+      config.low,
+      except,
+    );
+
+  // Simulation loop.
   setInterval(() => {
-    const n = state.tanks.length;
-    const active = activeTank(state.pump, state.tanks);
-    for (let i = 0; i < n; i++) if (i !== active) levels[i] = Math.max(0, levels[i] - 0.12);
-    if (active >= 0) {
-      levels[active] = Math.min(config.high, levels[active] + 1.2);
-      if (levels[active] >= config.high) {
-        setPump(false, state.auto);
-        state.tanks.forEach((t) => (t.valve = false));
-        addEvent({ type: 'full', tank: active });
+    for (let i = 0; i < n(); i++) if (i !== active) levels[i] = Math.max(0, levels[i] - 0.08);
+    mainPct = Math.min(100, mainPct + (src === 'pump' ? -0.25 : 0.05));
+    if (check?.run) {
+      // handled by the pumpCheck timer
+    } else if (src && active >= 0) {
+      if (src === 'pump' && config.main.enabled && config.main.sensor && mainPct < config.main.minPct) {
+        msg = 'Main tank is low. Pump stopped.';
+        stop();
+      } else if (timedLeft > 0) {
+        timedLeft -= (TICK_MS / 1000) * TIMER_SPEED;
+        if (timedLeft <= 0) {
+          addEvent({ type: 'timeout', tank: active, min: config.semi[active].fillMin ?? 10 });
+          stop();
+        }
+      } else {
+        levels[active] = Math.min(100, levels[active] + 1.2);
+        if (levels[active] >= config.high) {
+          addEvent({ type: 'full', tank: active });
+          const next = runAuto && autoMode ? autoPick(active) : -1;
+          if (next >= 0) {
+            valves[next] = true;
+            const prev = active;
+            active = next;
+            setTimeout(() => {
+              valves[prev] = false;
+              stateCh.emit();
+            }, 1000);
+          } else stop();
+        }
       }
-    } else if (state.auto) {
-      const low = pickLowest(
-        state.tanks.map((t, i) => ({ ...t, pct: levels[i] })),
-        config.low,
-      );
-      if (low >= 0) {
-        state.tanks.forEach((t, i) => (t.valve = i === low));
-        setPump(true, true);
-      }
+    } else if (autoMode) {
+      const low = autoPick();
+      if (low >= 0) start(low, firstSource(config.mode, config.phe.enabled), true);
     }
-    state.tanks.forEach((t, i) => (t.pct = Math.round(levels[i])));
-    state.lastSeen = Date.now();
     stateCh.emit();
-  }, 700);
+  }, TICK_MS);
 
   const applyCommand = (cmd: Omit<DeviceCommand, 'ts'>) => {
-    state.msg = '';
-    if (cmd.auto !== undefined) state.auto = cmd.auto;
-    if (cmd.pump !== undefined) {
-      state.auto = false;
-      if (cmd.pump) {
-        if (state.tanks.some((t) => t.valve)) setPump(true, false);
-        else state.msg = 'Open a valve first';
-      } else {
-        setPump(false, false);
-        setTimeout(() => {
-          state.tanks.forEach((t) => (t.valve = false));
-          stateCh.emit();
-        }, 1200);
-      }
+    msg = '';
+    if (cmd.auto !== undefined) autoMode = cmd.auto;
+    const manual = cmd.pump !== undefined || cmd.phe !== undefined || !!cmd.valve || !!cmd.fill;
+    if (manual) autoMode = false;
+    if (cmd.pump === false || cmd.phe === false) stop();
+    if (cmd.pump || cmd.phe) {
+      const open = valves.findIndex((v, i) => v && i < n());
+      const i = open >= 0 ? open : n() === 1 ? 0 : -1;
+      if (i < 0) msg = 'Open a valve first';
+      else start(i, cmd.phe ? 'phe' : 'pump', false);
     }
     if (cmd.valve) {
       const { i, open } = cmd.valve;
-      state.auto = false;
-      const openCount = state.tanks.filter((t) => t.valve).length;
-      if (!open && state.pump && openCount === 1 && state.tanks[i]?.valve) {
-        setPump(false, false);
-        state.tanks.forEach((t) => (t.valve = false));
-      } else if (state.tanks[i]) state.tanks[i].valve = open;
+      if (!open && src && active === i) {
+        msg = 'Pump stopped first';
+        stop();
+      } else if (open && src && i !== active && fillable(i)) {
+        valves[i] = true;
+        const prev = active;
+        active = i;
+        setTimeout(() => (valves[prev] = false), 1000);
+      } else if (!src && config.semi[i]?.valve) valves[i] = open;
+    }
+    if (cmd.fill) {
+      if (src) stop(true);
+      start(cmd.fill.i, cmd.fill.src, false);
+    }
+    if (cmd.pumpCheck) {
+      const tanks = config.semi.flatMap((t, i) => (autoCapable(config, i) ? [i] : []));
+      if (src || !tanks.length) msg = src ? 'Busy. Stop filling first.' : 'No tank with a sensor to check.';
+      else {
+        check = { run: true, rows: [] };
+        setTimeout(() => {
+          check = {
+            run: false,
+            rows: tanks.map((i, k) => {
+              const pctMin = [4.2, 11, 0.9, 6, 3, 7, 5, 2][k % 8];
+              const litres = config.semi[i].litres;
+              return {
+                i,
+                skipped: false,
+                pctMin,
+                lpm: litres ? Math.round(((pctMin * litres) / 100) * 10) / 10 : null,
+                minToFull: Math.round(100 / pctMin),
+                slow: pctMin < 0.4 * 3,
+              };
+            }),
+          };
+          addEvent({ type: 'check_done', tank: -1 });
+          stateCh.emit();
+        }, 2600);
+      }
     }
     stateCh.emit();
   };
@@ -204,14 +345,19 @@ export function createMockBackend(): Backend {
   const usage = (days: string[]): UsageDay[] => {
     const use = [160, 120, 240, 180, 150, 210, 180];
     const pt = [55, 40, 80, 60, 50, 70, 25];
-    const share = [0.42, 0.33, 0.25];
+    const pheShare = config.phe.enabled ? 0.4 : 0;
+    const share = config.semi.map((_, i) => 1 / (i + 2));
+    const sum = share.reduce((a, b) => a + b, 0);
     return days.map((date, i) => ({
       date,
       litres: use[i % 7],
-      pumpMin: pt[i % 7],
-      perTank: share
-        .slice(0, config.tankCount)
-        .map((f) => ({ litres: use[i % 7] * f, pumpMin: pt[i % 7] * f })),
+      pumpMin: pt[i % 7] * (1 - pheShare),
+      pheLitres: use[i % 7] * pheShare,
+      perTank: share.map((f) => ({
+        litres: (use[i % 7] * f) / sum,
+        pumpMin: (pt[i % 7] * (1 - pheShare) * f) / sum,
+        pheLitres: (use[i % 7] * pheShare * f) / sum,
+      })),
     }));
   };
 
@@ -279,17 +425,37 @@ export function createMockBackend(): Backend {
     async sendCommand(_id, cmd) {
       applyCommand(cmd);
     },
-    async setConfig(_id, cfg) {
-      Object.assign(config, cfg);
-      while (state.tanks.length < cfg.tankCount) {
-        state.tanks.push({ pct: 50, valve: false, ok: true });
-        levels.push(50);
+    async patchConfig(_id, patch) {
+      const c = JSON.parse(JSON.stringify(config)) as Record<string, unknown>;
+      for (const [path, v] of Object.entries(patch)) {
+        const keys = path.split('/');
+        let o = c as Record<string, unknown>;
+        for (const k of keys.slice(0, -1)) o = o[k] as Record<string, unknown>;
+        o[keys[keys.length - 1]] = v;
       }
-      state.tanks.length = cfg.tankCount;
-      levels.length = cfg.tankCount;
-      if (!state.tanks.some((t) => t.valve)) state.pump = false;
+      config = c as unknown as LayoutConfig;
+      configCh.emit();
+    },
+    async pinStatus() {
+      await wait(300);
+      return pin ? 'set' : 'none';
+    },
+    async verifyPin(_id, p) {
+      await wait(400);
+      pinOk = pin === null || p === pin;
+      return pinOk;
+    },
+    async saveSetup(_id, cfg, newPin) {
+      await wait(600);
+      if (pin && !pinOk) throw new Error('PIN needed');
+      if (newPin) pin = newPin;
+      if (src && !fillable(active)) stop();
+      config = JSON.parse(JSON.stringify(cfg)) as LayoutConfig;
       configCh.emit();
       stateCh.emit();
+    },
+    async endSetup() {
+      pinOk = false;
     },
     async claimDevice(deviceId, code) {
       await wait(800);

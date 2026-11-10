@@ -55,7 +55,7 @@ function NavItem({
   );
 }
 
-/** Floating 5-item nav: Home, Tanks, raised centre Bluetooth button, Usage, + (tanks sheet). */
+/** Floating 5-item nav: Home, Tanks, raised centre Bluetooth button, Usage, Account (design v2). */
 export function BottomNav() {
   const route = useUi((st) => st.route);
   const sheet = useUi((st) => st.sheet);
@@ -144,7 +144,12 @@ export function BottomNav() {
         }}
       >
         <NavItem icon="stats" label="Usage" active={is('usage')} onPress={() => go('usage')} />
-        <NavItem icon="plus" label="Manage tanks" active={false} onPress={() => openSheet('tanks')} />
+        <NavItem
+          icon="user"
+          label="Account"
+          active={is('account') || is('check')}
+          onPress={() => go('account')}
+        />
       </View>
     </View>
   );

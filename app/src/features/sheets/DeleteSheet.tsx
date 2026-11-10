@@ -47,8 +47,8 @@ export function DeleteSheet() {
   return (
     <Sheet open={open} onClose={close} title="Delete account" gap={14}>
       <Txt size={13} color={colors.muted}>
-        This removes your account and data. Your controller is released so it can be set up again. This cannot
-        be undone.
+        This removes your account and data, and signs out every phone in your family that uses it. Your
+        controller is released so it can be set up again. This cannot be undone.
       </Txt>
       <TextField
         inSheet

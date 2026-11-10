@@ -1,9 +1,18 @@
 import { create } from 'zustand';
 
 export type SheetName = 'tanks' | 'pw' | 'notif' | 'ble' | 'forgot' | 'delete';
-export type Route = 'welcome' | 'auth' | 'home' | 'tanks' | 'usage' | 'account';
+export type Route = 'welcome' | 'auth' | 'home' | 'tanks' | 'usage' | 'account' | 'check' | 'setup';
 
-const RANK: Record<Route, number> = { welcome: 0, auth: 1, home: 2, tanks: 3, usage: 3, account: 3 };
+const RANK: Record<Route, number> = {
+  welcome: 0,
+  auth: 1,
+  home: 2,
+  tanks: 3,
+  usage: 3,
+  account: 3,
+  check: 4,
+  setup: 4,
+};
 
 type UiState = {
   route: Route;

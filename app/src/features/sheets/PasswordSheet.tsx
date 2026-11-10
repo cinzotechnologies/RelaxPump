@@ -82,6 +82,9 @@ export function PasswordSheet() {
           Forgot it? Get a new one
         </Txt>
       </Press>
+      <Txt size={12} color={colors.faint}>
+        {"Your family's other phones sign out. Sign in there with the new password."}
+      </Txt>
       <PrimaryButton label="Save" loading={busy} onPress={save} />
     </Sheet>
   );

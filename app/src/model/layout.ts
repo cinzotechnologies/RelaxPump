@@ -267,3 +267,9 @@ export function serializeConfig(c: LayoutConfig): Record<string, unknown> {
     maxRunMin: c.maxRunMin,
   };
 }
+
+/** May Auto (and the pump check) fill tank i? Sensor + valve, or the single tank with a sensor. */
+export function autoCapable(cfg: Pick<LayoutConfig, 'semi'>, i: number): boolean {
+  const t = cfg.semi[i];
+  return !!t && t.sensor && (t.valve || cfg.semi.length === 1);
+}

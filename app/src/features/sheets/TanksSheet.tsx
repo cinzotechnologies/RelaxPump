@@ -7,62 +7,21 @@ import { Sheet } from '@/components/Sheet';
 import { TextField } from '@/components/TextField';
 import { TANK_NAME_MAX } from '@/logic/format';
 import { useDevice } from '@/state/device';
+import { go } from '@/state/nav';
 import { useUi } from '@/state/ui';
-import { alpha, colors, s, Txt } from '@/theme';
-
-function Stepper({ label, glyph, onPress }: { label: string; glyph: string; onPress: () => void }) {
-  return (
-    <Press
-      onPress={onPress}
-      accessibilityLabel={label}
-      style={{
-        width: s(32),
-        height: s(32),
-        borderRadius: s(16),
-        borderWidth: 1,
-        borderColor: alpha(colors.glow, 0.22),
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}
-    >
-      <Txt size={16}>{glyph}</Txt>
-    </Press>
-  );
-}
+import { colors, s, Txt } from '@/theme';
 
 export function TanksSheet() {
   const open = useUi((st) => st.sheet === 'tanks');
   const close = useUi((st) => st.closeSheet);
   const config = useDevice((d) => d.config);
-  const setCount = useDevice((d) => d.setCount);
   const setLitres = useDevice((d) => d.setLitres);
   const setTankName = useDevice((d) => d.setTankName);
-  const n = config.tankCount;
 
   return (
-    <Sheet open={open} onClose={close} title="Your tanks">
-      <View
-        style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          paddingVertical: s(12),
-          paddingHorizontal: s(14),
-          borderRadius: s(16),
-          backgroundColor: colors.card,
-        }}
-      >
-        <Txt size={14}>Number of tanks</Txt>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: s(12) }}>
-          <Stepper label="Remove a tank" glyph="−" onPress={() => setCount(n - 1)} />
-          <Txt size={16} weight={600} tabular style={{ width: s(14), textAlign: 'center' }}>
-            {n}
-          </Txt>
-          <Stepper label="Add a tank" glyph="+" onPress={() => setCount(n + 1)} />
-        </View>
-      </View>
+    <Sheet open={open} onClose={close} title="Tank names and sizes">
       <View style={{ gap: s(6), maxHeight: s(300) }}>
-        {config.tanks.map((t, i) => (
+        {config.semi.map((t, i) => (
           <Fade
             key={i}
             style={{
@@ -125,8 +84,20 @@ export function TanksSheet() {
         ))}
       </View>
       <Txt size={12} color={colors.faint}>
-        Tap a name to change it. Tank size in litres is optional. One sensor and one valve per tank.
+        Tap a name to change it. Tank size in litres is optional.
       </Txt>
+      <Press
+        noScale
+        onPress={() => {
+          close();
+          go('setup');
+        }}
+        style={{ alignSelf: 'flex-start', paddingVertical: s(2) }}
+      >
+        <Txt size={13} color={colors.glow}>
+          Add or remove tanks: Installer setup
+        </Txt>
+      </Press>
       <PrimaryButton label="Done" onPress={close} />
     </Sheet>
   );

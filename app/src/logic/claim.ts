@@ -27,3 +27,10 @@ export function parseBoxQr(text: string): { deviceId: string; pop: string; code:
 export function bleNameFor(deviceId: string): string {
   return `RelaxPump-${deviceId.slice(-4)}`;
 }
+
+/** Installer PIN hash: SHA-256 hex of "<DEVICE_ID>:pin:<4 digits>" (checked by the rules). */
+export function pinHash(deviceId: string, pin: string): Promise<string> {
+  return Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, `${deviceId}:pin:${pin}`, {
+    encoding: Crypto.CryptoEncoding.HEX,
+  });
+}

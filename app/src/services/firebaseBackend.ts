@@ -29,8 +29,10 @@ import {
 import { getMessaging, getToken, onTokenRefresh } from '@react-native-firebase/messaging';
 import Constants from 'expo-constants';
 
-import { claimHash } from '@/logic/claim';
-import type { DeviceConfig, DeviceEvent, DeviceInfo, DeviceState, Profile, UsageDay } from '@/model/types';
+import { claimHash, pinHash } from '@/logic/claim';
+import { normalizeConfig, serializeConfig } from '@/model/layout';
+import { normalizeInfo, normalizeState, normalizeUsage } from '@/model/state';
+import type { DeviceEvent, Profile, UsageDay } from '@/model/types';
 
 import { AuthError, ClaimError, type Backend } from './backend';
 
@@ -62,50 +64,6 @@ function mapAuthError(e: unknown, signingUp = false): AuthError {
     default:
       return new AuthError('unknown', 'Something went wrong. Try again.');
   }
-}
-
-/** RTDB drops empty arrays and may return sparse arrays as objects. */
-function arr<T>(v: unknown): T[] {
-  if (Array.isArray(v)) return v.filter((x) => x != null) as T[];
-  if (v && typeof v === 'object') return Object.values(v as Record<string, T>);
-  return [];
-}
-
-function normState(v: Partial<DeviceState> | null): DeviceState | null {
-  if (!v) return null;
-  return {
-    online: !!v.online,
-    lastSeen: Number(v.lastSeen ?? 0),
-    rssi: Number(v.rssi ?? -100),
-    ssid: String(v.ssid ?? ''),
-    pump: !!v.pump,
-    auto: !!v.auto,
-    msg: String(v.msg ?? ''),
-    tanks: arr<DeviceState['tanks'][number]>(v.tanks).map((t) => ({
-      pct: Number(t?.pct ?? 0),
-      valve: !!t?.valve,
-      ok: !!t?.ok,
-    })),
-  };
-}
-
-function normConfig(v: Partial<DeviceConfig> | null): DeviceConfig | null {
-  if (!v) return null;
-  const n = Number(v.tankCount ?? 1);
-  const tanks = arr<DeviceConfig['tanks'][number]>(v.tanks).map((t) => ({
-    emptyCm: Number(t?.emptyCm ?? 120),
-    fullCm: Number(t?.fullCm ?? 30),
-    litres: t?.litres ? Number(t.litres) : null,
-    name: typeof t?.name === 'string' && t.name.trim() ? t.name : null,
-  }));
-  while (tanks.length < n) tanks.push({ emptyCm: 120, fullCm: 30, litres: null, name: null });
-  return {
-    tankCount: n,
-    low: Number(v.low ?? 20),
-    high: Number(v.high ?? 95),
-    maxRunMin: Number(v.maxRunMin ?? 30),
-    tanks: tanks.slice(0, n),
-  };
 }
 
 export function createFirebaseBackend(): Backend {
@@ -242,10 +200,11 @@ export function createFirebaseBackend(): Backend {
         cb,
       ),
 
-    onInfo: (id, cb) => watch(`devices/${id}/info`, (v) => (v as DeviceInfo | null) ?? null, cb),
-    onState: (id, cb) => watch(`devices/${id}/state`, (v) => normState(v as Partial<DeviceState> | null), cb),
+    onInfo: (id, cb) => watch(`devices/${id}/info`, (v) => normalizeInfo(v as Record<string, unknown> | null), cb),
+    onState: (id, cb) =>
+      watch(`devices/${id}/state`, (v) => normalizeState(v as Record<string, unknown> | null), cb),
     onConfig: (id, cb) =>
-      watch(`devices/${id}/config`, (v) => normConfig(v as Partial<DeviceConfig> | null), cb),
+      watch(`devices/${id}/config`, (v) => (v ? normalizeConfig(v as Record<string, unknown>) : null), cb),
 
     onEvents: (id, limit, cb) =>
       onValue(
@@ -263,17 +222,11 @@ export function createFirebaseBackend(): Backend {
 
     onUsage: (id, days, cb) => {
       const byDay = new Map<string, UsageDay>();
-      const emit = () => cb(days.map((d) => byDay.get(d) ?? { date: d, litres: 0, pumpMin: 0, perTank: [] }));
+      const emit = () => cb(days.map((d) => byDay.get(d) ?? normalizeUsage(d, null)));
       const unsubs = days.map((d) =>
         onValue(ref(db, `devices/${id}/usage/${d}`), (snap) => {
-          const v = snap.val() as Partial<UsageDay> | null;
-          if (v)
-            byDay.set(d, {
-              date: d,
-              litres: Number(v.litres ?? 0),
-              pumpMin: Number(v.pumpMin ?? 0),
-              perTank: arr<UsageDay['perTank'][number]>(v.perTank),
-            });
+          const v = snap.val() as Record<string, unknown> | null;
+          if (v) byDay.set(d, normalizeUsage(d, v));
           else byDay.delete(d);
           emit();
         }),
@@ -286,17 +239,45 @@ export function createFirebaseBackend(): Backend {
       await set(ref(db, `devices/${id}/cmd`), { ...cmd, ts: serverTimestamp() });
     },
 
-    async setConfig(id, cfg) {
-      await set(ref(db, `devices/${id}/config`), {
-        ...cfg,
-        tanks: cfg.tanks.map((t) => ({
-          emptyCm: t.emptyCm,
-          fullCm: t.fullCm,
-          litres: t.litres ?? 0,
-          // RTDB drops nulls, so an unnamed tank simply has no `name` key.
-          ...(t.name ? { name: t.name } : {}),
-        })),
-      });
+    async patchConfig(id, patch) {
+      // Each key is its own path: the rules allow these customer fields without the installer PIN.
+      await update(ref(db, `devices/${id}/config`), patch);
+    },
+
+    async pinStatus(id) {
+      const uid = auth.currentUser?.uid;
+      if (!uid) throw new Error('Sign in again');
+      // With no attempt on file, a pinCheck write only passes while no PIN is set.
+      await remove(ref(db, `pinAttempts/${id}/${uid}`));
+      try {
+        await set(ref(db, `pinChecks/${id}/${uid}`), serverTimestamp());
+        return 'none';
+      } catch {
+        return 'set';
+      }
+    },
+
+    async verifyPin(id, pin) {
+      const uid = auth.currentUser?.uid;
+      if (!uid) throw new Error('Sign in again');
+      await set(ref(db, `pinAttempts/${id}/${uid}`), { hash: await pinHash(id, pin), ts: serverTimestamp() });
+      try {
+        await set(ref(db, `pinChecks/${id}/${uid}`), serverTimestamp());
+        return true;
+      } catch {
+        return false;
+      }
+    },
+
+    async saveSetup(id, cfg, newPin) {
+      const all: Record<string, unknown> = { [`devices/${id}/config`]: serializeConfig(cfg) };
+      if (newPin) all[`installerPins/${id}`] = { hash: await pinHash(id, newPin) };
+      await update(ref(db), all);
+    },
+
+    async endSetup(id) {
+      const uid = auth.currentUser?.uid;
+      if (uid) await remove(ref(db, `pinAttempts/${id}/${uid}`)).catch(() => {});
     },
 
     async claimDevice(deviceId, code) {

@@ -57,7 +57,20 @@ export interface Backend {
   onUsage(deviceId: string, days: string[], cb: (v: UsageDay[]) => void): Unsub;
 
   sendCommand(deviceId: string, cmd: Omit<DeviceCommand, 'ts'>): Promise<void>;
-  setConfig(deviceId: string, cfg: DeviceConfig): Promise<void>;
+  /**
+   * Customer edits (no PIN): leaf paths under config, e.g. {"low": 30, "semi/2/name": "Roof"}.
+   * null removes the field.
+   */
+  patchConfig(deviceId: string, patch: Record<string, string | number | null>): Promise<void>;
+
+  /** Installer PIN: 'none' before the first setup, else 'set'. */
+  pinStatus(deviceId: string): Promise<'none' | 'set'>;
+  /** True when the PIN is right (the rules then allow layout writes for 15 minutes). */
+  verifyPin(deviceId: string, pin: string): Promise<boolean>;
+  /** Installer setup Save: the whole layout in one write (+ the PIN on the first setup). */
+  saveSetup(deviceId: string, cfg: DeviceConfig, newPin?: string): Promise<void>;
+  /** Forget the PIN entry on this account (wizard closed). */
+  endSetup(deviceId: string): Promise<void>;
 
   /** Link a controller to the signed-in user with the code from the box. */
   claimDevice(deviceId: string, claimCode: string): Promise<void>;

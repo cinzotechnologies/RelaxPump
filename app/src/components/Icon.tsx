@@ -25,7 +25,9 @@ export type IconName =
   | 'wifi'
   | 'trash'
   | 'help'
-  | 'shield';
+  | 'shield'
+  | 'user'
+  | 'alert';
 
 type Props = { name: IconName; size?: number; color: string; strokeWidth?: number };
 
@@ -107,6 +109,10 @@ function render(name: IconName, p: Record<string, unknown>, color: string) {
       return <Path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 16l-4-4 4-4M6 12h10" {...p} />;
     case 'warning':
       return <Path d="M12 3l10 18H2zM12 10v5M12 18v.5" {...p} />;
+    case 'user':
+      return <Path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8z M4 21a8 8 0 0 1 16 0" {...p} />;
+    case 'alert':
+      return <Path d="M12 7v6 M12 17h.01" {...p} />;
     case 'check':
       return <Path d="M5 12l5 5 9-10" {...p} />;
     case 'trash':

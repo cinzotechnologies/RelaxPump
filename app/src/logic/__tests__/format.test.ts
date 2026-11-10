@@ -22,7 +22,7 @@ describe('format', () => {
     const now = Date.now();
     expect(eventRow({ id: 'a', type: 'full', tank: 2, ts: now - 600000 }, 20, now)).toMatchObject({
       title: 'Tank 3 is full',
-      sub: 'Pump stopped · 10 min ago',
+      sub: 'Filling stopped · 10 min ago',
     });
     expect(eventRow({ id: 'b', type: 'low', tank: 1, ts: now - 3600000 }, 20, now).sub).toBe(
       'Below 20% · 1 h ago',

@@ -8,7 +8,7 @@ import { Press } from './Press';
 
 const ease = Easing.bezier(...motion.ease);
 
-/** Two-option segmented control with a sliding glow indicator (`.seg` .35 s). */
+/** Segmented control (2 or 3 options) with a sliding glow indicator (`.seg` .35 s). */
 export function Segmented<T extends string>({
   options,
   value,
@@ -16,18 +16,19 @@ export function Segmented<T extends string>({
   height = 40,
   style,
 }: {
-  options: readonly [{ key: T; label: string }, { key: T; label: string }];
+  options: readonly { key: T; label: string }[];
   value: T;
   onChange: (v: T) => void;
   height?: number;
   style?: StyleProp<ViewStyle>;
 }) {
   const [w, setW] = useState(0);
-  const idx = options[0].key === value ? 0 : 1;
+  const idx = Math.max(0, options.findIndex((o) => o.key === value));
+  const count = Math.max(1, options.length);
   const x = useSharedValue(0);
-  const half = (w - s(6)) / 2;
+  const half = (w - s(6)) / count;
   useEffect(() => {
-    x.value = withTiming(idx === 0 ? 0 : half, { duration: 350, easing: ease });
+    x.value = withTiming(idx * half, { duration: 350, easing: ease });
   }, [idx, half, x]);
   const ind = useAnimatedStyle(() => ({ transform: [{ translateX: x.value }] }));
   const h = s(height);

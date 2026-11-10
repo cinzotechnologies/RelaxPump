@@ -1,36 +1,54 @@
-import { DEFAULT_CONFIG } from '@/model/types';
+import { DEFAULT_LAYOUT, DEFAULT_SEMI, type LayoutConfig } from '@/model/layout';
 
-import {
-  activeTank,
-  decidePump,
-  decideValve,
-  parseLitres,
-  pickLowest,
-  resizeConfig,
-  setHigh,
-  setLow,
-} from '../pump';
+import { activeTank, decideStart, decideValve, parseLitres, pickLowest, setHigh, setLow } from '../pump';
 
-const v = (...open: boolean[]) => open.map((valve) => ({ valve }));
+const live = (o: { pump?: boolean; phe?: boolean; active?: number | null; valves?: boolean[] } = {}) => ({
+  pump: !!o.pump,
+  phe: !!o.phe,
+  active: o.active ?? null,
+  semi: (o.valves ?? [false, false, false]).map((valve) => ({ valve })),
+});
+const cfg = (n: number, o: Partial<LayoutConfig> = {}): LayoutConfig => ({
+  ...DEFAULT_LAYOUT,
+  semi: Array.from({ length: n }, () => ({ ...DEFAULT_SEMI })),
+  ...o,
+});
+const phe = { ...DEFAULT_LAYOUT.phe, enabled: true };
 
-describe('pump safety', () => {
-  it('will not start the pump with every valve closed', () => {
-    expect(decidePump(false, v(false, false, false))).toEqual({ ok: false, msg: 'Open a valve first' });
+describe('start / stop filling', () => {
+  it('needs an open valve with 2+ tanks', () => {
+    expect(decideStart(live(), cfg(3))).toEqual({ ok: false, msg: 'Open a valve first' });
   });
-  it('starts with a valve open and always allows stop', () => {
-    expect(decidePump(false, v(false, true))).toEqual({ ok: true, on: true });
-    expect(decidePump(true, v(false, false))).toEqual({ ok: true, on: false });
+  it('uses the pump in Pump only, PHE first in Auto with a PHE line', () => {
+    expect(decideStart(live({ valves: [false, true, false] }), cfg(3, { mode: 'pump' }))).toMatchObject({
+      ok: true,
+      cmd: { pump: true },
+    });
+    expect(decideStart(live({ valves: [true, false, false] }), cfg(3, { mode: 'auto', phe }))).toMatchObject({
+      ok: true,
+      cmd: { phe: true },
+    });
   });
-  it('stops the pump first when the last open valve is closed', () => {
-    expect(decideValve(1, true, v(false, true, false)).kind).toBe('stopPumpFirst');
+  it('fills the only tank directly', () => {
+    expect(decideStart(live({ valves: [false] }), cfg(1))).toMatchObject({ ok: true, cmd: { fill: { i: 0, src: 'pump' } } });
   });
-  it('toggles a valve otherwise', () => {
-    expect(decideValve(0, true, v(true, true))).toEqual({ kind: 'toggle', open: false });
-    expect(decideValve(2, false, v(false, false, false))).toEqual({ kind: 'toggle', open: true });
+  it('always allows stop', () => {
+    expect(decideStart(live({ phe: true, active: 0 }), cfg(3))).toMatchObject({ ok: true, cmd: { pump: false } });
   });
-  it('finds the tank being filled only while the pump runs', () => {
-    expect(activeTank(true, v(false, true))).toBe(1);
-    expect(activeTank(false, v(false, true))).toBe(-1);
+});
+
+describe('valves', () => {
+  it('stops the source first when the filling tank valve is closed', () => {
+    expect(decideValve(1, live({ pump: true, active: 1, valves: [false, true, false] })).kind).toBe('stopPumpFirst');
+  });
+  it('toggles otherwise', () => {
+    expect(decideValve(0, live({ pump: true, active: 1, valves: [true, true] }))).toEqual({ kind: 'toggle', open: false });
+    expect(decideValve(2, live())).toEqual({ kind: 'toggle', open: true });
+  });
+  it('knows the filling tank', () => {
+    expect(activeTank(live({ pump: true, valves: [false, true] }))).toBe(1);
+    expect(activeTank(live({ phe: true, active: 2 }))).toBe(2);
+    expect(activeTank(live({ valves: [false, true] }))).toBe(-1);
   });
 });
 
@@ -46,17 +64,6 @@ describe('thresholds', () => {
     expect(setHigh(110, 20)).toBe(100);
     expect(setHigh(30, 40)).toBe(50);
   });
-});
-
-describe('tank config', () => {
-  it('clamps the tank count to 1…maxTanks and keeps settings', () => {
-    const c = { ...DEFAULT_CONFIG, tanks: [{ emptyCm: 100, fullCm: 30, litres: 500 }], tankCount: 1 };
-    expect(resizeConfig(c, 0, 3).tankCount).toBe(1);
-    const grown = resizeConfig(c, 5, 3);
-    expect(grown.tankCount).toBe(3);
-    expect(grown.tanks).toHaveLength(3);
-    expect(grown.tanks[0].litres).toBe(500);
-  });
   it('parses optional litres', () => {
     expect(parseLitres('1,000')).toBe(1000);
     expect(parseLitres('')).toBeNull();
@@ -66,12 +73,12 @@ describe('tank config', () => {
 });
 
 describe('auto pick', () => {
-  const t = (pct: number, ok = true) => ({ pct, ok, valve: false });
+  const t = (pct: number | null, ok = true) => ({ pct, ok });
   it('picks the lowest tank below Start', () => {
     expect(pickLowest([t(50), t(10), t(15)], 20)).toBe(1);
   });
-  it('skips sensor errors, the excluded tank, and tanks above Start', () => {
-    expect(pickLowest([t(5, false), t(30), t(12)], 20)).toBe(2);
+  it('skips sensor errors, tanks without a level, the excluded tank, and full ones', () => {
+    expect(pickLowest([t(5, false), t(null), t(12)], 20)).toBe(2);
     expect(pickLowest([t(10), t(12)], 20, 0)).toBe(1);
     expect(pickLowest([t(50), t(60)], 20)).toBe(-1);
   });

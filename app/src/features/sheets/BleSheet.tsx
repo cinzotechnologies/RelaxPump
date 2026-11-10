@@ -14,6 +14,7 @@ import { backend } from '@/services';
 import { MOCK_DEVICE_ID } from '@/services/mockBackend';
 import { provisioner, type FoundController, type WifiNetwork } from '@/services/provisioning';
 import { useDevice } from '@/state/device';
+import { go } from '@/state/nav';
 import { useSession } from '@/state/session';
 import { useUi } from '@/state/ui';
 import { alpha, colors, s, Txt } from '@/theme';
@@ -49,7 +50,7 @@ export function BleSheet() {
   const myDevice = useSession((st) => st.deviceId);
   const hasDevice = !!myDevice;
   const state = useDevice((d) => d.state);
-  const tankCount = useDevice((d) => d.config.tankCount);
+  const tankCount = useDevice((d) => d.config.semi.length);
   const online = useDevice((d) => hasDevice && d.online);
 
   const [step, setStep] = useState<Step>('status');
@@ -139,6 +140,11 @@ export function BleSheet() {
     if (!alive.current) return;
     setStep('status');
     showToast('Wi-Fi saved · Controller online');
+    // A controller that was just linked: the installer sets up its tanks next.
+    if (box && box.deviceId !== myDevice) {
+      close();
+      go('setup');
+    }
   };
 
   return (

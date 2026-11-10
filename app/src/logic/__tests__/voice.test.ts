@@ -25,7 +25,7 @@ describe('pump on by voice', () => {
   });
   it('opens the emptiest working tank first', () => {
     expect(planPumpOn(false, [tank(60), tank(20, false, false), tank(35)])).toEqual({
-      kind: 'valveThenPump',
+      kind: 'fill',
       tank: 2,
     });
   });

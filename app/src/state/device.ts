@@ -1,16 +1,18 @@
 import { create } from 'zustand';
 
 import { eventRow, eventToast } from '@/logic/events';
-import { dayKey, parseTankName } from '@/logic/format';
-import { decidePump, decideValve, parseLitres, resizeConfig, setHigh, setLow } from '@/logic/pump';
+import { dayKey, parseTankName, tankName } from '@/logic/format';
+import { activeTank, decideStart, decideValve, parseLitres, setHigh, setLow } from '@/logic/pump';
 import { planPumpOn, type VoiceAction } from '@/logic/voice';
-import {
-  DEFAULT_CONFIG,
-  type DeviceConfig,
-  type DeviceEvent,
-  type DeviceInfo,
-  type DeviceState,
-  type UsageDay,
+import { DEFAULT_LAYOUT, effectiveMode, firstSource, type Mode } from '@/model/layout';
+import type {
+  DeviceCommand,
+  DeviceConfig,
+  DeviceEvent,
+  DeviceInfo,
+  DeviceState,
+  TestPort,
+  UsageDay,
 } from '@/model/types';
 import { backend } from '@/services';
 import type { Unsub } from '@/services/backend';
@@ -26,6 +28,8 @@ export function isOnline(state: DeviceState | null, now = Date.now()): boolean {
   return !!state?.online && now - (state.lastSeen ?? 0) < OFFLINE_AFTER_MS;
 }
 
+type Cmd = Omit<DeviceCommand, 'ts'>;
+
 type DeviceStore = {
   id: string | null;
   info: DeviceInfo | null;
@@ -35,29 +39,34 @@ type DeviceStore = {
   /** Server clock minus phone clock (ms). */
   serverOffset: number;
   config: DeviceConfig;
+  /** True once the controller's config has arrived (installer setup opens after a claim otherwise). */
+  configLoaded: boolean;
   events: DeviceEvent[];
   usage: UsageDay[];
   /** Newest event the user has seen in the Notifications sheet. */
   seenTs: number;
   attach: (id: string | null) => void;
   markSeen: () => void;
+  /** Home "Pump" tile and Tanks "Start/Stop filling". */
   togglePump: () => void;
   toggleValve: (i: number) => void;
+  /** Tank without a sensor: Fill for its timer / Stop. */
+  toggleTimedFill: (i: number) => void;
   setAuto: (on: boolean) => void;
+  setMode: (m: Mode) => void;
   /** Voice / shortcut command (relaxpump://do/...), no tap. */
   voice: (a: VoiceAction) => void;
   setLow: (v: number) => void;
   setHigh: (v: number) => void;
-  setCount: (n: number) => void;
   setLitres: (i: number, text: string) => void;
   setTankName: (i: number, text: string) => void;
+  runPumpCheck: () => void;
+  testPort: (port: TestPort) => void;
 };
 
-/** Time for the controller to apply the valve command before the pump command overwrites it. */
-const VOICE_PUMP_DELAY_MS = 4000;
-
 let unsubs: Unsub[] = [];
-let configTimer: ReturnType<typeof setTimeout> | undefined;
+let patchTimer: ReturnType<typeof setTimeout> | undefined;
+let pendingPatch: Record<string, string | number | null> = {};
 let onlineTimer: ReturnType<typeof setInterval> | undefined;
 
 function last7Days(): string[] {
@@ -82,7 +91,7 @@ export const useDevice = create<DeviceStore>((set, get) => {
     useUi.getState().showToast('Controller is offline');
     return false;
   };
-  const send = (cmd: Parameters<ReturnType<typeof backend>['sendCommand']>[1]) => {
+  const send = (cmd: Cmd) => {
     const id = get().id;
     if (id)
       backend()
@@ -94,18 +103,24 @@ export const useDevice = create<DeviceStore>((set, get) => {
     const s = get().state;
     if (s) set({ state: { ...s, ...p } });
   };
-  const writeConfig = (cfg: DeviceConfig, delay = 400) => {
+  /** Customer config edits: applied locally now, written as leaf paths (no PIN) after a pause. */
+  const writePatch = (cfg: DeviceConfig, p: Record<string, string | number | null>, delay = 400) => {
     set({ config: cfg });
-    clearTimeout(configTimer);
-    configTimer = setTimeout(() => {
-      configTimer = undefined;
+    pendingPatch = { ...pendingPatch, ...p };
+    clearTimeout(patchTimer);
+    patchTimer = setTimeout(() => {
+      patchTimer = undefined;
       const id = get().id;
+      const body = pendingPatch;
+      pendingPatch = {};
       if (id)
         backend()
-          .setConfig(id, cfg)
+          .patchConfig(id, body)
           .catch(() => useUi.getState().showToast('Could not save'));
     }, delay);
   };
+  const names = () => get().config.semi.map((t) => t.name);
+  const noSensor = () => get().config.semi.map((t) => !t.sensor);
 
   return {
     id: null,
@@ -113,7 +128,8 @@ export const useDevice = create<DeviceStore>((set, get) => {
     state: null,
     online: false,
     serverOffset: 0,
-    config: DEFAULT_CONFIG,
+    config: DEFAULT_LAYOUT,
+    configLoaded: false,
     events: [],
     usage: [],
     seenTs: 0,
@@ -123,7 +139,16 @@ export const useDevice = create<DeviceStore>((set, get) => {
       unsubs = [];
       clearInterval(onlineTimer);
       onlineTimer = undefined;
-      set({ id, info: null, state: null, online: false, config: DEFAULT_CONFIG, events: [], usage: [] });
+      set({
+        id,
+        info: null,
+        state: null,
+        online: false,
+        config: DEFAULT_LAYOUT,
+        configLoaded: false,
+        events: [],
+        usage: [],
+      });
       if (!id) return;
       const b = backend();
       const since = Date.now();
@@ -140,22 +165,23 @@ export const useDevice = create<DeviceStore>((set, get) => {
         }),
         b.onConfig(id, (config) => {
           // Don't clobber a pending local edit (slider drag) with an older snapshot.
-          if (config && !configTimer) set({ config });
+          if (config && !patchTimer) set({ config, configLoaded: true });
+          else if (!config) set({ configLoaded: true });
         }),
         b.onEvents(id, 30, (events) => {
           const prevTop = get().events[0]?.ts ?? since;
           set({ events });
           const fresh = events.filter((e) => e.ts > prevTop && e.ts > since);
-          const names = get().config.tanks.map((t) => t.name);
-          const text = fresh[0] && eventToast(fresh[0], names);
+          const e = fresh[0];
+          const text = e && eventToast(e, names(), noSensor());
           if (text) useUi.getState().showToast(text);
           // Notify for everything the controller did by itself (auto start/stop, full, low, faults);
-          // skip pump on/off the user just tapped. Real controllers only: the simulator would
+          // skip on/off the user just tapped. Real controllers only: the simulator would
           // fire one every minute.
-          const e = fresh[0];
-          const manualPump = !!e && (e.type === 'pump_on' || e.type === 'pump_off') && !e.auto;
-          if (e && b.kind !== 'mock' && !manualPump) {
-            const row = eventRow(fresh[0], get().config.low, Date.now(), names);
+          const manual =
+            !!e && ['pump_on', 'pump_off', 'phe_on', 'phe_off'].includes(e.type) && !e.auto;
+          if (e && b.kind !== 'mock' && !manual) {
+            const row = eventRow(e, get().config.low, Date.now(), names(), noSensor());
             void notify(row.title, row.sub);
           }
         }),
@@ -163,34 +189,53 @@ export const useDevice = create<DeviceStore>((set, get) => {
       );
     },
     markSeen: () => set({ seenTs: get().events[0]?.ts ?? Date.now() }),
+
     togglePump: () => {
       const s = get().state;
       if (!s || !reachable()) return;
-      const d = decidePump(s.pump, s.tanks);
+      const d = decideStart(s, get().config);
       const ui = useUi.getState();
       if (!d.ok) {
         ui.setMsg(d.msg);
         return;
       }
       ui.setMsg('');
-      patch({ pump: d.on, auto: false });
-      ui.showToast(d.on ? 'Pump on' : 'Pump off');
-      send({ pump: d.on });
+      const stopping = s.pump || s.phe;
+      if (stopping) patch({ pump: false, phe: false, auto: false });
+      else if (d.cmd.phe) patch({ phe: true, src: 'phe', auto: false });
+      else patch({ pump: true, src: 'pump', auto: false });
+      ui.showToast(d.label);
+      send(d.cmd);
     },
     toggleValve: (i) => {
       const s = get().state;
       if (!s || !reachable()) return;
-      const d = decideValve(i, s.pump, s.tanks);
+      const d = decideValve(i, s);
       const ui = useUi.getState();
       if (d.kind === 'stopPumpFirst') {
         ui.setMsg(d.msg);
-        patch({ pump: false, auto: false });
-        send({ pump: false });
+        patch({ pump: false, phe: false, auto: false });
+        send({ valve: { i, open: false } });
         return;
       }
       ui.setMsg('');
-      patch({ auto: false, tanks: s.tanks.map((t, j) => (j === i ? { ...t, valve: d.open } : t)) });
+      patch({ auto: false, semi: s.semi.map((t, j) => (j === i ? { ...t, valve: d.open } : t)) });
       send({ valve: { i, open: d.open } });
+    },
+    toggleTimedFill: (i) => {
+      const s = get().state;
+      if (!s || !reachable()) return;
+      const c = get().config;
+      const running = (s.pump || s.phe) && activeTank(s) === i;
+      if (running) {
+        patch({ pump: false, phe: false });
+        send({ pump: false });
+        return;
+      }
+      const src = firstSource(c.mode, c.phe.enabled);
+      patch({ auto: false, active: i, src, pump: src === 'pump', phe: src === 'phe' });
+      useUi.getState().showToast(`Filling ${tankName(names(), i)} · ${c.semi[i]?.fillMin ?? 10} min`);
+      send({ fill: { i, src } });
     },
     setAuto: (on) => {
       if (!reachable()) return;
@@ -198,6 +243,11 @@ export const useDevice = create<DeviceStore>((set, get) => {
       patch({ auto: on });
       useUi.getState().showToast(on ? 'Auto on' : 'Auto off');
       send({ auto: on });
+    },
+    setMode: (m) => {
+      const c = get().config;
+      const mode = effectiveMode(m, c.phe.enabled);
+      if (mode !== c.mode) writePatch({ ...c, mode }, { mode }, 0);
     },
     voice: (a) => {
       const s = get().state;
@@ -207,62 +257,64 @@ export const useDevice = create<DeviceStore>((set, get) => {
         get().setAuto(a === 'auto-on');
         return;
       }
+      const filling = s.pump || s.phe;
       if (a === 'pump-off') {
-        if (!s.pump) {
+        if (!filling) {
           ui.showToast('Pump is already off');
           return;
         }
-        patch({ pump: false, auto: false });
+        patch({ pump: false, phe: false, auto: false });
         ui.showToast('Pump off');
         send({ pump: false });
         return;
       }
-      const plan = planPumpOn(s.pump, s.tanks);
+      const c = get().config;
+      const plan = planPumpOn(
+        filling,
+        s.semi,
+        c.semi.map((t) => t.valve || c.semi.length === 1),
+      );
       if (plan.kind === 'already') ui.showToast('Pump is already on');
       else if (plan.kind === 'full') ui.showToast('All tanks are full');
-      else if (plan.kind === 'pump') {
-        patch({ pump: true, auto: false });
-        ui.showToast('Pump on');
-        send({ pump: true });
-      } else {
-        // the controller applies one command at a time: open the valve, then start the pump
-        const i = plan.tank;
-        const name = get().config.tanks[i]?.name?.trim() || `Tank ${i + 1}`;
-        patch({ auto: false, tanks: s.tanks.map((t, j) => (j === i ? { ...t, valve: true } : t)) });
-        ui.showToast(`Filling ${name}`);
-        send({ valve: { i, open: true } });
-        setTimeout(() => {
-          if (!get().online) return;
-          patch({ pump: true });
-          send({ pump: true });
-        }, VOICE_PUMP_DELAY_MS);
+      else if (plan.kind === 'pump') get().togglePump();
+      else {
+        const src = firstSource(c.mode, c.phe.enabled);
+        patch({ auto: false, active: plan.tank, src });
+        ui.showToast(`Filling ${tankName(names(), plan.tank)}`);
+        send({ fill: { i: plan.tank, src } });
       }
     },
     setLow: (v) => {
       const c = get().config;
       const low = setLow(v, c.high);
-      if (low !== c.low) writeConfig({ ...c, low });
+      if (low !== c.low) writePatch({ ...c, low }, { low });
     },
     setHigh: (v) => {
       const c = get().config;
       const high = setHigh(v, c.low);
-      if (high !== c.high) writeConfig({ ...c, high });
-    },
-    setCount: (n) => {
-      const c = get().config;
-      const max = get().info?.maxTanks ?? 3;
-      const next = resizeConfig(c, n, max);
-      if (next.tankCount !== c.tankCount) writeConfig(next, 0);
+      if (high !== c.high) writePatch({ ...c, high }, { high });
     },
     setLitres: (i, text) => {
       const c = get().config;
-      const tanks = c.tanks.map((t, j) => (j === i ? { ...t, litres: parseLitres(text) } : t));
-      writeConfig({ ...c, tanks }, 800);
+      const litres = parseLitres(text);
+      const semi = c.semi.map((t, j) => (j === i ? { ...t, litres } : t));
+      writePatch({ ...c, semi }, { [`semi/${i}/litres`]: litres }, 800);
     },
     setTankName: (i, text) => {
       const c = get().config;
-      const tanks = c.tanks.map((t, j) => (j === i ? { ...t, name: parseTankName(text) } : t));
-      writeConfig({ ...c, tanks }, 800);
+      const name = parseTankName(text);
+      const semi = c.semi.map((t, j) => (j === i ? { ...t, name } : t));
+      writePatch({ ...c, semi }, { [`semi/${i}/name`]: name }, 800);
+    },
+    runPumpCheck: () => {
+      const s = get().state;
+      if (!s || !reachable()) return;
+      patch({ check: { run: true, rows: [] } });
+      send({ pumpCheck: true });
+    },
+    testPort: (port) => {
+      if (!reachable()) return;
+      send({ test: { port, ms: port === 'PUMP' ? 2000 : 1000 } });
     },
   };
 });

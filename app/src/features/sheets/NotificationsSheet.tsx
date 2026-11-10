@@ -12,11 +12,14 @@ import { alpha, colors, s, Txt } from '@/theme';
 function iconFor(e: DeviceEvent): { icon: IconName; color: string; bg: string } {
   switch (e.type) {
     case 'full':
+    case 'check_done':
       return { icon: 'check', color: colors.glow, bg: alpha(colors.glow, 0.12) };
     case 'low':
       return { icon: 'down', color: colors.warning, bg: alpha(colors.warning, 0.14) };
     case 'pump_on':
     case 'pump_off':
+    case 'phe_on':
+    case 'phe_off':
       return { icon: 'power', color: colors.glow, bg: alpha(colors.glow, 0.12) };
     default:
       return { icon: 'warning', color: colors.warning, bg: alpha(colors.warning, 0.14) };
@@ -28,7 +31,7 @@ export function NotificationsSheet() {
   const close = useUi((st) => st.closeSheet);
   const events = useDevice((d) => d.events);
   const low = useDevice((d) => d.config.low);
-  const tanks = useDevice((d) => d.config.tanks);
+  const tanks = useDevice((d) => d.config.semi);
 
   return (
     <Sheet open={open} onClose={close} title="Notifications" gap={10}>
@@ -43,6 +46,7 @@ export function NotificationsSheet() {
           low,
           undefined,
           tanks.map((t) => t.name),
+          tanks.map((t) => !t.sensor),
         );
         const t = iconFor(e);
         return (
