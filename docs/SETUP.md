@@ -51,8 +51,8 @@ Expo Go has no Firebase or Bluetooth code, so the app runs on a built-in simulat
 
 - Sign in with **98765 43210** / **relax123** (demo home), or sign up a new account
   and finish the Bluetooth setup (simulated) to get a demo controller.
-- Demo layout: `EXPO_PUBLIC_MOCK_LAYOUT` = `<tanks>[,phe][,main][,ns<n>]`, e.g. `8`, `5,phe`,
-  `1,ns1` (one tank without a sensor). Default `4,phe,main,ns3`.
+- Demo layout: `EXPO_PUBLIC_MOCK_LAYOUT` = `<tanks 1–5>[,main]`, e.g. `1`, `2`, `5,main`.
+  Default `3,main`.
 - Installer setup in the simulator: the first time you choose a PIN; after that, enter it.
 
 ## 4. Real app on an Android phone — development build
@@ -79,18 +79,19 @@ Want a standalone APK to share? `eas build --profile preview --platform android`
 
 ```bash
 cd firebase
-npm run new-device                 # board v1 (3 tanks)
-npm run new-device -- --board v2   # PCB v2 (8 tanks, PHE, MAIN); --id RP-3F2A9C to pick the id
+npm run new-device                 # relay module (board 1, active LOW)
+npm run new-device -- --board v2   # PCB v2 (MOSFETs, active HIGH); --id RP-3F2A9C to pick the id
 ```
 
-It creates the device login, the claim hash and a default v2 config (3 tanks, sensor + valve), and writes
+Both boards take 1–5 tanks + MAIN with the same pins (`docs/wiring.md`). It creates the device login,
+the claim hash and a default config (3 tanks, no main sensor), and writes
 `firebase/out/<ID>/` (git-ignored): `secrets.h` (flash with it), `qr.png` (print on the box),
 `label.txt`, `device.json`.
 
 ### Test without an ESP32
 
 ```bash
-npm run fake-device -- --id RP-XXXXXX          # --fast fills 10x quicker (simple: every tank sensor + valve)
+npm run fake-device -- --id RP-XXXXXX          # --fast fills 10x quicker (1–5 tanks, main tank)
 ```
 
 Sign up in the app (development build), then link the fake controller to that phone number:
@@ -105,14 +106,15 @@ With a real board, the app links it itself: Bluetooth setup → scan `qr.png`.
 
 Copy `firebase/out/<ID>/secrets.h` to `firmware/include/secrets.h` (it holds `RP_BOARD 1|2`), then in
 VS Code: PlatformIO → Upload, Monitor at 115200 (type `h` for the bench commands, see
-`docs/wiring.md`). Wrong board version? Type `board 1` or `board 2` in the monitor.
-Relay test: `firmware/tools/ValveTest`.
+`docs/wiring.md`). Wrong output polarity? Type `board 1` (relays) or `board 2` (PCB) in the monitor.
+Relay test: `firmware/tools/ValveTest` (V1–V5).
 
 Fill-logic tests on the PC (no board): `sh firmware/scripts/test-native.sh` (needs any C++17
 compiler: g++, clang++ or `zig c++` via `CXX="zig c++"`), or `pio test -e native` with gcc.
 
-A controller with old firmware keeps its `tankCount`/`tanks` config; the new firmware converts it
-to the v2 layout on first connect (all tanks with sensor + valve, mode Pump only).
+Old configs (`tankCount` + `tanks`, no `main`) already fit v2: nothing to convert. A controller
+still on the first firmware reports `maxTanks: 3`, and the rules then refuse more than 3 tanks —
+flash v2 (fw 2.1.0) to use T4, T5 and MAIN.
 
 ## 7. First-time setup (customer)
 
@@ -122,16 +124,19 @@ to the v2 layout on first connect (all tanks with sensor + valve, mode Pump only
 4. Pick the home Wi-Fi, type its password → **Connect**.
 5. The controller goes online and is linked to the account, and **Installer setup** opens:
    1. Choose a 4-digit installer PIN (enter it twice). Keep it; family members need no PIN.
-   2. Number of semi tanks (tank *n* uses S*n* and V*n*).
-   3. Per tank: name, size, Sensor / Valve. With 2+ tanks every tank needs a valve. A tank without a
-      sensor gets a fill time (and needs an overflow pipe).
-   4. Main tank sensor (stop the pump below x %) and PHE line, if fitted (board v2).
-   5. Check wiring: sensors show **Found ✓** or **No answer**; tap **Test** on each valve, PHE and
-      the pump and listen for the click.
-   6. Water source: Auto (PHE first, then pump) / PHE only / Pump only → **Save**.
+   2. Number of semi tanks, 1–5 (tank *n* uses port T*n*: sensor + valve V*n*). One tank = sensor
+      only, the pump fills it directly.
+   3. Per tank: name, size, height above the main tank.
+   4. Main tank sensor (port MAIN): on/off and "stop the pump below x %".
+   5. Check wiring: sensors show **Found ✓** or **No answer — check cable**; tap **Test** on each
+      valve and the pump and listen for the click.
+   6. Summary (tanks, sensors, valves, main, relays used x of 6) → **Save**. The app waits for the
+      controller to confirm the new layout.
 
-Later: **Account → Installer setup** (PIN) to add a tank or change the wiring. Customers can change
-tank names and sizes, Start/Stop levels and the water source without the PIN.
+Later: **Account → Installer setup** (PIN) to change the wiring. **Add a tank:** buy a Tank Kit
+(sensor + valve), wire it to the next free port, then Installer setup → tank count + 1 (from 1 to 2
+tanks, tank 1 needs a valve too). Customers can change tank names, sizes and Start/Stop levels
+without the PIN.
 **Account → Pump check** measures each tank's fill speed (L/min, full in…, Slow warning).
 
 The whole family can use one account: same phone number and password on every phone. Changing the
@@ -143,6 +148,6 @@ Changing router or password later: centre Bluetooth button → **Change Wi-Fi** 
 
 - Forgot password (no SMS yet): `npm run reset-password -- --phone 9876543210 --password newpass123`.
 - Forgot installer PIN: `npm run reset-pin -- --id RP-XXXXXX` (the next setup chooses a new PIN).
-- Rules changed (v2): run `npm run deploy:rules` in `firebase/` before using the v2 app with the
-  real database, or Installer setup / customer edits cannot save.
+- Rules changed (v2, 1–5 tanks): run `npm run deploy:rules` in `firebase/` before using the v2 app
+  with the real database, or Installer setup / customer edits cannot save.
 - WhatsApp support link: `app/app.config.ts` → `extra.SUPPORT_WHATSAPP`.

@@ -73,8 +73,8 @@ not change the HP, because tanks fill one at a time.
 info:   { name, fw, maxTanks: 5, board: 'v1'|'v2', ownerUid }
 config: { tankCount: 1..5, low, high, maxRunMin,
           tanks: [ { name, litres|null, emptyCm, fullCm, heightFt|null } ],   // length = tankCount
-          main:  { enabled: bool, litres|null, emptyCm, fullCm, minPct },     // optional
-          installerPinHash }                                                  // sha256 of the PIN
+          main:  { enabled: bool, litres|null, emptyCm, fullCm, minPct } }    // optional
+installerPins/{id}: { hash }        // sha256 of the PIN — see the note below
 state:  { online, lastSeen, rssi, ssid, pump, auto, msg, active: int|null,
           tanks: [ { pct, valve, ok } ],
           main:  { pct, ok } | null,
@@ -88,7 +88,10 @@ usage:  unchanged (perTank up to 5)
 - Valve per tank is **implied**: `tankCount ≥ 2` → every tank has a valve; `tankCount == 1` → none.
 - Existing devices: `tankCount` ≤ 3 already fits; add missing fields with defaults.
 - Rules (`firebase/database.rules.json`): `tankCount` 1–5, `tanks` length = `tankCount`,
-  `main.minPct` 5–40, `installerPinHash` only writable by the owner. Update the emulator tests.
+  `main.minPct` 5–40, the installer PIN hash only writable by the owner. Update the emulator tests.
+- **Built (R1):** the PIN hash lives in `installerPins/{id}` (never readable), not in
+  `config.installerPinHash`: the owner can read all of `devices/{id}`, and a readable 4-digit hash
+  is cracked in seconds. Details: `docs/data-model.md` → "Installer PIN".
 
 ---
 
