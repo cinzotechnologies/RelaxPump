@@ -8,16 +8,15 @@ import { Icon } from '@/components/Icon';
 import { Press } from '@/components/Press';
 import { RangeSlider } from '@/components/RangeSlider';
 import { Screen } from '@/components/Screen';
-import { Segmented } from '@/components/Segmented';
 import { LevelBar } from '@/components/SourceChip';
 import { Toggle } from '@/components/Toggle';
 import { WaveFill } from '@/components/WaveFill';
 import { fmtNum, litresShort } from '@/logic/format';
 import { HIGH_MAX, HIGH_MIN, LOW_MAX, LOW_MIN, STEP } from '@/logic/pump';
-import { effectiveMode, modeOptions } from '@/model/layout';
+import { MAX_TANKS } from '@/model/layout';
 import { useDevice } from '@/state/device';
 import { go } from '@/state/nav';
-import { useTanks, type TankView } from '@/state/selectors';
+import { mainView, useTanks, type TankView } from '@/state/selectors';
 import { useUi } from '@/state/ui';
 import { alpha, colors, s, Txt } from '@/theme';
 
@@ -54,14 +53,11 @@ function TankCard({
   showValve: boolean;
 }) {
   const toggleValve = useDevice((d) => d.toggleValve);
-  const toggleTimedFill = useDevice((d) => d.toggleTimedFill);
   const pct = t.pct ?? 0;
-  const isLow = t.hasSensor && pct < low;
+  const isLow = t.pct !== null && pct < low;
   const tint = isLow ? colors.warningLight : colors.glow;
+  // Tall gauges for 1–3 tanks, short for 4–5.
   const gaugeH = s(big ? 170 : 120);
-  // Tank without a sensor: dashed gauge, "No sensor", and a timer Fill button instead of the valve.
-  const timerBtn = !t.hasSensor;
-  const btnOn = timerBtn ? t.active : t.valve;
   return (
     <View
       style={{
@@ -76,93 +72,70 @@ function TankCard({
         boxShadow: t.active ? `0 0 ${s(20)}px ${alpha(colors.glow, 0.15)}` : undefined,
       }}
     >
-      {t.hasSensor ? (
-        <View
+      <View
+        style={{
+          width: '100%',
+          height: gaugeH,
+          borderRadius: s(16),
+          backgroundColor: alpha(colors.glow, 0.06),
+          overflow: 'hidden',
+        }}
+      >
+        <WaveFill
+          pct={t.ok ? pct : 0}
           style={{
-            width: '100%',
-            height: gaugeH,
-            borderRadius: s(16),
-            backgroundColor: alpha(colors.glow, 0.06),
-            overflow: 'hidden',
+            backgroundImage: isLow
+              ? 'linear-gradient(180deg, #FCD34D, #D97706)'
+              : 'linear-gradient(180deg, #7FE3EC, #037788)',
+            boxShadow: t.active ? `0 0 ${s(20)}px ${alpha(colors.glow, 0.55)}` : undefined,
           }}
+          back={{ height: s(9), top: -s(9), color: tint, opacity: 0.45 }}
+          front={{ height: s(8), top: -s(7), color: tint }}
+        />
+        <DashLine pct={high} color={alpha(colors.text, 0.75)} />
+        <DashLine pct={low} color={alpha(colors.warning, 0.85)} />
+        <Txt
+          size={16}
+          weight={700}
+          tabular
+          style={{ position: 'absolute', left: 0, right: 0, top: s(10), textAlign: 'center' }}
         >
-          <WaveFill
-            pct={t.ok ? pct : 0}
-            style={{
-              backgroundImage: isLow
-                ? 'linear-gradient(180deg, #FCD34D, #D97706)'
-                : 'linear-gradient(180deg, #7FE3EC, #037788)',
-              boxShadow: t.active ? `0 0 ${s(20)}px ${alpha(colors.glow, 0.55)}` : undefined,
-            }}
-            back={{ height: s(9), top: -s(9), color: tint, opacity: 0.45 }}
-            front={{ height: s(8), top: -s(7), color: tint }}
-          />
-          <DashLine pct={high} color={alpha(colors.text, 0.75)} />
-          <DashLine pct={low} color={alpha(colors.warning, 0.85)} />
-          <Txt
-            size={16}
-            weight={700}
-            tabular
-            style={{ position: 'absolute', left: 0, right: 0, top: s(10), textAlign: 'center' }}
-          >
-            {t.pct !== null ? `${t.pct}%` : '--'}
-          </Txt>
-        </View>
-      ) : (
-        <View
-          style={{
-            width: '100%',
-            height: gaugeH,
-            borderRadius: s(16),
-            borderWidth: 1.5,
-            borderStyle: 'dashed',
-            borderColor: alpha(colors.muted, 0.5),
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <Icon name="alert" size={18} color={colors.muted} />
-        </View>
-      )}
+          {t.pct !== null ? `${t.pct}%` : '--'}
+        </Txt>
+      </View>
       <View style={{ alignItems: 'center', gap: 1 }}>
         <Txt size={12} color={colors.muted} numberOfLines={1} style={{ maxWidth: s(96) }}>
           {t.name}
         </Txt>
-        {!t.hasSensor ? (
-          <Txt size={11} weight={600} color={colors.muted}>
-            No sensor
-          </Txt>
-        ) : t.litres && t.pct !== null ? (
+        {t.litres && t.pct !== null ? (
           <Txt size={11} weight={600}>
             {litresShort(t.pct, t.litres)}
           </Txt>
         ) : null}
-        {t.hasSensor && !t.ok ? (
+        {!t.ok ? (
           <Txt size={11} color={colors.dangerText}>
             Sensor error
           </Txt>
         ) : null}
       </View>
-      {timerBtn || (showValve && t.hasValve) ? (
+      {showValve && t.hasValve ? (
         <Press
           haptic
-          onPress={() => (timerBtn ? toggleTimedFill(t.i) : toggleValve(t.i))}
-          accessibilityLabel={
-            timerBtn ? (btnOn ? `Stop ${t.name}` : `Fill ${t.name}`) : `Valve ${t.i + 1} ${t.valve ? 'open' : 'closed'}`
-          }
-          accessibilityRole={timerBtn ? 'button' : 'switch'}
-          accessibilityState={timerBtn ? undefined : { checked: t.valve }}
+          onPress={() => toggleValve(t.i)}
+          accessibilityLabel={`Valve ${t.i + 1} ${t.valve ? 'open' : 'closed'}`}
+          accessibilityRole="switch"
+          accessibilityState={{ checked: t.valve }}
           style={{
             width: '100%',
             height: s(34),
             borderRadius: s(17),
             alignItems: 'center',
             justifyContent: 'center',
-            backgroundColor: btnOn ? colors.glow : alpha(colors.white, 0.07),
+            backgroundColor: t.valve ? colors.glow : alpha(colors.white, 0.07),
           }}
         >
-          <Txt size={12} weight={600} color={btnOn ? colors.base : colors.valveOff} numberOfLines={1}>
-            {timerBtn ? (btnOn ? 'Stop' : `Fill ${t.fillMin} min`) : t.valve ? 'Open' : 'Closed'}
+          <Txt size={12} weight={600} color={t.valve ? colors.base : colors.valveOff} numberOfLines={1}>
+            {t.valve ? 'Open' : 'Closed'}
           </Txt>
         </Press>
       ) : null}
@@ -179,19 +152,17 @@ export default function Tanks() {
   const setAuto = useDevice((d) => d.setAuto);
   const setLow = useDevice((d) => d.setLow);
   const setHigh = useDevice((d) => d.setHigh);
-  const setMode = useDevice((d) => d.setMode);
+  const maxTanks = useDevice((d) => d.info?.maxTanks ?? MAX_TANKS);
   const msg = useUi((st) => st.msg) || state?.msg || '';
   const big = tanks.length <= 3;
   const { width: winW } = useWindowDimensions();
   // flex: 0 0 calc((100% - 16px) / 3)
   const cardW = (winW - s(32) - s(16)) / 3;
-  const filling = !!state && (state.pump || state.phe);
+  const filling = !!state?.pump;
   const back = useCallback(() => go('home'), []);
-  const sources = modeOptions(config.phe.enabled).map((o) => ({ key: o.k, label: o.label }));
-  const mode = effectiveMode(config.mode, config.phe.enabled);
-  const hasMain = config.main.enabled && config.main.sensor;
-  const mainPct = state?.main?.pct ?? null;
-  const hasNoSensor = tanks.some((t) => !t.hasSensor);
+  const main = mainView(state, config);
+  const mainPct = main?.pct ?? null;
+  const single = tanks.length === 1;
 
   return (
     <Screen
@@ -221,16 +192,12 @@ export default function Tanks() {
           }}
         >
           <Txt size={13} weight={600} color={colors.glow}>
-            Setup
+            {`${tanks.length} of ${maxTanks} · Setup`}
           </Txt>
         </Press>
       </View>
 
-      <FadeUp>
-        <Segmented height={42} options={sources} value={mode} onChange={setMode} />
-      </FadeUp>
-
-      {hasMain ? (
+      {main ? (
         <FadeUp
           style={{
             flexDirection: 'row',
@@ -248,12 +215,10 @@ export default function Tanks() {
             <Txt family="outfit" size={24} weight={500} tabular>
               {mainPct === null ? '--' : `${mainPct}%`}
             </Txt>
-            {config.main.litres ? (
-              <Txt size={11} color={colors.muted}>{`${fmtNum(config.main.litres)} L`}</Txt>
-            ) : null}
+            {main.litres ? <Txt size={11} color={colors.muted}>{`${fmtNum(main.litres)} L`}</Txt> : null}
           </View>
           <View style={{ flex: 1 }}>
-            <LevelBar pct={mainPct ?? 0} height={46} markPct={config.main.minPct} />
+            <LevelBar pct={mainPct ?? 0} height={46} markPct={main.minPct} />
           </View>
         </FadeUp>
       ) : null}
@@ -323,9 +288,9 @@ export default function Tanks() {
             fill={colors.glow}
           />
         </View>
-        {hasNoSensor ? (
+        {single ? (
           <Txt size={12} color={colors.muted} style={{ lineHeight: s(18) }}>
-            Tanks without a sensor are not in Auto. Tap Fill to run them on a timer.
+            One tank: the pump fills it directly — no valve needed.
           </Txt>
         ) : null}
       </FadeUp>

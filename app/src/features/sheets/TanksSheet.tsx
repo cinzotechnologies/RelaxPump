@@ -21,7 +21,7 @@ export function TanksSheet() {
   return (
     <Sheet open={open} onClose={close} title="Tank names and sizes">
       <View style={{ gap: s(6), maxHeight: s(300) }}>
-        {config.semi.map((t, i) => (
+        {config.tanks.map((t, i) => (
           <Fade
             key={i}
             style={{

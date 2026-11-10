@@ -8,32 +8,30 @@ import { Fade, FadeUp } from '@/components/FadeUp';
 import { Icon } from '@/components/Icon';
 import { Press } from '@/components/Press';
 import { Screen } from '@/components/Screen';
-import { Segmented } from '@/components/Segmented';
 import { Spinner } from '@/components/Spinner';
 import { Toggle } from '@/components/Toggle';
 import { fmtNum, TANK_NAME_MAX } from '@/logic/format';
-import { modeHelp, portsOf, type Mode } from '@/model/layout';
+import { MAX_TANKS } from '@/model/layout';
 import type { TestPort } from '@/model/types';
 import { backend } from '@/services';
 import { useDevice } from '@/state/device';
 import { go } from '@/state/nav';
 import { useSession } from '@/state/session';
 import {
+  countHelp,
   draftFrom,
   draftToConfig,
-  maxTanksOf,
-  modesOf,
+  HEIGHT_DEFAULT,
+  HEIGHT_STEP,
+  MIN_PCT_STEP,
   outputsOf,
   reduce,
   sensorChecksOf,
   SIZE_CHIPS,
   STEP_TITLES,
-  stepBlocked,
   summaryRows,
   summaryText,
-  tankErrors,
-  FILL_STEP,
-  MIN_PCT_STEP,
+  tankPorts,
   type Action,
   type Draft,
 } from '@/state/setup';
@@ -48,7 +46,11 @@ type PinMode = 'enter' | 'new' | 'confirm';
 
 // ------------------------------------------------------------------ small parts
 function Card({ children, gap = 12 }: { children: ReactNode; gap?: number }) {
-  return <View style={{ padding: s(14), gap: s(gap), borderRadius: s(20), backgroundColor: colors.card }}>{children}</View>;
+  return (
+    <View style={{ padding: s(14), gap: s(gap), borderRadius: s(20), backgroundColor: colors.card }}>
+      {children}
+    </View>
+  );
 }
 
 function Label({ children }: { children: string }) {
@@ -61,7 +63,15 @@ function Label({ children }: { children: string }) {
 
 function PortTag({ children }: { children: string }) {
   return (
-    <View style={{ height: s(22), paddingHorizontal: s(8), borderRadius: s(6), backgroundColor: colors.deepCard, justifyContent: 'center' }}>
+    <View
+      style={{
+        height: s(22),
+        paddingHorizontal: s(8),
+        borderRadius: s(6),
+        backgroundColor: colors.deepCard,
+        justifyContent: 'center',
+      }}
+    >
       <Txt size={11} weight={700} color={colors.glow} style={{ fontFamily: 'monospace' }}>
         {children}
       </Txt>
@@ -100,7 +110,17 @@ function Ghost({ label, onPress, height = 40 }: { label: string; onPress: () => 
   );
 }
 
-function Mini({ value, onDec, onInc, labels }: { value: string; onDec: () => void; onInc: () => void; labels: [string, string] }) {
+function Mini({
+  value,
+  onDec,
+  onInc,
+  labels,
+}: {
+  value: string;
+  onDec: () => void;
+  onInc: () => void;
+  labels: [string, string];
+}) {
   const btn = (glyph: string, label: string, onPress: () => void) => (
     <Press
       onPress={onPress}
@@ -131,7 +151,17 @@ function Mini({ value, onDec, onInc, labels }: { value: string; onDec: () => voi
   );
 }
 
-function Cta({ label, onPress, disabled, arrow }: { label: string; onPress: () => void; disabled?: boolean; arrow?: boolean }) {
+function Cta({
+  label,
+  onPress,
+  disabled,
+  arrow,
+}: {
+  label: string;
+  onPress: () => void;
+  disabled?: boolean;
+  arrow?: boolean;
+}) {
   return (
     <Press
       onPress={onPress}
@@ -251,12 +281,10 @@ function Keypad({
 }
 
 // ------------------------------------------------------------------ steps
-function StepCount({ d, dispatch, max, ports }: StepProps & { max: number }) {
+function StepCount({ d, dispatch }: StepProps) {
   const legend: [string, string][] = [
-    ['Semi tank valves', `V1–V${ports.valves}`],
-    ['Semi tank sensors', `S1–S${ports.sensors}`],
-    ...(ports.phe ? ([['PHE line valve', 'PHE']] as [string, string][]) : []),
-    ...(ports.main ? ([['Main tank sensor', 'MAIN']] as [string, string][]) : []),
+    ['Semi tanks (sensor + valve)', `T1–T${d.max}`],
+    ['Main tank sensor', 'MAIN'],
     ['Pump', 'PUMP'],
   ];
   const btn = (glyph: string, label: string, n: number) => (
@@ -283,9 +311,23 @@ function StepCount({ d, dispatch, max, ports }: StepProps & { max: number }) {
       <Txt size={15} color={colors.muted}>
         How many semi tanks are connected?
       </Txt>
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: s(28), paddingVertical: s(26) }}>
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: s(28),
+          paddingVertical: s(26),
+        }}
+      >
         {btn('−', 'One less', d.n - 1)}
-        <Txt family="outfit" size={72} weight={500} tabular style={{ minWidth: s(60), textAlign: 'center', lineHeight: s(80) }}>
+        <Txt
+          family="outfit"
+          size={72}
+          weight={500}
+          tabular
+          style={{ minWidth: s(60), textAlign: 'center', lineHeight: s(80) }}
+        >
           {String(d.n)}
         </Txt>
         {btn('+', 'One more', d.n + 1)}
@@ -296,15 +338,19 @@ function StepCount({ d, dispatch, max, ports }: StepProps & { max: number }) {
           <Row key={k} left={k} right={<PortTag>{v}</PortTag>} />
         ))}
       </Card>
-      <Txt size={12} color={colors.muted} style={{ lineHeight: s(18) }}>
-        {`Tank 1 uses S1 and V1, tank 2 uses S2 and V2, and so on. Up to ${max} tanks.`}
+      <Txt size={12} color={colors.muted} style={{ lineHeight: s(18) }} accessibilityLiveRegion="polite">
+        {countHelp(d)}
       </Txt>
+      {d.max < MAX_TANKS ? (
+        <Txt size={12} color={colors.warningLight} style={{ lineHeight: s(18) }}>
+          {`This controller's firmware supports ${d.max} tanks. Update it for up to ${MAX_TANKS}.`}
+        </Txt>
+      ) : null}
     </FadeUp>
   );
 }
 
-function StepTanks({ d, dispatch, ports }: StepProps) {
-  const errs = tankErrors(d, ports);
+function StepTanks({ d, dispatch }: StepProps) {
   return (
     <>
       {d.tanks.slice(0, d.n).map((t, i) => (
@@ -316,12 +362,7 @@ function StepTanks({ d, dispatch, ports }: StepProps) {
                   {`Tank ${i + 1}`}
                 </Txt>
               }
-              right={
-                <View style={{ flexDirection: 'row', gap: s(6) }}>
-                  <PortTag>{`S${i + 1}`}</PortTag>
-                  <PortTag>{`V${i + 1}`}</PortTag>
-                </View>
-              }
+              right={<PortTag>{tankPorts(d, i)}</PortTag>}
             />
             <TextInput
               defaultValue={t.name ?? ''}
@@ -370,40 +411,16 @@ function StepTanks({ d, dispatch, ports }: StepProps) {
               })}
             </View>
             <Row
-              left="Sensor"
+              left="Height above the main tank"
               right={
-                <Toggle value={t.sensor} onChange={(v) => dispatch({ type: 'tank', i, patch: { sensor: v } })} label="Sensor" />
+                <Mini
+                  value={`${t.heightFt ?? HEIGHT_DEFAULT} ft`}
+                  labels={['Lower', 'Higher']}
+                  onDec={() => dispatch({ type: 'height', i, delta: -HEIGHT_STEP })}
+                  onInc={() => dispatch({ type: 'height', i, delta: HEIGHT_STEP })}
+                />
               }
             />
-            <Row
-              left="Valve"
-              right={<Toggle value={t.valve} onChange={(v) => dispatch({ type: 'tank', i, patch: { valve: v } })} label="Valve" />}
-            />
-            {!t.sensor ? (
-              <Row
-                left="Fill time (no sensor)"
-                right={
-                  <Mini
-                    value={`${t.fillMin ?? 10} min`}
-                    labels={['Less time', 'More time']}
-                    onDec={() => dispatch({ type: 'fillMin', i, delta: -FILL_STEP })}
-                    onInc={() => dispatch({ type: 'fillMin', i, delta: FILL_STEP })}
-                  />
-                }
-              />
-            ) : null}
-            {!t.sensor ? (
-              <Txt size={12} color={colors.muted}>
-                Fit an overflow pipe on this tank.
-              </Txt>
-            ) : null}
-            {errs[i] ? (
-              <View style={{ paddingVertical: s(10), paddingHorizontal: s(12), borderRadius: s(12), backgroundColor: alpha(colors.dangerText, 0.12) }}>
-                <Txt size={12} color={colors.dangerText}>
-                  {errs[i]}
-                </Txt>
-              </View>
-            ) : null}
           </Card>
         </FadeUp>
       ))}
@@ -411,7 +428,7 @@ function StepTanks({ d, dispatch, ports }: StepProps) {
   );
 }
 
-function StepExtras({ d, dispatch, ports }: StepProps) {
+function StepMain({ d, dispatch }: StepProps) {
   const title = (t: string, sub: string) => (
     <View style={{ gap: s(3), flex: 1 }}>
       <Txt size={14} weight={700}>
@@ -423,46 +440,33 @@ function StepExtras({ d, dispatch, ports }: StepProps) {
     </View>
   );
   return (
-    <>
-      <FadeUp>
-        <Card>
+    <FadeUp>
+      <Card>
+        <Row
+          left={title('Main tank sensor', 'Port MAIN · protects the pump')}
+          right={
+            <Toggle
+              value={d.mainOn}
+              onChange={(on) => dispatch({ type: 'main', on })}
+              label="Main tank sensor"
+            />
+          }
+        />
+        {d.mainOn ? (
           <Row
-            left={title('Main tank sensor', ports.main ? 'Port MAIN · protects the pump' : 'Not on this controller')}
+            left="Stop the pump below"
             right={
-              ports.main ? (
-                <Toggle value={d.mainOn} onChange={(on) => dispatch({ type: 'main', on })} label="Main tank sensor" />
-              ) : null
+              <Mini
+                value={`${d.minPct}%`}
+                labels={['Lower', 'Higher']}
+                onDec={() => dispatch({ type: 'minPct', delta: -MIN_PCT_STEP })}
+                onInc={() => dispatch({ type: 'minPct', delta: MIN_PCT_STEP })}
+              />
             }
           />
-          {d.mainOn ? (
-            <Row
-              left="Stop the pump below"
-              right={
-                <Mini
-                  value={`${d.minPct}%`}
-                  labels={['Lower', 'Higher']}
-                  onDec={() => dispatch({ type: 'minPct', delta: -MIN_PCT_STEP })}
-                  onInc={() => dispatch({ type: 'minPct', delta: MIN_PCT_STEP })}
-                />
-              }
-            />
-          ) : null}
-        </Card>
-      </FadeUp>
-      <FadeUp step={1}>
-        <Card>
-          <Row
-            left={title('PHE line', ports.phe ? 'Port PHE · public water supply' : 'Not on this controller')}
-            right={ports.phe ? <Toggle value={d.pheOn} onChange={(on) => dispatch({ type: 'phe', on })} label="PHE line" /> : null}
-          />
-          {d.pheOn ? (
-            <Txt size={12} color={colors.muted} style={{ lineHeight: s(18) }}>
-              Fit a check valve on the PHE line and on the pump line.
-            </Txt>
-          ) : null}
-        </Card>
-      </FadeUp>
-    </>
+        ) : null}
+      </Card>
+    </FadeUp>
   );
 }
 
@@ -497,7 +501,9 @@ function StepWiring({ d }: StepProps) {
                 <Txt
                   size={13}
                   weight={700}
-                  color={c.state === 'ok' ? colors.glow : c.state === 'bad' ? colors.dangerText : colors.muted}
+                  color={
+                    c.state === 'ok' ? colors.glow : c.state === 'bad' ? colors.dangerText : colors.muted
+                  }
                 >
                   {c.state === 'ok' ? 'Found ✓' : c.state === 'bad' ? 'No answer — check cable' : 'Waiting…'}
                 </Txt>
@@ -541,16 +547,11 @@ function StepWiring({ d }: StepProps) {
   );
 }
 
-function StepSource({ d, dispatch }: StepProps) {
-  const modes = modesOf(d).map((m) => ({ key: m.k, label: m.label }));
+function StepSave({ d }: StepProps) {
   return (
     <FadeUp style={{ gap: s(12) }}>
       <Txt size={15} color={colors.muted}>
-        Where should the water come from?
-      </Txt>
-      <Segmented height={42} options={modes} value={d.mode} onChange={(mode: Mode) => dispatch({ type: 'mode', mode })} />
-      <Txt size={13} color={colors.muted} style={{ lineHeight: s(20) }}>
-        {modeHelp(d.mode, d.pheOn)}
+        Check and save. You can change this later with the installer PIN.
       </Txt>
       <Card>
         <Label>Summary</Label>
@@ -577,7 +578,6 @@ function StepSource({ d, dispatch }: StepProps) {
 type StepProps = {
   d: Draft;
   dispatch: (a: Action) => void;
-  ports: ReturnType<typeof portsOf>;
 };
 
 // ------------------------------------------------------------------ screen
@@ -588,7 +588,7 @@ export default function Setup() {
   const config = useDevice((st) => st.config);
   const online = useDevice((st) => st.online);
   const showToast = useUi((st) => st.showToast);
-  const ports = portsOf(info);
+  const maxTanks = info?.maxTanks ?? MAX_TANKS;
 
   const [phase, setPhase] = useState<Phase>('loading');
   const [pinMode, setPinMode] = useState<PinMode>('enter');
@@ -600,9 +600,9 @@ export default function Setup() {
   const [step, setStep] = useState(0);
   const [doneNote, setDoneNote] = useState('');
   const [draft, dispatchRaw] = useReducer(
-    (d: Draft, a: Action | { type: 'reset'; d: Draft }) => (a.type === 'reset' ? a.d : reduce(d, a, ports)),
+    (d: Draft, a: Action | { type: 'reset'; d: Draft }) => (a.type === 'reset' ? a.d : reduce(d, a)),
     undefined,
-    () => draftFrom(config, ports),
+    () => draftFrom(config, maxTanks),
   );
   const dispatch = useCallback((a: Action) => dispatchRaw(a), []);
   const alive = useRef(true);
@@ -635,7 +635,10 @@ export default function Setup() {
   }, [deviceId, showToast]);
 
   const startWizard = () => {
-    dispatchRaw({ type: 'reset', d: draftFrom(useDevice.getState().config, ports) });
+    dispatchRaw({
+      type: 'reset',
+      d: draftFrom(useDevice.getState().config, useDevice.getState().info?.maxTanks ?? MAX_TANKS),
+    });
     setStep(0);
     setPhase('wizard');
   };
@@ -693,12 +696,12 @@ export default function Setup() {
     }
     void backend().endSetup(deviceId);
     // Wait for the controller to report the new layout.
-    const want = cfg.semi.length;
+    const want = cfg.tanks.length;
     const t0 = Date.now();
     while (alive.current && Date.now() - t0 < CONFIRM_MS) {
       const st = useDevice.getState();
       if (!st.online) break;
-      if (st.state?.semi.length === want) break;
+      if (st.state?.tanks.length === want) break;
       await new Promise((r) => setTimeout(r, 500));
     }
     if (!alive.current) return;
@@ -706,7 +709,7 @@ export default function Setup() {
     setDoneNote(
       !st.online
         ? 'The controller picks it up when it is online.'
-        : st.state?.semi.length === want
+        : st.state?.tanks.length === want
           ? 'The controller is updated — no re-flash needed.'
           : 'Saved. The controller has not confirmed yet — check it is online.',
     );
@@ -717,8 +720,6 @@ export default function Setup() {
     if (phase === 'wizard' && step > 0) setStep((x) => x - 1);
     else exit();
   }, [phase, step, exit]);
-
-  const blocked = stepBlocked(draft, step, ports);
 
   return (
     <Screen onBack={back} contentStyle={{ paddingBottom: insets.bottom }}>
@@ -756,7 +757,15 @@ export default function Setup() {
       ) : null}
 
       {phase === 'done' ? (
-        <Fade style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: s(16), paddingHorizontal: s(28) }}>
+        <Fade
+          style={{
+            flex: 1,
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: s(16),
+            paddingHorizontal: s(28),
+          }}
+        >
           <View
             style={{
               width: s(84),
@@ -784,7 +793,14 @@ export default function Setup() {
 
       {phase === 'wizard' ? (
         <View style={{ flex: 1 }}>
-          <View style={{ paddingTop: Math.max(s(52), insets.top + s(12)), paddingHorizontal: s(16), paddingBottom: s(12), gap: s(12) }}>
+          <View
+            style={{
+              paddingTop: Math.max(s(52), insets.top + s(12)),
+              paddingHorizontal: s(16),
+              paddingBottom: s(12),
+              gap: s(12),
+            }}
+          >
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
               <Txt family="outfit" size={26} weight={500} accessibilityRole="header">
                 {STEP_TITLES[step]}
@@ -795,7 +811,12 @@ export default function Setup() {
               {STEP_TITLES.map((_, i) => (
                 <View
                   key={i}
-                  style={{ flex: 1, height: s(4), borderRadius: s(4), backgroundColor: i <= step ? colors.glow : alpha(colors.glow, 0.15) }}
+                  style={{
+                    flex: 1,
+                    height: s(4),
+                    borderRadius: s(4),
+                    backgroundColor: i <= step ? colors.glow : alpha(colors.glow, 0.15),
+                  }}
                 />
               ))}
             </View>
@@ -808,22 +829,34 @@ export default function Setup() {
           <ScrollView
             key={step}
             style={{ flex: 1 }}
-            contentContainerStyle={{ paddingHorizontal: s(16), paddingTop: s(6), paddingBottom: s(20), gap: s(12) }}
+            contentContainerStyle={{
+              paddingHorizontal: s(16),
+              paddingTop: s(6),
+              paddingBottom: s(20),
+              gap: s(12),
+            }}
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
           >
-            {step === 0 ? <StepCount d={draft} dispatch={dispatch} ports={ports} max={maxTanksOf(ports)} /> : null}
-            {step === 1 ? <StepTanks d={draft} dispatch={dispatch} ports={ports} /> : null}
-            {step === 2 ? <StepExtras d={draft} dispatch={dispatch} ports={ports} /> : null}
-            {step === 3 ? <StepWiring d={draft} dispatch={dispatch} ports={ports} /> : null}
-            {step === 4 ? <StepSource d={draft} dispatch={dispatch} ports={ports} /> : null}
+            {step === 0 ? <StepCount d={draft} dispatch={dispatch} /> : null}
+            {step === 1 ? <StepTanks d={draft} dispatch={dispatch} /> : null}
+            {step === 2 ? <StepMain d={draft} dispatch={dispatch} /> : null}
+            {step === 3 ? <StepWiring d={draft} dispatch={dispatch} /> : null}
+            {step === 4 ? <StepSave d={draft} dispatch={dispatch} /> : null}
           </ScrollView>
-          <View style={{ flexDirection: 'row', gap: s(10), paddingHorizontal: s(16), paddingTop: s(14), paddingBottom: Math.max(s(26), insets.bottom + s(12)) }}>
+          <View
+            style={{
+              flexDirection: 'row',
+              gap: s(10),
+              paddingHorizontal: s(16),
+              paddingTop: s(14),
+              paddingBottom: Math.max(s(26), insets.bottom + s(12)),
+            }}
+          >
             <Ghost label={step > 0 ? 'Back' : 'Cancel'} onPress={back} height={52} />
             <Cta
               label={step === 4 ? 'Save' : 'Next'}
               arrow
-              disabled={blocked}
               onPress={() => (step === 4 ? void save() : setStep((x) => x + 1))}
             />
           </View>

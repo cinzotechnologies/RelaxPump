@@ -1,4 +1,5 @@
-// Home and Tanks render every layout from the config (no screen may assume 3 tanks).
+// Home and Tanks render every layout from the config (no screen may assume 3 tanks): 1 and 5 tanks,
+// with and without the main tank sensor.
 import 'react-native-gesture-handler/jestSetup';
 import { render, screen } from '@testing-library/react-native';
 import type { ReactElement } from 'react';
@@ -32,42 +33,53 @@ const show = (el: ReactElement) =>
 
 function load(spec: string) {
   const config = mockLayout(spec);
+  const n = config.tanks.length;
   const state = normalizeState({
     online: true,
     lastSeen: Date.now(),
-    pump: false,
-    phe: true,
-    src: 'phe',
+    pump: true,
     active: 0,
     auto: true,
-    semi: config.semi.map((t, i) => ({ pct: t.sensor ? 20 + i * 5 : null, valve: i === 0, ok: true })),
+    tanks: config.tanks.map((_, i) => ({ pct: 20 + i * 5, valve: n > 1 && i === 0, ok: true })),
     main: config.main.enabled ? { pct: 72, ok: true } : null,
   });
-  useSession.setState({ deviceId: 'RP-3F2A9C', profile: { name: 'Rina', phone: '9876543210', devices: {}, createdAt: 0 } });
-  useDevice.setState({ config, state, online: true, configLoaded: true });
+  useSession.setState({
+    deviceId: 'RP-3F2A9C',
+    profile: { name: 'Rina', phone: '9876543210', devices: {}, createdAt: 0 },
+  });
+  useDevice.setState({
+    config,
+    state,
+    online: true,
+    configLoaded: true,
+    info: { name: 'RelaxPump Controller', fw: '2.1.0', board: 'v1', maxTanks: 5, ownerUid: 'u' },
+  });
   return config;
 }
 
 describe.each([
   ['1', 1],
-  ['8,phe,main,ns3', 8],
+  ['1,main', 1],
+  ['5', 5],
+  ['5,main', 5],
 ])('layout %s', (spec, n) => {
-  it('Home lists every tank', async () => {
+  it('Home lists every tank, and the main tank card when enabled', async () => {
     const cfg = load(spec);
     await show(<Home />);
     expect(screen.getByText(`TANKS · ${n}`)).toBeTruthy();
-    cfg.semi.forEach((t) => expect(screen.getAllByText(t.name!).length).toBeGreaterThan(0));
-    if (cfg.main.enabled) expect(screen.getByText('MAIN TANK')).toBeTruthy();
-    if (cfg.semi.some((t) => !t.sensor)) expect(screen.getByText('Fill 10 min')).toBeTruthy();
+    cfg.tanks.forEach((t) => expect(screen.getAllByText(t.name!).length).toBeGreaterThan(0));
+    expect(screen.queryByText('MAIN TANK') !== null).toBe(cfg.main.enabled);
+    expect(screen.queryByText('PUMP SOURCE') !== null).toBe(cfg.main.enabled);
+    expect(screen.queryByText(/PHE/)).toBeNull();
   });
-  it('Tanks shows a card per tank and the source control', async () => {
+  it('Tanks shows a card per tank; valve buttons only with 2+ tanks', async () => {
     const cfg = load(spec);
     await show(<Tanks />);
-    cfg.semi.forEach((t) => expect(screen.getAllByText(t.name!).length).toBeGreaterThan(0));
-    expect(screen.getByText('Pump only')).toBeTruthy();
-    expect(screen.queryByText('PHE only') !== null).toBe(cfg.phe.enabled);
-    // one tank: no valve button
-    expect(screen.queryAllByText(/^(Open|Closed)$/).length).toBe(n === 1 ? 0 : cfg.semi.filter((t) => t.sensor).length);
-    if (cfg.semi.some((t) => !t.sensor)) expect(screen.getByText(/Tanks without a sensor are not in Auto/)).toBeTruthy();
+    cfg.tanks.forEach((t) => expect(screen.getAllByText(t.name!).length).toBeGreaterThan(0));
+    expect(screen.getByText(`${n} of 5 · Setup`)).toBeTruthy();
+    expect(screen.queryAllByText(/^(Open|Closed)$/).length).toBe(n === 1 ? 0 : n);
+    expect(screen.queryByText(/One tank: the pump fills it directly/) !== null).toBe(n === 1);
+    expect(screen.queryByText('MAIN TANK') !== null).toBe(cfg.main.enabled);
+    expect(screen.queryByText(/PHE|Pump only/)).toBeNull();
   });
 });

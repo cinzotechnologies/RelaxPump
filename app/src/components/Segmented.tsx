@@ -23,7 +23,10 @@ export function Segmented<T extends string>({
   style?: StyleProp<ViewStyle>;
 }) {
   const [w, setW] = useState(0);
-  const idx = Math.max(0, options.findIndex((o) => o.key === value));
+  const idx = Math.max(
+    0,
+    options.findIndex((o) => o.key === value),
+  );
   const count = Math.max(1, options.length);
   const x = useSharedValue(0);
   const half = (w - s(6)) / count;

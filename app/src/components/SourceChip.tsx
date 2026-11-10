@@ -1,11 +1,9 @@
 import { View } from 'react-native';
 
-import type { Source } from '@/model/types';
 import { alpha, colors, s, Txt } from '@/theme';
 
-/** "PHE" / "PUMP" pill (design v2 `.src`): teal for PHE water, amber for the pump. */
-export function SourceChip({ src, label }: { src: Source; label?: string }) {
-  const phe = src === 'phe';
+/** Amber pill on the main tank card (design v2 `.src.s-pump`): "PUMP SOURCE". */
+export function SourceChip({ label = 'PUMP SOURCE' }: { label?: string }) {
   return (
     <View
       style={{
@@ -13,11 +11,11 @@ export function SourceChip({ src, label }: { src: Source; label?: string }) {
         paddingHorizontal: s(9),
         borderRadius: 999,
         justifyContent: 'center',
-        backgroundColor: phe ? alpha(colors.glow, 0.16) : alpha(colors.warning, 0.18),
+        backgroundColor: alpha(colors.warning, 0.18),
       }}
     >
-      <Txt size={10} weight={700} tracking={0.4} color={phe ? colors.glow : colors.warningLight}>
-        {label ?? (phe ? 'PHE' : 'PUMP')}
+      <Txt size={10} weight={700} tracking={0.4} color={colors.warningLight}>
+        {label}
       </Txt>
     </View>
   );

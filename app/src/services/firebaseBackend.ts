@@ -200,7 +200,8 @@ export function createFirebaseBackend(): Backend {
         cb,
       ),
 
-    onInfo: (id, cb) => watch(`devices/${id}/info`, (v) => normalizeInfo(v as Record<string, unknown> | null), cb),
+    onInfo: (id, cb) =>
+      watch(`devices/${id}/info`, (v) => normalizeInfo(v as Record<string, unknown> | null), cb),
     onState: (id, cb) =>
       watch(`devices/${id}/state`, (v) => normalizeState(v as Record<string, unknown> | null), cb),
     onConfig: (id, cb) =>

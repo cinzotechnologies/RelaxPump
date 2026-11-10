@@ -1,16 +1,14 @@
-// Mirrors the Realtime Database data model (docs/data-model.md, docs/flexible-system.md §5).
-import type { Board, LayoutConfig, Ports, Source } from './layout';
+// Mirrors the Realtime Database data model (docs/data-model.md, docs/flexible-system.md §3).
+import type { Board, LayoutConfig } from './layout';
 
-export type { Board, LayoutConfig, Mode, Ports, SemiConfig, Source } from './layout';
+export type { Board, LayoutConfig, MainConfig, TankConfig } from './layout';
 export { DEFAULT_LAYOUT as DEFAULT_CONFIG } from './layout';
 
 /** The layout config (`config` node). */
 export type DeviceConfig = LayoutConfig;
 
-/** One semi tank as the controller reports it. pct is null without a sensor (or when it fails). */
-export type SemiState = { pct: number | null; valve: boolean; ok: boolean };
-/** Kept for helpers that only need levels and valves. */
-export type TankState = SemiState;
+/** One semi tank as the controller reports it. pct is null when the sensor gives no reading. */
+export type TankState = { pct: number | null; valve: boolean; ok: boolean };
 
 export type CheckRow = {
   i: number;
@@ -28,15 +26,14 @@ export type DeviceState = {
   rssi: number;
   ssid: string;
   pump: boolean;
-  phe: boolean;
   auto: boolean;
   msg: string;
-  src: Source | null;
+  /** Tank being filled. */
   active: number | null;
-  semi: SemiState[];
+  tanks: TankState[];
   main: { pct: number | null; ok: boolean } | null;
-  /** Which sensor ports answer (installer setup "Check wiring"). */
-  detected: { s: boolean[]; main: boolean } | null;
+  /** Which sensor ports answer (installer setup "Check wiring"): T1–T5, MAIN. */
+  detected: { tanks: boolean[]; main: boolean } | null;
   check: PumpCheck | null;
 };
 
@@ -44,20 +41,18 @@ export type DeviceInfo = {
   name: string;
   fw: string;
   board: Board | null;
+  /** 5 with v2 firmware, 3 with the first firmware. */
   maxTanks: number;
-  ports: Ports;
   ownerUid: string | null;
 };
 
-export type TestPort = `V${1 | 2 | 3 | 4 | 5 | 6 | 7 | 8}` | 'PHE' | 'PUMP';
+export type TestPort = `V${1 | 2 | 3 | 4 | 5}` | 'PUMP';
 
 /** App → device. The device applies it and deletes `cmd`. */
 export type DeviceCommand = {
   pump?: boolean;
-  phe?: boolean;
   auto?: boolean;
   valve?: { i: number; open: boolean };
-  fill?: { i: number; src: Source };
   test?: { port: TestPort; ms: number };
   pumpCheck?: boolean;
   ts: number;
@@ -71,28 +66,24 @@ export type EventType =
   | 'dry_run'
   | 'timeout'
   | 'sensor'
-  | 'phe_on'
-  | 'phe_off'
-  | 'phe_none'
   | 'main_low'
   | 'board_error'
   | 'check_done';
 export type DeviceEvent = {
   id: string;
   type: EventType;
-  /** Semi tank index, or -1 for main tank / board events. */
+  /** Tank index, or -1 for main tank / board events. */
   tank: number;
   ts: number;
   min?: number;
   auto?: boolean;
 };
 
-export type UsageTank = { litres: number; pumpMin: number; pheLitres: number };
+export type UsageTank = { litres: number; pumpMin: number };
 export type UsageDay = {
   date: string; // yyyy-mm-dd
   litres: number;
   pumpMin: number;
-  pheLitres: number;
   perTank: UsageTank[];
 };
 

@@ -1,6 +1,5 @@
-import { tankViews, averageLevel } from '@/state/selectors';
-
 import { mockLayout } from '@/services/mockBackend';
+import { averageLevel, mainView, tankViews } from '@/state/selectors';
 
 import { normalizeInfo, normalizeState, normalizeUsage } from '../state';
 
@@ -14,70 +13,94 @@ describe('reading state', () => {
   it('reads v2 state', () => {
     const s = normalizeState({
       online: true,
-      pump: false,
-      phe: true,
+      pump: true,
       auto: true,
-      src: 'phe',
       active: 1,
-      semi: [{ pct: 40, valve: false, ok: true }, { pct: null, valve: true, ok: true }],
+      tanks: [
+        { pct: 40, valve: false, ok: true },
+        { pct: null, valve: true, ok: false },
+      ],
       main: { pct: 72, ok: true },
-      detected: { s: [true, false], main: true },
-      check: { run: false, rows: [{ i: 0, pctMin: 4.2, lpm: 42, minToFull: 24, slow: false, skipped: false }] },
+      detected: { tanks: [true, false, false, false, false], main: true },
+      check: {
+        run: false,
+        rows: [{ i: 0, pctMin: 4.2, lpm: 42, minToFull: 24, slow: false, skipped: false }],
+      },
     })!;
-    expect(s.src).toBe('phe');
     expect(s.active).toBe(1);
-    expect(s.semi[1].pct).toBeNull();
+    expect(s.tanks[1].pct).toBeNull();
     expect(s.main).toEqual({ pct: 72, ok: true });
+    expect(s.detected?.tanks.slice(0, 2)).toEqual([true, false]);
     expect(s.check?.rows[0].lpm).toBe(42);
   });
-  it('reads v1 state (tanks only): failed sensors have no level', () => {
+  it('first firmware: failed sensors (pct 0, ok false) have no level; active from the open valve', () => {
     const s = normalizeState({
       online: true,
       pump: true,
       auto: false,
-      tanks: [{ pct: 0, valve: false, ok: false }, { pct: 55, valve: true, ok: true }],
+      tanks: [
+        { pct: 0, valve: false, ok: false },
+        { pct: 55, valve: true, ok: true },
+      ],
     })!;
-    expect(s.semi.map((t) => t.pct)).toEqual([null, 55]);
-    expect(s.src).toBe('pump');
+    expect(s.tanks.map((t) => t.pct)).toEqual([null, 55]);
     expect(s.active).toBe(1);
     expect(s.main).toBeNull();
   });
-  it('reads info: old devices are v1 with 3 ports', () => {
-    expect(normalizeInfo({ maxTanks: 3, fw: '1.0.0' })).toMatchObject({ maxTanks: 3, ports: { phe: false, main: false } });
-    expect(normalizeInfo({ board: 'v2', ports: { sensors: 8, valves: 8, phe: true, main: true } })?.maxTanks).toBe(8);
+  it('one tank pumping: the only tank is active', () => {
+    expect(normalizeState({ pump: true, tanks: [{ pct: 30, valve: false, ok: true }] })!.active).toBe(0);
   });
-  it('reads usage with PHE litres', () => {
-    expect(normalizeUsage('2026-11-10', { litres: 300, pumpMin: 20, pheLitres: 120, perTank: [{ litres: 300, pheLitres: 120 }] })).toEqual({
+  it('reads info: maxTanks 1–5, old devices 3', () => {
+    expect(normalizeInfo({ fw: '1.0.0' })).toMatchObject({ maxTanks: 3, board: null });
+    expect(normalizeInfo({ maxTanks: 5, board: 'v2' })).toMatchObject({ maxTanks: 5, board: 'v2' });
+    expect(normalizeInfo({ maxTanks: 8 })?.maxTanks).toBe(5);
+  });
+  it('reads usage', () => {
+    expect(normalizeUsage('2026-11-10', { litres: 300, pumpMin: 20, perTank: [{ litres: 300 }] })).toEqual({
       date: '2026-11-10',
       litres: 300,
       pumpMin: 20,
-      pheLitres: 120,
-      perTank: [{ litres: 300, pumpMin: 0, pheLitres: 120 }],
+      perTank: [{ litres: 300, pumpMin: 0 }],
     });
   });
 });
 
 describe('tank views for every mock layout', () => {
-  it.each(['1', '3', '5,phe', '8,phe,main', '4,phe,main,ns3'])('%s', (spec) => {
+  it.each(['1', '2', '3,main', '5', '5,main'])('%s', (spec) => {
     const cfg = mockLayout(spec);
+    const n = cfg.tanks.length;
     const st = normalizeState({
       online: true,
       pump: true,
       auto: true,
       active: 0,
-      semi: cfg.semi.map((t, i) => ({ pct: t.sensor ? 10 * (i + 1) : null, valve: i === 0, ok: true })),
+      tanks: cfg.tanks.map((_, i) => ({ pct: 10 * (i + 1), valve: n > 1 && i === 0, ok: true })),
+      main: cfg.main.enabled ? { pct: 8, ok: true } : null,
     });
     const v = tankViews(st, cfg);
-    expect(v).toHaveLength(cfg.semi.length);
+    expect(v).toHaveLength(n);
     expect(v[0].active).toBe(true);
-    const noSensor = v.filter((t) => !t.hasSensor);
-    noSensor.forEach((t) => expect(t.pct).toBeNull());
-    const { count } = averageLevel(v);
-    expect(count).toBe(cfg.semi.filter((t) => t.sensor).length);
+    expect(v.every((t) => t.hasValve === n > 1)).toBe(true);
+    expect(averageLevel(v).count).toBe(n);
+    const m = mainView(st, cfg);
+    if (cfg.main.enabled) expect(m).toMatchObject({ pct: 8, minPct: 10, low: true, litres: 5000 });
+    else expect(m).toBeNull();
   });
   it('averages only tanks with a level', () => {
-    const cfg = mockLayout('3,ns2');
-    const st = normalizeState({ online: true, semi: [{ pct: 20, ok: true }, { pct: null, ok: true }, { pct: 60, ok: true }] });
-    expect(averageLevel(tankViews(st, cfg))).toEqual({ avg: 40, count: 2 });
+    const cfg = mockLayout('3');
+    const st = normalizeState({
+      online: true,
+      tanks: [
+        { pct: 20, ok: true },
+        { pct: null, ok: false },
+        { pct: 60, ok: true },
+      ],
+    });
+    expect(averageLevel(tankViews(st, cfg))).toEqual({ avg: 40, count: 3 });
+  });
+  it('one tank never shows a valve, even if a stale state says so', () => {
+    const cfg = mockLayout('1');
+    const st = normalizeState({ online: true, tanks: [{ pct: 50, ok: true, valve: true }] });
+    expect(tankViews(st, cfg)[0]).toMatchObject({ hasValve: false, valve: false });
   });
 });

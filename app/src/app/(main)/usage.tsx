@@ -30,8 +30,7 @@ function AnimBar({ size, horizontal, style }: { size: number; horizontal?: boole
 export default function Usage() {
   const insets = useSafeAreaInsets();
   const usage = useDevice((d) => d.usage);
-  const tankCfg = useDevice((d) => d.config.semi);
-  const hasPhe = useDevice((d) => d.config.phe.enabled);
+  const tankCfg = useDevice((d) => d.config.tanks);
   const tankCount = tankCfg.length;
   const [seg, setSeg] = useState<Seg>('use');
   const [picked, setSel] = useState<number | null>(null);
@@ -51,8 +50,6 @@ export default function Usage() {
     ),
   );
   const pmx = Math.max(1, ...per);
-  const pheTot = usage.reduce((a, u) => a + u.pheLitres, 0);
-  const pumpTot = Math.max(0, usage.reduce((a, u) => a + u.litres, 0) - pheTot);
 
   return (
     <Screen
@@ -87,12 +84,6 @@ export default function Usage() {
         <Txt size={34} weight={700} tracking={-1} tabular>
           {seg === 'use' ? `${fmtNum(tot)} L` : hm(tot)}
         </Txt>
-        {seg === 'use' && hasPhe ? (
-          <View style={{ flexDirection: 'row', gap: s(14), marginTop: s(6) }}>
-            <Txt size={12} color={colors.warningLight}>{`Pump ${fmtNum(pumpTot)} L`}</Txt>
-            <Txt size={12} color={colors.glow}>{`PHE ${fmtNum(pheTot)} L`}</Txt>
-          </View>
-        ) : null}
       </FadeUp>
       <FadeUp
         step={2}

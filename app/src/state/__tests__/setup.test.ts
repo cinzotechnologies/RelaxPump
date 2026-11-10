@@ -1,17 +1,16 @@
-import { DEFAULT_LAYOUT, V1_PORTS, V2_PORTS } from '@/model/layout';
+import { DEFAULT_LAYOUT } from '@/model/layout';
 import { mockLayout } from '@/services/mockBackend';
 
 import {
+  countHelp,
   draftFrom,
   draftToConfig,
-  modesOf,
   outputsOf,
   reduce,
   sensorChecksOf,
-  stepBlocked,
   summaryRows,
   summaryText,
-  tankErrors,
+  tankPorts,
   type Action,
   type Draft,
 } from '../setup';
@@ -21,78 +20,91 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
   setItem: jest.fn(() => Promise.resolve()),
 }));
 
-const run = (d: Draft, ...as: Action[]) => as.reduce((x, a) => reduce(x, a, V2_PORTS), d);
-const fresh = () => draftFrom(DEFAULT_LAYOUT, V2_PORTS);
+const run = (d: Draft, ...as: Action[]) => as.reduce((x, a) => reduce(x, a), d);
+const fresh = () => draftFrom(DEFAULT_LAYOUT);
 
 describe('installer setup draft', () => {
-  it('counts 1…8 on v2 and 1…3 on v1', () => {
-    expect(run(fresh(), { type: 'count', n: 12 }).n).toBe(8);
+  it('counts 1…5 (1…3 on the first firmware)', () => {
+    expect(run(fresh(), { type: 'count', n: 12 }).n).toBe(5);
     expect(run(fresh(), { type: 'count', n: 0 }).n).toBe(1);
-    expect(reduce(draftFrom(DEFAULT_LAYOUT, V1_PORTS), { type: 'count', n: 5 }, V1_PORTS).n).toBe(3);
+    expect(reduce(draftFrom(DEFAULT_LAYOUT, 3), { type: 'count', n: 5 }).n).toBe(3);
   });
   it('keeps what was typed when the count goes down and up', () => {
-    const d = run(fresh(), { type: 'count', n: 4 }, { type: 'tank', i: 3, patch: { name: 'Garden' } }, { type: 'count', n: 2 }, { type: 'count', n: 4 });
+    const d = run(
+      fresh(),
+      { type: 'count', n: 4 },
+      { type: 'tank', i: 3, patch: { name: 'Garden' } },
+      { type: 'count', n: 2 },
+      { type: 'count', n: 4 },
+    );
     expect(d.tanks[3].name).toBe('Garden');
   });
-  it('blocks Next on step 2 while a tank needs a valve (design inline error)', () => {
-    const d = run(fresh(), { type: 'count', n: 3 }, { type: 'tank', i: 1, patch: { valve: false } });
-    expect(tankErrors(d, V2_PORTS)[1]).toBe('Needs a valve — you have more than one tank.');
-    expect(stepBlocked(d, 1, V2_PORTS)).toBe(true);
-    expect(stepBlocked(d, 0, V2_PORTS)).toBe(false);
-    expect(stepBlocked(run(d, { type: 'count', n: 1 }), 1, V2_PORTS)).toBe(false);
+  it('one tank = sensor only; 2+ = sensor + valve per port', () => {
+    const one = run(fresh(), { type: 'count', n: 1 });
+    expect(tankPorts(one, 0)).toBe('T1 · sensor only');
+    expect(countHelp(one)).toMatch(/only a sensor/);
+    const three = run(fresh(), { type: 'count', n: 3 });
+    expect(tankPorts(three, 2)).toBe('T3 · sensor + valve');
+    expect(countHelp(three)).toMatch(/tank 1 uses T1/);
   });
-  it('fill time 5–120 in steps of 5 for a tank without a sensor', () => {
-    let d = run(fresh(), { type: 'tank', i: 0, patch: { sensor: false } });
-    d = run(d, ...Array.from({ length: 30 }, () => ({ type: 'fillMin', i: 0, delta: 5 }) as Action));
-    expect(d.tanks[0].fillMin).toBe(120);
-    d = run(d, ...Array.from({ length: 30 }, () => ({ type: 'fillMin', i: 0, delta: -5 }) as Action));
-    expect(d.tanks[0].fillMin).toBe(5);
+  it('going from 1 to 2 tanks says tank 1 needs a valve too', () => {
+    const d = run(draftFrom(mockLayout('1')), { type: 'count', n: 2 });
+    expect(countHelp(d)).toMatch(/fit a valve on tank 1 too/);
   });
-  it('main tank stop level 5–40, PHE off drops the PHE only mode', () => {
+  it('height 5–100 ft in steps of 5, default 20', () => {
+    let d = fresh();
+    expect(d.tanks[0].heightFt).toBe(20);
+    d = run(d, ...Array.from({ length: 30 }, () => ({ type: 'height', i: 0, delta: 5 }) as Action));
+    expect(d.tanks[0].heightFt).toBe(100);
+    d = run(d, ...Array.from({ length: 30 }, () => ({ type: 'height', i: 0, delta: -5 }) as Action));
+    expect(d.tanks[0].heightFt).toBe(5);
+  });
+  it('main tank stop level 5–40', () => {
     let d = run(fresh(), { type: 'main', on: true }, { type: 'minPct', delta: 50 });
     expect(d.minPct).toBe(40);
-    d = run(d, { type: 'phe', on: true }, { type: 'mode', mode: 'phe' });
-    expect(d.mode).toBe('phe');
-    expect(modesOf(d).map((m) => m.label)).toEqual(['Auto', 'PHE only', 'Pump only']);
-    d = run(d, { type: 'phe', on: false });
-    expect(d.mode).toBe('auto');
-    expect(modesOf(d).map((m) => m.label)).toEqual(['Auto', 'Pump only']);
+    d = run(d, { type: 'minPct', delta: -100 });
+    expect(d.minPct).toBe(5);
   });
-  it('no main / PHE on a v1 board', () => {
-    const d = reduce(draftFrom(DEFAULT_LAYOUT, V1_PORTS), { type: 'phe', on: true }, V1_PORTS);
-    expect(d.pheOn).toBe(false);
-  });
-  it('builds the saved config', () => {
+  it('builds the saved config and the summary', () => {
     const d = run(
       fresh(),
       { type: 'count', n: 2 },
-      { type: 'tank', i: 1, patch: { sensor: false } },
+      { type: 'tank', i: 1, patch: { litres: 500, name: 'Kitchen' } },
       { type: 'main', on: true },
-      { type: 'phe', on: true },
-      { type: 'mode', mode: 'auto' },
     );
     const c = draftToConfig(d);
-    expect(c.semi).toHaveLength(2);
-    expect(c.semi[0].fillMin).toBeNull();
-    expect(c.semi[1]).toMatchObject({ sensor: false, fillMin: 10 });
-    expect(c.main).toMatchObject({ enabled: true, sensor: true, minPct: 10 });
-    expect(c.phe.enabled).toBe(true);
-    expect(summaryText(d)).toBe('2 semi tanks · PHE · main tank sensor.');
-    expect(summaryRows(d)[1]).toEqual({ k: 'With sensor', v: '1 of 2' });
+    expect(c.tanks).toHaveLength(2);
+    expect(c.tanks[1]).toMatchObject({ litres: 500, name: 'Kitchen', heightFt: 20 });
+    expect(c.main).toMatchObject({ enabled: true, minPct: 10 });
+    expect(c).not.toHaveProperty('phe');
+    expect(summaryText(d)).toBe('2 semi tanks · main tank sensor.');
+    expect(summaryRows(d)).toEqual([
+      { k: 'Semi tanks', v: '2' },
+      { k: 'Sensors', v: '2' },
+      { k: 'Valves', v: '2' },
+      { k: 'Main tank sensor', v: 'Yes · stop below 10%' },
+      { k: 'Relays used', v: '3 of 6' },
+    ]);
+    const one = run(fresh(), { type: 'count', n: 1 });
+    expect(summaryRows(one)[2]).toEqual({ k: 'Valves', v: 'None (one tank)' });
+    expect(summaryRows(one)[4]).toEqual({ k: 'Relays used', v: '1 of 6' });
+    expect(summaryText(one)).toBe('1 semi tank.');
   });
   it('lists the wiring checks', () => {
-    const d = run(fresh(), { type: 'count', n: 3 }, { type: 'tank', i: 2, patch: { sensor: false } }, { type: 'phe', on: true });
-    expect(outputsOf(d).map((o) => o.port)).toEqual(['V1', 'V2', 'V3', 'PHE', 'PUMP']);
-    const checks = sensorChecksOf(d, { s: [true, false, true, false, false, false, false, false], main: false });
-    expect(checks.map((c) => `${c.port}:${c.state}`)).toEqual(['S1:ok', 'S2:bad']);
+    const d = run(fresh(), { type: 'count', n: 3 }, { type: 'main', on: true });
+    expect(outputsOf(d).map((o) => o.port)).toEqual(['V1', 'V2', 'V3', 'PUMP']);
+    expect(outputsOf(run(d, { type: 'count', n: 1 })).map((o) => o.port)).toEqual(['PUMP']);
+    const checks = sensorChecksOf(d, { tanks: [true, false, true, false, false], main: false });
+    expect(checks.map((c) => `${c.port}:${c.state}`)).toEqual(['T1:ok', 'T2:bad', 'T3:ok', 'MAIN:bad']);
     expect(sensorChecksOf(d, null)[0].state).toBe('wait');
   });
   it('starts from the mock layouts', () => {
-    for (const spec of ['1', '3', '5,phe', '8,phe,main', '4,phe,main,ns3']) {
+    for (const spec of ['1', '2', '3,main', '5', '5,main']) {
       const cfg = mockLayout(spec);
-      const d = draftFrom(cfg, V2_PORTS);
-      expect(d.n).toBe(cfg.semi.length);
-      expect(stepBlocked(d, 1, V2_PORTS)).toBe(false);
+      const d = draftFrom(cfg);
+      expect(d.n).toBe(cfg.tanks.length);
+      expect(d.mainOn).toBe(cfg.main.enabled);
+      expect(draftToConfig(d).tanks).toHaveLength(cfg.tanks.length);
     }
   });
 });

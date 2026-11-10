@@ -14,7 +14,7 @@ import { WaveFill } from '@/components/WaveFill';
 import { fmtNum, initials, litresOf } from '@/logic/format';
 import { useDevice } from '@/state/device';
 import { go } from '@/state/nav';
-import { averageLevel, useTanks } from '@/state/selectors';
+import { averageLevel, mainView, useTanks } from '@/state/selectors';
 import { useSession } from '@/state/session';
 import { useUi } from '@/state/ui';
 import { alpha, colors, s, Txt } from '@/theme';
@@ -84,7 +84,6 @@ export default function Home() {
   const events = useDevice((d) => d.events);
   const seenTs = useDevice((d) => d.seenTs);
   const togglePump = useDevice((d) => d.togglePump);
-  const toggleTimedFill = useDevice((d) => d.toggleTimedFill);
   const setAuto = useDevice((d) => d.setAuto);
   const openSheet = useUi((st) => st.openSheet);
   const tanks = useTanks();
@@ -94,12 +93,9 @@ export default function Home() {
   const n = tanks.length;
   const { avg, count } = averageLevel(tanks);
   const active = tanks.find((t) => t.active);
-  const filling = !!state && (state.pump || state.phe);
-  const src = filling ? state?.src : null;
-  const hasMain = config.main.enabled && config.main.sensor;
-  const hasPhe = config.phe.enabled;
-  const mainPct = state?.main?.pct ?? null;
-  const pheState = state?.phe ? 'Flowing' : 'Off';
+  const filling = !!state?.pump;
+  const main = mainView(state, config);
+  const mainPct = main?.pct ?? null;
   const online = useDevice((d) => d.online);
   const status = !deviceId
     ? 'No controller'
@@ -253,7 +249,6 @@ export default function Home() {
             <Txt size={12} color={online ? colors.glow : colors.dangerText}>
               {status}
             </Txt>
-            {online && src ? <SourceChip src={src} /> : null}
           </View>
         </View>
         <Txt size={40} weight={700} tracking={-1.2} tabular style={{ lineHeight: s(44), marginTop: s(4) }}>
@@ -273,8 +268,8 @@ export default function Home() {
         <ActionTile icon="stats" label="Usage" on={false} onPress={() => go('usage')} />
       </FadeUp>
 
-      {/* Main tank / PHE line */}
-      {hasMain ? (
+      {/* Main tank (sensor on port MAIN) */}
+      {main ? (
         <FadeUp
           step={2}
           style={{
@@ -290,39 +285,23 @@ export default function Home() {
             <Txt size={11} weight={600} tracking={1.5} color={colors.glow} style={{ flex: 1 }}>
               MAIN TANK
             </Txt>
-            {hasPhe ? <SourceChip src="phe" label={`PHE · ${pheState}`} /> : null}
+            <SourceChip label={main.low ? 'LOW · PUMP OFF' : 'PUMP SOURCE'} />
           </View>
           <View style={{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between' }}>
             <Txt family="outfit" size={26} weight={500} tabular>
               {mainPct === null ? '--' : `${mainPct}%`}
             </Txt>
-            {config.main.litres && mainPct !== null ? (
+            {main.litres && mainPct !== null ? (
               <Txt size={12} color={colors.muted}>
-                {`${fmtNum((config.main.litres * mainPct) / 100)} / ${fmtNum(config.main.litres)} L`}
+                {`${fmtNum((main.litres * mainPct) / 100)} / ${fmtNum(main.litres)} L`}
+              </Txt>
+            ) : !main.ok ? (
+              <Txt size={12} color={colors.dangerText}>
+                No reading
               </Txt>
             ) : null}
           </View>
           <LevelBar pct={mainPct ?? 0} />
-        </FadeUp>
-      ) : hasPhe ? (
-        <FadeUp
-          step={2}
-          style={{
-            marginTop: s(14),
-            marginHorizontal: s(16),
-            paddingVertical: s(12),
-            paddingHorizontal: s(14),
-            borderRadius: s(22),
-            backgroundColor: colors.card,
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-          }}
-        >
-          <Txt size={13} weight={600}>
-            PHE line
-          </Txt>
-          <SourceChip src="phe" label={pheState} />
         </FadeUp>
       ) : null}
 
@@ -352,7 +331,7 @@ export default function Home() {
           <Press
             key={t.i}
             onPress={() => go('tanks')}
-            accessibilityLabel={t.hasSensor ? `${t.name}, ${t.pct ?? 'no reading'} percent` : `${t.name}, no sensor`}
+            accessibilityLabel={`${t.name}, ${t.pct ?? 'no reading'} percent`}
             style={{
               flexDirection: 'row',
               alignItems: 'center',
@@ -365,31 +344,14 @@ export default function Home() {
               backgroundColor: colors.card,
             }}
           >
-            {t.hasSensor ? (
-              <ProgressRing pct={t.pct ?? 0} low={(t.pct ?? 0) < config.low} active={t.active} />
-            ) : (
-              <View
-                style={{
-                  width: s(36),
-                  height: s(36),
-                  borderRadius: s(18),
-                  borderWidth: 1.5,
-                  borderStyle: 'dashed',
-                  borderColor: alpha(colors.muted, 0.5),
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <Icon name="alert" size={16} color={colors.muted} />
-              </View>
-            )}
+            <ProgressRing pct={t.pct ?? 0} low={(t.pct ?? 0) < config.low} active={t.active} />
             <View style={{ flex: 1, gap: s(2) }}>
               <Txt size={14} numberOfLines={1}>
                 {t.name}
               </Txt>
-              {!t.hasSensor ? (
-                <Txt size={11} color={colors.faint}>
-                  {t.active ? `Filling · ${t.fillMin} min timer` : 'No sensor · fills by timer'}
+              {!t.ok && state ? (
+                <Txt size={11} color={colors.dangerText}>
+                  Sensor error
                 </Txt>
               ) : t.litres && t.pct !== null ? (
                 <Txt size={11} color={colors.faint}>
@@ -397,29 +359,9 @@ export default function Home() {
                 </Txt>
               ) : null}
             </View>
-            {t.hasSensor ? (
-              <Txt size={15} weight={600} tabular>
-                {t.pct !== null ? `${t.pct}%` : '--'}
-              </Txt>
-            ) : (
-              <Press
-                haptic
-                onPress={() => toggleTimedFill(t.i)}
-                accessibilityLabel={t.active ? `Stop filling ${t.name}` : `Fill ${t.name}`}
-                style={{
-                  height: s(34),
-                  paddingHorizontal: s(12),
-                  borderRadius: s(17),
-                  borderWidth: 1,
-                  borderColor: alpha(colors.glow, 0.4),
-                  justifyContent: 'center',
-                }}
-              >
-                <Txt size={13} weight={600} color={colors.glow}>
-                  {t.active ? 'Stop' : `Fill ${t.fillMin} min`}
-                </Txt>
-              </Press>
-            )}
+            <Txt size={15} weight={600} tabular>
+              {t.pct !== null ? `${t.pct}%` : '--'}
+            </Txt>
           </Press>
         ))}
       </FadeUp>

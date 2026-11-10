@@ -50,7 +50,7 @@ export function BleSheet() {
   const myDevice = useSession((st) => st.deviceId);
   const hasDevice = !!myDevice;
   const state = useDevice((d) => d.state);
-  const tankCount = useDevice((d) => d.config.semi.length);
+  const tankCount = useDevice((d) => d.config.tanks.length);
   const online = useDevice((d) => hasDevice && d.online);
 
   const [step, setStep] = useState<Step>('status');

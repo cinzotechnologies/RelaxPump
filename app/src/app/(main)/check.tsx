@@ -15,7 +15,6 @@ import { BackButton } from '@/components/BackButton';
 import { FadeUp } from '@/components/FadeUp';
 import { Press } from '@/components/Press';
 import { Screen } from '@/components/Screen';
-import { autoCapable } from '@/model/layout';
 import { useDevice } from '@/state/device';
 import { go } from '@/state/nav';
 import { useTanks } from '@/state/selectors';
@@ -40,9 +39,19 @@ function CheckBar({ running, pct, delay }: { running: boolean; pct: number; dela
   }, [running, pct, delay, reduce, x]);
   const st = useAnimatedStyle(() => ({ width: `${x.value * 100}%` }));
   return (
-    <View style={{ height: s(8), borderRadius: s(8), backgroundColor: alpha(colors.glow, 0.12), overflow: 'hidden' }}>
+    <View
+      style={{
+        height: s(8),
+        borderRadius: s(8),
+        backgroundColor: alpha(colors.glow, 0.12),
+        overflow: 'hidden',
+      }}
+    >
       <Animated.View
-        style={[{ height: '100%', borderRadius: s(8), backgroundImage: 'linear-gradient(90deg, #037788, #7FE3EC)' }, st]}
+        style={[
+          { height: '100%', borderRadius: s(8), backgroundImage: 'linear-gradient(90deg, #037788, #7FE3EC)' },
+          st,
+        ]}
       />
     </View>
   );
@@ -74,7 +83,8 @@ export default function PumpCheck() {
   const tanks = useTanks();
   const back = useCallback(() => go('account'), []);
 
-  const candidates = tanks.filter((t) => autoCapable(config, t.i));
+  // Every tank has a sensor; the controller skips tanks that are already full or not answering.
+  const candidates = tanks.filter((t) => t.ok && (t.pct ?? 0) < config.high - 2);
   const check = state?.check ?? null;
   const running = !!check?.run;
   const done = !!check && !check.run && check.rows.length > 0;
@@ -112,13 +122,17 @@ export default function PumpCheck() {
           <Txt size={14} style={{ lineHeight: s(20) }}>
             {candidates.length
               ? `${candidates.length} ${candidates.length === 1 ? 'tank' : 'tanks'} with a sensor will be checked. It takes about ${candidates.length * 2 + 1} minutes.`
-              : 'No tank with a sensor and a valve to check.'}
+              : 'No tank to check: all are full or their sensors give no reading.'}
           </Txt>
         </FadeUp>
       ) : null}
 
       {shown.map((t, k) => (
-        <FadeUp key={t.i} step={k} style={{ padding: s(14), gap: s(10), borderRadius: s(18), backgroundColor: colors.card }}>
+        <FadeUp
+          key={t.i}
+          step={k}
+          style={{ padding: s(14), gap: s(10), borderRadius: s(18), backgroundColor: colors.card }}
+        >
           <Txt size={15} weight={700}>
             {t.name}
           </Txt>
@@ -128,17 +142,25 @@ export default function PumpCheck() {
 
       {rows.map((r, k) => {
         const t = tanks[r.i];
-        const ht = config.semi[r.i]?.heightFt;
+        const ht = config.tanks[r.i]?.heightFt;
         const rate = r.lpm !== null ? `${r.lpm} L/min` : `${r.pctMin ?? 0} %/min`;
         return (
-          <FadeUp key={r.i} step={k} style={{ padding: s(14), gap: s(10), borderRadius: s(18), backgroundColor: colors.card }}>
+          <FadeUp
+            key={r.i}
+            step={k}
+            style={{ padding: s(14), gap: s(10), borderRadius: s(18), backgroundColor: colors.card }}
+          >
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
               <Txt size={15} weight={700}>
                 {t.name}
               </Txt>
               <Tag slow={r.slow} />
             </View>
-            <CheckBar running={false} pct={Math.min(100, ((r.lpm ?? r.pctMin ?? 0) / maxLpm) * 100)} delay={0} />
+            <CheckBar
+              running={false}
+              pct={Math.min(100, ((r.lpm ?? r.pctMin ?? 0) / maxLpm) * 100)}
+              delay={0}
+            />
             <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
               <Txt size={13} color={colors.muted}>
                 {ht ? `${rate} · ${ht} ft` : rate}

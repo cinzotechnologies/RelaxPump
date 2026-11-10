@@ -1,21 +1,21 @@
-// In-memory backend that behaves like a v2 controller (fill engine in miniature): 1–8 tanks,
-// optional sensor/valve per tank, PHE line, main tank, Auto, timer fills, pump check, installer PIN.
-// Used for UI work without Firebase or a controller (Expo Go, or EXPO_PUBLIC_BACKEND=mock).
+// In-memory backend that behaves like a v2 controller (fill engine in miniature): 1–5 tanks
+// (one tank = no valve, the pump fills it directly), optional main tank sensor, Auto, pump check,
+// test pulses, installer PIN. Used for UI work without Firebase or a controller (Expo Go, or
+// EXPO_PUBLIC_BACKEND=mock).
 //
-// Pick the demo layout with EXPO_PUBLIC_MOCK_LAYOUT, e.g. "8", "5,phe", "3,main,ns2", "1,ns1":
-//   <tanks>[,phe][,main][,ns<n> = tank n has no sensor]. Default "4,phe,main,ns3".
+// Pick the demo layout with EXPO_PUBLIC_MOCK_LAYOUT: "<tanks>[,main]", e.g. "1", "2", "3,main",
+// "5,main". Default "3,main".
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { pickLowest } from '@/logic/pump';
 import {
+  clampCount,
   DEFAULT_LAYOUT,
-  DEFAULT_SEMI,
-  V2_PORTS,
-  autoCapable,
-  firstSource,
+  DEFAULT_TANK,
+  hasValves,
+  MAX_TANKS,
   type LayoutConfig,
-  type Source,
 } from '@/model/layout';
 import type {
   CheckRow,
@@ -48,31 +48,25 @@ class Channel<T> {
 
 const DEMO_ID = 'RP-3F2A9C';
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
-const NAMES = ['Roof', 'Kitchen', 'Bathroom', 'Garden', 'Guest', 'Office', 'Store', 'Terrace'];
-const PCTS = [82, 46, 18, 64, 90, 35, 55, 27];
-const LITRES = [1000, 500, 500, 1000, 500, 1000, 1000, 500];
+const NAMES = ['Roof', 'Kitchen', 'Bathroom', 'Garden', 'Guest'];
+const PCTS = [82, 46, 18, 64, 90];
+const LITRES = [1000, 500, 500, 1000, 500];
+const HEIGHTS = [30, 12, 20, 25, 15];
 
-/** Demo layouts for the simulator and the tests: "5,phe,main,ns3". */
-export function mockLayout(spec = '4,phe,main,ns3'): LayoutConfig {
+/** Demo layouts for the simulator and the tests: "3,main" = 3 tanks + main tank sensor. */
+export function mockLayout(spec = '3,main'): LayoutConfig {
   const parts = spec.split(',').map((p) => p.trim());
-  const n = Math.max(1, Math.min(8, parseInt(parts[0], 10) || 4));
-  const ns = parts.find((p) => /^ns\d$/.test(p));
-  const noSensor = ns ? parseInt(ns.slice(2), 10) - 1 : -1;
-  const phe = parts.includes('phe');
+  const n = clampCount(parseInt(parts[0], 10) || 3);
   const main = parts.includes('main');
   return {
     ...DEFAULT_LAYOUT,
-    semi: Array.from({ length: n }, (_, i) => ({
-      ...DEFAULT_SEMI,
+    tanks: Array.from({ length: n }, (_, i) => ({
+      ...DEFAULT_TANK,
       name: NAMES[i],
       litres: LITRES[i],
-      sensor: i !== noSensor,
-      valve: n > 1 || i !== noSensor,
-      fillMin: i === noSensor ? 10 : null,
+      heightFt: HEIGHTS[i],
     })),
-    main: { ...DEFAULT_LAYOUT.main, enabled: main, sensor: main, litres: main ? 5000 : null },
-    phe: { ...DEFAULT_LAYOUT.phe, enabled: phe },
-    mode: phe ? 'auto' : 'pump',
+    main: { ...DEFAULT_LAYOUT.main, enabled: main, litres: main ? 5000 : null },
     low: 30,
     high: 95,
   };
@@ -87,9 +81,7 @@ type Saved = {
   session?: string | null;
 };
 
-/** Seconds of simulator time per real tick: timer fills of 10 min end in about a minute. */
 const TICK_MS = 700;
-const TIMER_SPEED = 10;
 
 export function createMockBackend(spec = process.env.EXPO_PUBLIC_MOCK_LAYOUT): Backend {
   let user: SessionUser | null = null;
@@ -122,10 +114,9 @@ export function createMockBackend(spec = process.env.EXPO_PUBLIC_MOCK_LAYOUT): B
 
   const info: DeviceInfo = {
     name: 'RelaxPump Controller',
-    fw: '2.0.0',
-    board: 'v2',
-    maxTanks: 8,
-    ports: V2_PORTS,
+    fw: '2.1.0',
+    board: 'v1',
+    maxTanks: MAX_TANKS,
     ownerUid: 'demo',
   };
   let config: LayoutConfig = mockLayout(spec || undefined);
@@ -135,43 +126,43 @@ export function createMockBackend(spec = process.env.EXPO_PUBLIC_MOCK_LAYOUT): B
   let pinOk = false;
 
   // Live controller state
-  let src: Source | null = null;
+  let pump = false;
   let active = -1;
-  let timedLeft = 0; // seconds left on a timer fill
   let runAuto = false;
   let autoMode = true;
   let msg = '';
-  const valves = new Array<boolean>(8).fill(false);
+  const valves = new Array<boolean>(MAX_TANKS).fill(false);
   let check: { run: boolean; rows: CheckRow[] } | null = null;
 
   const now = Date.now();
   const events: DeviceEvent[] = [
     { id: 'e3', type: 'full', tank: 0, ts: now - 10 * 60000 },
-    { id: 'e2', type: 'low', tank: 2, ts: now - 60 * 60000 },
-    { id: 'e1', type: 'pump_off', tank: 1, ts: new Date().setHours(6, 40, 0, 0), min: 25, auto: true },
+    { id: 'e2', type: 'low', tank: 2 % config.tanks.length, ts: now - 60 * 60000 },
+    { id: 'e1', type: 'pump_off', tank: 0, ts: new Date().setHours(6, 40, 0, 0), min: 25, auto: true },
   ];
   let evSeq = 4;
   let runStart = Date.now();
 
-  const n = () => config.semi.length;
+  const n = () => config.tanks.length;
+  const valved = () => hasValves(n());
+  const mainLow = () => config.main.enabled && mainPct < config.main.minPct;
   const snapshot = (): DeviceState => ({
     online: true,
     lastSeen: Date.now(),
     rssi: -55,
     ssid: 'Home_WiFi',
-    pump: src === 'pump',
-    phe: src === 'phe',
+    pump,
     auto: autoMode,
     msg,
-    src,
-    active: active >= 0 ? active : null,
-    semi: config.semi.map((t, i) => ({
-      pct: t.sensor ? Math.round(levels[i]) : null,
-      valve: valves[i],
+    active: pump && active >= 0 ? active : null,
+    tanks: config.tanks.map((_, i) => ({
+      pct: Math.round(levels[i]),
+      valve: valved() && valves[i],
       ok: true,
     })),
-    main: config.main.enabled && config.main.sensor ? { pct: Math.round(mainPct), ok: true } : null,
-    detected: { s: Array.from({ length: 8 }, (_, i) => i < 6), main: true },
+    main: config.main.enabled ? { pct: Math.round(mainPct), ok: true } : null,
+    // Ports T1–T4 and MAIN answer in the demo; T5 has no cable.
+    detected: { tanks: Array.from({ length: MAX_TANKS }, (_, i) => i < 4), main: true },
     check,
   });
 
@@ -195,53 +186,41 @@ export function createMockBackend(spec = process.env.EXPO_PUBLIC_MOCK_LAYOUT): B
     eventsCh.emit();
   };
 
-  const fillable = (i: number) => i >= 0 && i < n() && (n() === 1 || config.semi[i].valve);
-
-  const start = (i: number, s: Source, auto: boolean) => {
-    if (!fillable(i)) {
-      msg = `Tank ${i + 1} needs a valve.`;
-      return;
-    }
-    if (s === 'pump' && config.mode === 'phe') s = 'phe';
-    if (s === 'phe' && (!config.phe.enabled || config.mode === 'pump')) s = 'pump';
-    if (s === 'pump' && config.main.enabled && config.main.sensor && mainPct < config.main.minPct) {
+  const start = (i: number, auto: boolean) => {
+    if (i < 0 || i >= n()) return;
+    if (mainLow()) {
       msg = 'Main tank is low. The pump will not start.';
       return;
     }
     valves.fill(false);
-    if (config.semi[i].valve) valves[i] = true;
+    if (valved()) valves[i] = true;
     active = i;
-    src = s;
+    pump = true;
     runAuto = auto;
     runStart = Date.now();
-    timedLeft = config.semi[i].sensor ? 0 : (config.semi[i].fillMin ?? 10) * 60;
     msg = '';
-    addEvent({ type: s === 'pump' ? 'pump_on' : 'phe_on', tank: i, auto });
+    addEvent({ type: 'pump_on', tank: i, auto });
   };
 
   const stop = (stopped = true) => {
-    if (src && stopped)
+    if (pump && stopped)
       addEvent({
-        type: src === 'pump' ? 'pump_off' : 'phe_off',
+        type: 'pump_off',
         tank: Math.max(0, active),
         auto: runAuto,
         min: (Date.now() - runStart) / 60000,
       });
-    src = null;
+    pump = false;
     active = -1;
-    timedLeft = 0;
     setTimeout(() => {
-      if (!src) valves.fill(false);
+      if (!pump) valves.fill(false);
       stateCh.emit();
     }, 1200);
   };
 
   const autoPick = (except = -1) =>
     pickLowest(
-      config.semi.map((t, i) => ({
-        pct: autoCapable(config, i) ? levels[i] : null,
-        ok: true,
-      })),
+      config.tanks.map((_, i) => ({ pct: levels[i], ok: true })),
       config.low,
       except,
     );
@@ -249,26 +228,21 @@ export function createMockBackend(spec = process.env.EXPO_PUBLIC_MOCK_LAYOUT): B
   // Simulation loop.
   setInterval(() => {
     for (let i = 0; i < n(); i++) if (i !== active) levels[i] = Math.max(0, levels[i] - 0.08);
-    mainPct = Math.min(100, mainPct + (src === 'pump' ? -0.25 : 0.05));
+    mainPct = Math.min(100, mainPct + (pump ? -0.25 : 0.05));
     if (check?.run) {
       // handled by the pumpCheck timer
-    } else if (src && active >= 0) {
-      if (src === 'pump' && config.main.enabled && config.main.sensor && mainPct < config.main.minPct) {
+    } else if (pump && active >= 0) {
+      if (mainLow()) {
         msg = 'Main tank is low. Pump stopped.';
+        addEvent({ type: 'main_low', tank: -1 });
         stop();
-      } else if (timedLeft > 0) {
-        timedLeft -= (TICK_MS / 1000) * TIMER_SPEED;
-        if (timedLeft <= 0) {
-          addEvent({ type: 'timeout', tank: active, min: config.semi[active].fillMin ?? 10 });
-          stop();
-        }
       } else {
         levels[active] = Math.min(100, levels[active] + 1.2);
         if (levels[active] >= config.high) {
           addEvent({ type: 'full', tank: active });
-          const next = runAuto && autoMode ? autoPick(active) : -1;
+          const next = runAuto && autoMode && valved() ? autoPick(active) : -1;
           if (next >= 0) {
-            valves[next] = true;
+            valves[next] = true; // open the next valve first, close the old one after
             const prev = active;
             active = next;
             setTimeout(() => {
@@ -280,7 +254,7 @@ export function createMockBackend(spec = process.env.EXPO_PUBLIC_MOCK_LAYOUT): B
       }
     } else if (autoMode) {
       const low = autoPick();
-      if (low >= 0) start(low, firstSource(config.mode, config.phe.enabled), true);
+      if (low >= 0) start(low, true);
     }
     stateCh.emit();
   }, TICK_MS);
@@ -288,42 +262,41 @@ export function createMockBackend(spec = process.env.EXPO_PUBLIC_MOCK_LAYOUT): B
   const applyCommand = (cmd: Omit<DeviceCommand, 'ts'>) => {
     msg = '';
     if (cmd.auto !== undefined) autoMode = cmd.auto;
-    const manual = cmd.pump !== undefined || cmd.phe !== undefined || !!cmd.valve || !!cmd.fill;
-    if (manual) autoMode = false;
-    if (cmd.pump === false || cmd.phe === false) stop();
-    if (cmd.pump || cmd.phe) {
-      const open = valves.findIndex((v, i) => v && i < n());
-      const i = open >= 0 ? open : n() === 1 ? 0 : -1;
-      if (i < 0) msg = 'Open a valve first';
-      else start(i, cmd.phe ? 'phe' : 'pump', false);
-    }
-    if (cmd.valve) {
+    if (cmd.pump !== undefined || cmd.valve) autoMode = false;
+    if (cmd.valve && valved()) {
       const { i, open } = cmd.valve;
-      if (!open && src && active === i) {
+      if (!open && pump && active === i) {
         msg = 'Pump stopped first';
         stop();
-      } else if (open && src && i !== active && fillable(i)) {
+      } else if (open && pump && i !== active) {
         valves[i] = true;
         const prev = active;
         active = i;
         setTimeout(() => (valves[prev] = false), 1000);
-      } else if (!src && config.semi[i]?.valve) valves[i] = open;
+      } else if (!pump && i < n()) {
+        if (open) valves.fill(false); // idle: one valve open at a time
+        valves[i] = open;
+      }
     }
-    if (cmd.fill) {
-      if (src) stop(true);
-      start(cmd.fill.i, cmd.fill.src, false);
+    if (cmd.pump === false) stop();
+    if (cmd.pump && !pump) {
+      const open = valves.findIndex((v, i) => v && i < n());
+      const i = valved() ? open : 0;
+      if (i < 0) msg = 'Open a valve first';
+      else start(i, false);
     }
     if (cmd.pumpCheck) {
-      const tanks = config.semi.flatMap((t, i) => (autoCapable(config, i) ? [i] : []));
-      if (src || !tanks.length) msg = src ? 'Busy. Stop filling first.' : 'No tank with a sensor to check.';
+      const tanks = config.tanks.map((_, i) => i).filter((i) => levels[i] < config.high - 2);
+      if (pump || !tanks.length)
+        msg = pump ? 'Busy. Stop filling first.' : 'No tank to check: all full or no sensor answer.';
       else {
         check = { run: true, rows: [] };
         setTimeout(() => {
           check = {
             run: false,
             rows: tanks.map((i, k) => {
-              const pctMin = [4.2, 11, 0.9, 6, 3, 7, 5, 2][k % 8];
-              const litres = config.semi[i].litres;
+              const pctMin = [4.2, 11, 0.9, 6, 3][k % 5];
+              const litres = config.tanks[i].litres;
               return {
                 i,
                 skipped: false,
@@ -345,19 +318,13 @@ export function createMockBackend(spec = process.env.EXPO_PUBLIC_MOCK_LAYOUT): B
   const usage = (days: string[]): UsageDay[] => {
     const use = [160, 120, 240, 180, 150, 210, 180];
     const pt = [55, 40, 80, 60, 50, 70, 25];
-    const pheShare = config.phe.enabled ? 0.4 : 0;
-    const share = config.semi.map((_, i) => 1 / (i + 2));
+    const share = config.tanks.map((_, i) => 1 / (i + 2));
     const sum = share.reduce((a, b) => a + b, 0);
     return days.map((date, i) => ({
       date,
       litres: use[i % 7],
-      pumpMin: pt[i % 7] * (1 - pheShare),
-      pheLitres: use[i % 7] * pheShare,
-      perTank: share.map((f) => ({
-        litres: (use[i % 7] * f) / sum,
-        pumpMin: (pt[i % 7] * (1 - pheShare) * f) / sum,
-        pheLitres: (use[i % 7] * pheShare * f) / sum,
-      })),
+      pumpMin: pt[i % 7],
+      perTank: share.map((f) => ({ litres: (use[i % 7] * f) / sum, pumpMin: (pt[i % 7] * f) / sum })),
     }));
   };
 
@@ -449,7 +416,8 @@ export function createMockBackend(spec = process.env.EXPO_PUBLIC_MOCK_LAYOUT): B
       await wait(600);
       if (pin && !pinOk) throw new Error('PIN needed');
       if (newPin) pin = newPin;
-      if (src && !fillable(active)) stop();
+      // Tank removed, or one tank ↔ several (the water path changed): stop, like the firmware.
+      if (pump && (active >= cfg.tanks.length || hasValves(cfg.tanks.length) !== valved())) stop();
       config = JSON.parse(JSON.stringify(cfg)) as LayoutConfig;
       configCh.emit();
       stateCh.emit();

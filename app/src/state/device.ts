@@ -2,9 +2,9 @@ import { create } from 'zustand';
 
 import { eventRow, eventToast } from '@/logic/events';
 import { dayKey, parseTankName, tankName } from '@/logic/format';
-import { activeTank, decideStart, decideValve, parseLitres, setHigh, setLow } from '@/logic/pump';
+import { decideStart, decideValve, fillCommand, parseLitres, setHigh, setLow } from '@/logic/pump';
 import { planPumpOn, type VoiceAction } from '@/logic/voice';
-import { DEFAULT_LAYOUT, effectiveMode, firstSource, type Mode } from '@/model/layout';
+import { DEFAULT_LAYOUT, hasValves } from '@/model/layout';
 import type {
   DeviceCommand,
   DeviceConfig,
@@ -50,10 +50,7 @@ type DeviceStore = {
   /** Home "Pump" tile and Tanks "Start/Stop filling". */
   togglePump: () => void;
   toggleValve: (i: number) => void;
-  /** Tank without a sensor: Fill for its timer / Stop. */
-  toggleTimedFill: (i: number) => void;
   setAuto: (on: boolean) => void;
-  setMode: (m: Mode) => void;
   /** Voice / shortcut command (relaxpump://do/...), no tap. */
   voice: (a: VoiceAction) => void;
   setLow: (v: number) => void;
@@ -119,8 +116,7 @@ export const useDevice = create<DeviceStore>((set, get) => {
           .catch(() => useUi.getState().showToast('Could not save'));
     }, delay);
   };
-  const names = () => get().config.semi.map((t) => t.name);
-  const noSensor = () => get().config.semi.map((t) => !t.sensor);
+  const names = () => get().config.tanks.map((t) => t.name);
 
   return {
     id: null,
@@ -173,15 +169,14 @@ export const useDevice = create<DeviceStore>((set, get) => {
           set({ events });
           const fresh = events.filter((e) => e.ts > prevTop && e.ts > since);
           const e = fresh[0];
-          const text = e && eventToast(e, names(), noSensor());
+          const text = e && eventToast(e, names());
           if (text) useUi.getState().showToast(text);
           // Notify for everything the controller did by itself (auto start/stop, full, low, faults);
           // skip on/off the user just tapped. Real controllers only: the simulator would
           // fire one every minute.
-          const manual =
-            !!e && ['pump_on', 'pump_off', 'phe_on', 'phe_off'].includes(e.type) && !e.auto;
+          const manual = !!e && ['pump_on', 'pump_off'].includes(e.type) && !e.auto;
           if (e && b.kind !== 'mock' && !manual) {
-            const row = eventRow(e, get().config.low, Date.now(), names(), noSensor());
+            const row = eventRow(e, get().config.low, Date.now(), names());
             void notify(row.title, row.sub);
           }
         }),
@@ -193,49 +188,38 @@ export const useDevice = create<DeviceStore>((set, get) => {
     togglePump: () => {
       const s = get().state;
       if (!s || !reachable()) return;
-      const d = decideStart(s, get().config);
+      const d = decideStart(s, get().config.tanks.length);
       const ui = useUi.getState();
       if (!d.ok) {
         ui.setMsg(d.msg);
         return;
       }
       ui.setMsg('');
-      const stopping = s.pump || s.phe;
-      if (stopping) patch({ pump: false, phe: false, auto: false });
-      else if (d.cmd.phe) patch({ phe: true, src: 'phe', auto: false });
-      else patch({ pump: true, src: 'pump', auto: false });
+      patch({ pump: !s.pump, auto: false });
       ui.showToast(d.label);
       send(d.cmd);
     },
     toggleValve: (i) => {
       const s = get().state;
-      if (!s || !reachable()) return;
+      if (!s || !hasValves(get().config.tanks.length) || !reachable()) return;
       const d = decideValve(i, s);
       const ui = useUi.getState();
       if (d.kind === 'stopPumpFirst') {
         ui.setMsg(d.msg);
-        patch({ pump: false, phe: false, auto: false });
+        patch({ pump: false, auto: false });
         send({ valve: { i, open: false } });
         return;
       }
       ui.setMsg('');
-      patch({ auto: false, semi: s.semi.map((t, j) => (j === i ? { ...t, valve: d.open } : t)) });
+      // Idle: one valve open at a time (the controller closes the others).
+      const idle = !s.pump;
+      patch({
+        auto: false,
+        tanks: s.tanks.map((t, j) =>
+          j === i ? { ...t, valve: d.open } : idle && d.open ? { ...t, valve: false } : t,
+        ),
+      });
       send({ valve: { i, open: d.open } });
-    },
-    toggleTimedFill: (i) => {
-      const s = get().state;
-      if (!s || !reachable()) return;
-      const c = get().config;
-      const running = (s.pump || s.phe) && activeTank(s) === i;
-      if (running) {
-        patch({ pump: false, phe: false });
-        send({ pump: false });
-        return;
-      }
-      const src = firstSource(c.mode, c.phe.enabled);
-      patch({ auto: false, active: i, src, pump: src === 'pump', phe: src === 'phe' });
-      useUi.getState().showToast(`Filling ${tankName(names(), i)} · ${c.semi[i]?.fillMin ?? 10} min`);
-      send({ fill: { i, src } });
     },
     setAuto: (on) => {
       if (!reachable()) return;
@@ -243,11 +227,6 @@ export const useDevice = create<DeviceStore>((set, get) => {
       patch({ auto: on });
       useUi.getState().showToast(on ? 'Auto on' : 'Auto off');
       send({ auto: on });
-    },
-    setMode: (m) => {
-      const c = get().config;
-      const mode = effectiveMode(m, c.phe.enabled);
-      if (mode !== c.mode) writePatch({ ...c, mode }, { mode }, 0);
     },
     voice: (a) => {
       const s = get().state;
@@ -257,31 +236,26 @@ export const useDevice = create<DeviceStore>((set, get) => {
         get().setAuto(a === 'auto-on');
         return;
       }
-      const filling = s.pump || s.phe;
+      const filling = s.pump;
       if (a === 'pump-off') {
         if (!filling) {
           ui.showToast('Pump is already off');
           return;
         }
-        patch({ pump: false, phe: false, auto: false });
+        patch({ pump: false, auto: false });
         ui.showToast('Pump off');
         send({ pump: false });
         return;
       }
-      const c = get().config;
-      const plan = planPumpOn(
-        filling,
-        s.semi,
-        c.semi.map((t) => t.valve || c.semi.length === 1),
-      );
+      const n = get().config.tanks.length;
+      const plan = planPumpOn(filling, s.tanks.slice(0, n));
       if (plan.kind === 'already') ui.showToast('Pump is already on');
       else if (plan.kind === 'full') ui.showToast('All tanks are full');
       else if (plan.kind === 'pump') get().togglePump();
       else {
-        const src = firstSource(c.mode, c.phe.enabled);
-        patch({ auto: false, active: plan.tank, src });
+        patch({ auto: false, active: plan.tank, pump: true });
         ui.showToast(`Filling ${tankName(names(), plan.tank)}`);
-        send({ fill: { i: plan.tank, src } });
+        send(fillCommand(plan.tank, n));
       }
     },
     setLow: (v) => {
@@ -297,14 +271,14 @@ export const useDevice = create<DeviceStore>((set, get) => {
     setLitres: (i, text) => {
       const c = get().config;
       const litres = parseLitres(text);
-      const semi = c.semi.map((t, j) => (j === i ? { ...t, litres } : t));
-      writePatch({ ...c, semi }, { [`semi/${i}/litres`]: litres }, 800);
+      const tanks = c.tanks.map((t, j) => (j === i ? { ...t, litres } : t));
+      writePatch({ ...c, tanks }, { [`tanks/${i}/litres`]: litres }, 800);
     },
     setTankName: (i, text) => {
       const c = get().config;
       const name = parseTankName(text);
-      const semi = c.semi.map((t, j) => (j === i ? { ...t, name } : t));
-      writePatch({ ...c, semi }, { [`semi/${i}/name`]: name }, 800);
+      const tanks = c.tanks.map((t, j) => (j === i ? { ...t, name } : t));
+      writePatch({ ...c, tanks }, { [`tanks/${i}/name`]: name }, 800);
     },
     runPumpCheck: () => {
       const s = get().state;

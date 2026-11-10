@@ -10,7 +10,7 @@ import { Icon, type IconName } from '@/components/Icon';
 import { Press } from '@/components/Press';
 import { Screen } from '@/components/Screen';
 import { initials, phoneShow } from '@/logic/format';
-import { freePorts, portsOf } from '@/model/layout';
+import { freePorts, MAX_TANKS, RELAYS, valveCount } from '@/model/layout';
 import { backend } from '@/services';
 import { useDevice } from '@/state/device';
 import { go } from '@/state/nav';
@@ -51,7 +51,9 @@ function Stat({ value, label, accent }: { value: string; label: string; accent?:
   );
 }
 
-const Divider = () => <View style={{ height: 1, marginLeft: s(60), backgroundColor: alpha(colors.glow, 0.08) }} />;
+const Divider = () => (
+  <View style={{ height: 1, marginLeft: s(60), backgroundColor: alpha(colors.glow, 0.08) }} />
+);
 
 function Row({
   icon,
@@ -105,11 +107,11 @@ export default function Account() {
   const config = useDevice((d) => d.config);
   const info = useDevice((d) => d.info);
   const deviceId = useSession((st) => st.deviceId);
-  const ports = portsOf(info);
-  const n = config.semi.length;
-  const sensors = config.semi.filter((t) => t.sensor).length;
-  const free = freePorts(config, ports);
-  const maxPorts = Math.max(ports.sensors, ports.valves);
+  const n = config.tanks.length;
+  const valves = valveCount(n);
+  const maxPorts = Math.min(MAX_TANKS, info?.maxTanks ?? MAX_TANKS);
+  const free = freePorts(n, maxPorts);
+  const hasMain = config.main.enabled;
   const openSheet = useUi((st) => st.openSheet);
   const showToast = useUi((st) => st.showToast);
   const name = profile?.name || 'My Home';
@@ -157,26 +159,25 @@ export default function Account() {
         </Txt>
       </FadeUp>
       {deviceId ? (
-        <FadeUp step={1} style={{ padding: s(16), gap: s(12), borderRadius: s(22), backgroundColor: colors.card }}>
+        <FadeUp
+          step={1}
+          style={{ padding: s(16), gap: s(12), borderRadius: s(22), backgroundColor: colors.card }}
+        >
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
             <Txt size={11} weight={600} tracking={1.5} color={colors.glow}>
               MY SETUP
             </Txt>
-            <Pill>{`${deviceId}${info?.board ? ` · ${info.board}` : ''}`}</Pill>
+            <Pill>{`${deviceId} · ${RELAYS}-relay`}</Pill>
           </View>
           <View style={{ flexDirection: 'row', gap: s(8) }}>
             <Stat value={String(n)} label={n === 1 ? 'tank' : 'tanks'} />
-            <Stat value={String(sensors)} label={sensors === 1 ? 'sensor' : 'sensors'} />
-            <Stat value="PHE" label={config.phe.enabled ? 'on' : 'off'} accent={config.phe.enabled} />
-            <Stat
-              value="Main"
-              label={config.main.enabled && config.main.sensor ? 'sensor' : 'none'}
-              accent={config.main.enabled && config.main.sensor}
-            />
+            <Stat value={String(valves)} label={valves === 1 ? 'valve' : 'valves'} />
+            <Stat value={String(n)} label={n === 1 ? 'sensor' : 'sensors'} />
+            <Stat value="Main" label={hasMain ? 'sensor' : 'none'} accent={hasMain} />
           </View>
           <Txt size={12} color={colors.muted} style={{ lineHeight: s(18) }}>
             {free > 0
-              ? `${free} of ${maxPorts} tank ports free. Add a tank any time.`
+              ? `${free} of ${maxPorts} tank ports free. Add a tank any time with a Tank Kit (sensor + valve).`
               : `All ${maxPorts} tank ports are in use.`}
           </Txt>
         </FadeUp>
