@@ -60,6 +60,7 @@ export function BottomNav() {
   const route = useUi((st) => st.route);
   const sheet = useUi((st) => st.sheet);
   const openSheet = useUi((st) => st.openSheet);
+  const closeSheet = useUi((st) => st.closeSheet);
   const go = useNav();
   const insets = useSafeAreaInsets();
   const bleOpen = sheet === 'ble';
@@ -97,7 +98,14 @@ export function BottomNav() {
       </View>
 
       <Press
-        onPress={() => openSheet('ble')}
+        onPress={() => {
+          // Tapped while the sheet is still sliding away (store still says 'ble'): finish the
+          // close, then open it again once the animation is over, instead of ignoring the tap.
+          if (useUi.getState().sheet === 'ble') {
+            closeSheet();
+            setTimeout(() => openSheet('ble'), 550);
+          } else openSheet('ble');
+        }}
         accessibilityLabel="Bluetooth setup"
         style={{
           width: s(58),
