@@ -108,7 +108,13 @@ async function stopPump(reason) {
 }
 
 onValue(ref(db, `${base}/config`), (s) => {
-  if (s.exists()) cfg = { ...cfg, ...s.val() };
+  if (s.exists()) {
+    const v = s.val();
+    // v2 config (semi[]) → the simple shape this simulator uses (every tank with sensor + valve).
+    if (v.semi) v.tanks = Object.values(v.semi);
+    if (v.semi) v.tankCount = v.tanks.length;
+    cfg = { ...cfg, ...v };
+  }
   console.log(`Config: ${cfg.tankCount} tanks, start <${cfg.low}%, stop ${cfg.high}%`);
 });
 

@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RelaxPump Controller v2 — pins, connectors, BOM</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Outfit:wght@400;500;600&amp;display=swap">
+<style>
+body{margin:0;background:#FFFFFF}
+.sp{width:1440px;padding:40px;box-sizing:border-box;font-family:Inter,system-ui,sans-serif;color:#021A20;background:#FFFFFF}
+.sp *{box-sizing:border-box}
+.cols{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px;margin-top:28px;align-items:start}
+.box{border:1px solid #CFE3E7;border-radius:18px;overflow:hidden}
+.box h2{margin:0;padding:14px 18px;font:600 16px/1.2 Outfit,sans-serif;background:#F3F9FA;border-bottom:1px solid #CFE3E7}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:8px 12px;text-align:left;border-bottom:1px solid #EEF4F5;vertical-align:top}
+th{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#48656A;font-weight:600}
+td.m{font-family:ui-monospace,Menlo,monospace;font-weight:600;color:#035360;white-space:nowrap}
+tr:last-child td{border-bottom:0}
+.note{padding:14px 18px;font-size:13px;line-height:1.55;color:#2E4A50}
+.note li{margin-bottom:6px}
+</style>
+</helmet>
+<div class="sp">
+<div style="display: flex; align-items: baseline; gap: 16px"><span style="font-family: Outfit, sans-serif; font-size: 30px; font-weight: 500">RelaxPump Controller v2 — pins, connectors, parts</span><span style="font-size: 14px; color: #48656A">for the KiCad / EasyEDA schematic</span></div>
+<div class="cols">
+
+<div style="display: flex; flex-direction: column; gap: 24px">
+<div class="box"><h2>ESP32 pin map</h2>
+<table>
+<tr><th>Pin</th><th>Goes to</th></tr>
+<tr><td class="m">G21 / G22</td><td>MCP23017 SDA / SCL (4.7 kΩ pull-ups to 3.3 V)</td></tr>
+<tr><td class="m">MCP GPA0–7</td><td>V1–V8 MOSFET gates (100 Ω, 10 kΩ pull-down)</td></tr>
+<tr><td class="m">G32</td><td>PHE MOSFET gate (direct)</td></tr>
+<tr><td class="m">G33</td><td>PUMP MOSFET gate (direct)</td></tr>
+<tr><td class="m">G18</td><td>Trig, all 9 sensors (100 Ω)</td></tr>
+<tr><td class="m">G34 G35 G36 G39</td><td>Echo S1 S2 S3 S4 (1k/2k divider)</td></tr>
+<tr><td class="m">G16 G17 G19 G23</td><td>Echo S5 S6 S7 S8 (1k/2k divider)</td></tr>
+<tr><td class="m">G4</td><td>Echo MAIN (1k/2k divider)</td></tr>
+<tr><td class="m">G2</td><td>Status LED (1 kΩ)</td></tr>
+<tr><td class="m">G0</td><td>Setup button (BOOT)</td></tr>
+<tr><td class="m">G13 G14 G25–27 G5</td><td>Spare (G39↔G13 swap for a CT sensor later)</td></tr>
+<tr><td class="m">VIN / GND</td><td>5 V from the buck</td></tr>
+</table></div>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 24px">
+<div class="box"><h2>Connectors</h2>
+<table>
+<tr><th>Connector</th><th>Pins</th></tr>
+<tr><td class="m">12V IN</td><td>1 +12 V · 2 GND · 12 V 5 A supply</td></tr>
+<tr><td class="m">V1–V8, PHE</td><td>1 +12 V · 2 switched GND → 12 V NC solenoid</td></tr>
+<tr><td class="m">PUMP</td><td>1 +12 V · 2 switched GND → coil of a 12 V DIN-rail relay in the mains box</td></tr>
+<tr><td class="m">S1–S8, MAIN (RJ45)</td><td>T568B: 8 +5 V (brown) · 7 GND (brown-white) · 4 Trig (blue) · 6 Echo (green) · 1, 2 extra GND (orange pair) · 3, 5 spare</td></tr>
+</table></div>
+<div class="box"><h2>Mains box (not on this PCB)</h2>
+<div class="note"><ul style="margin: 0; padding-left: 18px">
+<li>MCB → contactor (sized to the pump) → overload relay (≥ 1.5 HP) → pump.</li>
+<li>12 V DIN-rail interface relay: coil from PUMP; contact switches the 230 V contactor coil. RC snubber on the coil.</li>
+<li>Existing starter panel: use the interface relay contact as a dry contact in its start circuit.</li>
+<li>Electrician only. Earth everything metal.</li>
+</ul></div></div>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 24px">
+<div class="box"><h2>Bill of materials (main parts)</h2>
+<table>
+<tr><th>Qty</th><th>Part</th></tr>
+<tr><td class="m">1</td><td>ESP32-DevKitC-32E + 2 × 1×19 female headers</td></tr>
+<tr><td class="m">1</td><td>MCP23017-E/SO + 100 nF</td></tr>
+<tr><td class="m">10</td><td>AO3400 MOSFET (or IRLZ44N) + SS34 flyback + LED + 1 kΩ</td></tr>
+<tr><td class="m">11</td><td>2-pin screw terminal 5.08 mm 10 A</td></tr>
+<tr><td class="m">9</td><td>RJ45 8P8C through-hole jack</td></tr>
+<tr><td class="m">9</td><td>1 kΩ + 2 kΩ divider (0603)</td></tr>
+<tr><td class="m">3</td><td>TPD4E05U06 ESD array</td></tr>
+<tr><td class="m">1</td><td>5 V 3 A buck (MP1584EN / XL1509-5.0 circuit)</td></tr>
+<tr><td class="m">1</td><td>5 A fuse holder + fuse · SS54 · SMBJ15A</td></tr>
+<tr><td class="m">1</td><td>470 µF 25 V + 10 µF ceramic</td></tr>
+<tr><td class="m">1</td><td>6×6 tactile switch · status LED</td></tr>
+<tr><td class="m">4</td><td>M3 mounting holes</td></tr>
+</table></div>
+<div class="box"><h2>Layout rules</h2>
+<div class="note"><ul style="margin: 0; padding-left: 18px">
+<li>2-layer, 1.6 mm, 1 oz copper (2 oz if possible).</li>
+<li>12 V rail traces ≥ 2.5 mm (6 A); each valve output ≥ 1 mm (2 A).</li>
+<li>No copper under the ESP32 antenna; antenna at the board edge.</li>
+<li>Ground pour on both layers, stitched with vias.</li>
+<li>Board 160 × 100 mm to fit an IP65 box; connectors on the edges.</li>
+</ul></div></div>
+</div>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":980}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

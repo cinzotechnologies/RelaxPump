@@ -2,7 +2,7 @@
 // then writes secrets.h (for flashing) and the box QR label into firebase/out/<ID>/ (git-ignored).
 //
 //   npm run new-device                 # random id
-//   npm run new-device -- --id RP-3F2A9C --tanks 3
+//   npm run new-device -- --id RP-3F2A9C --board v2   (v1 = today's 3-tank board, default)
 import { createHash, randomInt } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -17,7 +17,10 @@ const HEX = '0123456789ABCDEF';
 
 const id = (arg('id') || `RP-${rand(6, HEX)}`).toUpperCase();
 if (!/^RP-[0-9A-F]{6}$/.test(id)) throw new Error('id must look like RP-3F2A9C');
-const maxTanks = Number(arg('tanks', '3'));
+const board = arg('board', 'v1') === 'v2' ? 'v2' : 'v1';
+const ports = board === 'v2' ? { sensors: 8, valves: 8, phe: true, main: true } : { sensors: 3, valves: 3, phe: false, main: false };
+const maxTanks = ports.sensors;
+const startTanks = Math.min(3, maxTanks);
 const pop = rand(8);
 const code = rand(12);
 const password = rand(24, ALNUM + 'abcdefghjkmnpqrstuvwxyz');
@@ -35,13 +38,16 @@ if (existing.exists()) throw new Error(`${id} already exists`);
 await auth.createUser({ uid: `dev-${id}`, email: `${id.toLowerCase()}@${DEVICE_DOMAIN}`, password, emailVerified: true });
 await db.ref().update({
   [`claims/${id}`]: { codeHash },
-  [`devices/${id}/info`]: { name: 'RelaxPump Controller', fw: '', maxTanks },
+  [`devices/${id}/info`]: { name: 'RelaxPump Controller', fw: '', board, maxTanks, ports },
+  // v2 layout; the installer changes it in the app (Installer setup).
   [`devices/${id}/config`]: {
-    tankCount: maxTanks,
+    semi: Array.from({ length: startTanks }, () => ({ emptyCm: 120, fullCm: 30, sensor: true, valve: true })),
+    main: { enabled: false, sensor: false, minPct: 10 },
+    phe: { enabled: false, probeMin: 4, retryMin: 30 },
+    mode: 'pump',
     low: 20,
     high: 95,
     maxRunMin: 30,
-    tanks: Array.from({ length: maxTanks }, () => ({ emptyCm: 120, fullCm: 30, litres: 0 })),
   },
 });
 
@@ -57,6 +63,7 @@ writeFileSync(
 #define RP_POP              "${pop}"
 #define RP_FIREBASE_API_KEY "${apiKey}"
 #define RP_FIREBASE_DB_URL  "${DB_URL}"
+#define RP_BOARD            ${board === 'v2' ? 2 : 1}
 `,
 );
 writeFileSync(new URL('device.json', dir), JSON.stringify({ id, pop, code, password, apiKey }, null, 2));

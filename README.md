@@ -1,8 +1,10 @@
 # RelaxPump
 
-Water-tank automation, **engineered by CINZO**. One ESP32 controller per home: an ultrasonic
-sensor and a solenoid valve per tank, one pump through relay + contactor, and a mobile app to
-watch the levels and run the pump by hand or automatically.
+Water-tank automation, **engineered by CINZO**. One ESP32 controller per home for 1–8 semi
+tanks (each with a sensor and/or a solenoid valve), an optional PHE (public water) line, an
+optional main-tank sensor and one pump. The installer sets the layout in the app — the firmware is
+the same for every home (`docs/flexible-system.md`). The app shows the levels and fills the tanks
+by hand or automatically, from the pump or the PHE line.
 
 | Folder | What |
 |---|---|
@@ -10,7 +12,8 @@ watch the levels and run the pump by hand or automatically.
 | `firmware/` | PlatformIO project for the ESP32 controller (`tools/ValveTest` = relay test) |
 | `web/` | Website, store and admin panel — Next.js on Cloudflare (see `docs/website-brief.md`) |
 | `firebase/` | Realtime Database rules, emulator tests, admin/seed scripts |
-| `docs/` | Setup guide, data model, wiring |
+| `docs/` | Setup guide, data model, wiring (board v1 + v2), v2 plan |
+| `hardware/` | PCB v2 notes (pins, connectors, layout) |
 | `reference/` | Approved design and legacy code (read-only) |
 
 Setup: see [`docs/SETUP.md`](docs/SETUP.md).
