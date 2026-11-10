@@ -85,6 +85,10 @@ static void onSysEvent(arduino_event_t *e) {
 
 bool wifiLowLevelInit(bool persistent);  // arduino-esp32 WiFiGeneric
 
+// Without this, initArduino() frees the Bluetooth controller memory at boot (its weak default says
+// Bluetooth is unused) and BLE setup can never start. The WiFiProv library used to pull this in.
+extern "C" bool btInUse() { return true; }
+
 /** Encrypted BLE reply: the app reads this controller's id and claim code before sending Wi-Fi. */
 static esp_err_t onIdentityRequest(uint32_t, const uint8_t *, ssize_t, uint8_t **out, ssize_t *outLen, void *) {
   static const char reply[] = "RP1;" RP_DEVICE_ID ";" RP_CLAIM_CODE;
@@ -116,6 +120,10 @@ static void startProvisioning() {
     return;
   }
   if (provisioned) {
+    wifi_config_t saved = {};
+    esp_wifi_get_config(WIFI_IF_STA, &saved);
+    Serial.printf("[WIFI] connecting to saved network \"%s\" (hold BOOT 5 s or type w to forget it)\n",
+                  (const char *)saved.sta.ssid);
     esp_wifi_start();
     wifi_prov_mgr_deinit();
     WiFi.begin();
