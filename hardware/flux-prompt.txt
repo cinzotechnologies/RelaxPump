@@ -1,0 +1,9 @@
+Design a 2-layer PCB, 120 x 90 mm, called "RelaxPump Controller v2 Rev A" (water-tank pump controller).
+
+Use the attached netlist (pcb-v2-netlist.csv: Ref, Pin, Pin name, Net) and BOM (pcb-v2-bom.csv) exactly. Summary:
+- U1 ESP32-DevKitC-32E (38-pin) plugged into two 1x19 female headers 25.4 mm apart, on the left; antenna overhangs the left board edge, no copper or parts under it.
+- Power on the right: J1 12 V screw terminal -> F1 5 A fuse -> D1 SS54 (reverse protection) -> +12V; D2 SMBJ15A TVS and C1 470 uF + C2 10 uF on +12V; U2 5 V 3 A buck module (MP1584EN mini, pins IN+, IN-, OUT+, OUT-) feeding +5V (C3 100 uF, C4 10 uF, LED8 power LED).
+- Six low-side outputs on the top edge (J2-J7 = V1, V2, V3, V4, V5, PUMP), each: GPIO -> 100 R -> AO3400A gate, 10 k gate pull-down, source to GND, drain to terminal pin 2, terminal pin 1 = +12V, SS34 flyback diode (cathode +12V), 4.7 k + green LED from +12V to drain. Gates: V1 G25, V2 G26, V3 G27, V4 G32, V5 G22, PUMP G33.
+- Six RJ45 sensor jacks on the bottom edge (J8-J13 = T1, T2, T3, T4, T5, MAIN), T568B: pin 8 +5V, pins 3/5/7 GND, pin 4 TRIG via 100 R from the GPIO, pin 6 ECHO via a 1 k / 2 k divider to the GPIO, PESD5V0S2BT ESD on TRIG and ECHO. Trig/Echo: T1 G16/G17, T2 G18/G19, T3 G23/G4, T4 G13/G34, T5 G14/G35, MAIN G21/G39.
+- SW1 SETUP to G0, SW2 RESET to EN, LED7 status on G2 via 1 k, J14 spare header (3V3, G5, GND), four M3 holes.
+Rules: +12V traces >= 2.5 mm, output traces >= 1 mm, GND pour on both layers with stitching vias, no 230 V anywhere on the board, silkscreen every port name. Run ERC and DRC and list anything that does not fit.

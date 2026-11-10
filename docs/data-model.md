@@ -1,33 +1,29 @@
-# Realtime Database data model (v2 flexible system)
+# Realtime Database data model (v2 customizable system, 1–5 tanks)
 
-Source of truth for the shape: `docs/flexible-system.md` §5. Types in the app:
-`app/src/model/layout.ts` (config, ports, validation, v1 → v2 reading) and `app/src/model/types.ts`.
+Source of truth for the shape: `docs/flexible-system.md` §3. Types in the app:
+`app/src/model/layout.ts` (config, validation, helpers) and `app/src/model/types.ts`.
 
 ```
 devices/{deviceId}/                     deviceId = "RP-" + 6 hex, e.g. RP-3F2A9C
-  info:   { name, fw, board: 'v1'|'v2', maxTanks,
-            ports: { sensors, valves, phe, main }, ownerUid }
-                                         admin creates; the device writes fw/board/maxTanks/ports;
+  info:   { name, fw, board: 'v1'|'v2', maxTanks: 5, ownerUid }
+                                         admin creates; the device writes fw/board/maxTanks
+                                         (board is a label: hand-wired board / PCB, same pins);
                                          the user sets ownerUid by claiming
-  config: { semi: [ { name?, litres?, emptyCm, fullCm, heightFt?,
-                      sensor, valve, fillMin? } ],        1..maxTanks entries
-            main: { enabled, sensor, litres?, emptyCm, fullCm, minPct },
-            phe:  { enabled, probeMin, retryMin },
-            mode: 'auto'|'phe'|'pump', low, high, maxRunMin }
-  state:  { online, lastSeen, rssi, ssid, auto, msg,
-            pump, phe, src: 'pump'|'phe'|null, active: int|null,
-            semi: [ { pct|null, valve, ok } ],
-            main: { pct|null, ok } | null,
-            detected: { s: [bool × 8], main },           which sensor ports answer
-            check: { run, rows: [ { i, pctMin, lpm|null, minToFull|null, slow } ] } }
-  cmd:    { pump?, phe?, auto?, valve?: { i, open }, fill?: { i, src },
-            test?: { port: 'V1'..'V8'|'PHE'|'PUMP', ms ≤ 3000 }, pumpCheck?, ts }
+  config: { tankCount: 1..5, low, high, maxRunMin,
+            tanks: [ { name?, litres?, emptyCm, fullCm, heightFt? } ],   length = tankCount
+            main?: { enabled, litres?, emptyCm?, fullCm?, minPct 5–40 } }
+  state:  { online, lastSeen, rssi, ssid, pump, auto, msg, active: int|null,
+            tanks: [ { pct, valve, ok } ],
+            main: { pct, ok } | null,
+            detected: { tanks: [bool × 5], main },       which sensor ports answer
+            check: { run, rows: [ { i, pctMin, lpm|null, minToFull|null, slow } ] } | null }
+  cmd:    { pump?, auto?, valve?: { i: 0..4, open }, pumpCheck?,
+            test?: { port: 'V1'..'V5'|'PUMP', ms ≤ 3000 }, ts }
   events/{pushId}: { type, tank, ts, min?, auto? }
             type = full | low | pump_on | pump_off | dry_run | timeout | sensor |
-                   phe_on | phe_off | phe_none | main_low | board_error | check_done
-            tank = semi index, or -1 for main tank / board events
-  usage/{yyyy-mm-dd}: { litres, pumpMin, pheLitres,
-                        perTank: [ { litres, pumpMin, pheLitres } ] }
+                   main_low | board_error | check_done
+            tank = tank index, or -1 for main tank / board events
+  usage/{yyyy-mm-dd}: { litres, pumpMin, perTank: [ { litres, pumpMin } ] }   up to 5
 users/{uid}: { name, phone, devices: { deviceId: true }, fcm: { token: true }, createdAt }
 claims/{deviceId}: { codeHash }                      admin only, never readable
 claimAttempts/{deviceId}/{uid}: "<sha256 hex>"       write-only, used by the claim rule
@@ -36,29 +32,23 @@ pinAttempts/{deviceId}/{uid}: { hash, ts }           write-only, fresh (± 60 s)
 pinChecks/{deviceId}/{uid}: ts                       write succeeds only with a valid PIN
 ```
 
-## Per-tank rules (app, rules and firmware)
+## Layout rules (app, rules and firmware)
 
-| Tank has | Behaviour |
-|---|---|
-| sensor + valve | Auto fills below `low`, stops at `high` |
-| valve only | manual Fill for `fillMin` (1–120) minutes, not in Auto |
-| sensor only | level shown; only allowed as the single tank (pump fills it directly) |
-| neither | single tank only; pump on/off with a `fillMin` timer |
-
-- With 2+ semi tanks every tank has a valve.
-- No sensor → `fillMin` is required.
-- Semi tank *n* always uses port S*n* and V*n*; the count is capped by `info.maxTanks`
-  (= `ports.sensors`: 3 on board v1, 8 on board v2).
-- `main.enabled` needs `ports.main`, `phe.enabled` needs `ports.phe`, `mode: 'phe'` needs PHE.
+- 1–5 semi tanks; tank *n* uses port T*n* (sensor) and relay V*n* (valve).
+- **Valves are implied:** `tankCount ≥ 2` → every tank has a valve; `tankCount == 1` → no valve,
+  the pump fills the tank directly (V1 unused).
+- `tanks` has exactly `tankCount` entries; `tankCount ≤ info.maxTanks` (old 3-tank firmware
+  reports 3, v2 firmware reports 5).
+- Main tank sensor (port MAIN) optional: the pump never starts, and stops, below `main.minPct`.
+- No PHE line, no modes, no tanks without a sensor.
 
 ## Who may write what
 
 | Path | Writer |
 |---|---|
-| `config` as a whole, `config/semi/{i}` (layout), `maxRunMin`, `main`, `phe` | owner **with installer PIN** (or no PIN set yet) |
-| `config/low`, `high`, `mode`, `semi/{i}/name`, `semi/{i}/litres`, `main/litres` | owner (customer) |
-| `config/semi`, `main`, `phe`, `mode` while they don't exist | device (one-time migration) |
-| `info/fw`, `board`, `maxTanks`, `ports` | device |
+| `config` as a whole, `tankCount`, `tanks/{i}` (layout), `emptyCm`, `fullCm`, `heightFt`, `maxRunMin`, `main` | owner **with installer PIN** (or no PIN set yet) |
+| `config/low`, `high`, `tanks/{i}/name`, `tanks/{i}/litres`, `main/litres` | owner (customer) |
+| `info/fw`, `board`, `maxTanks` | device |
 | `state`, `events` (append-only), `usage` | device |
 | `cmd` | owner writes, device deletes |
 
@@ -72,22 +62,18 @@ RTDB read rules cannot be taken away deeper in the tree. So the hash lives in
 - **Check a PIN:** write `pinAttempts/{id}/{uid} = { hash, ts: now }`, then write
   `pinChecks/{id}/{uid} = now`. The second write succeeds only when the attempt matches (or no PIN
   is set yet → first setup). An attempt is valid for 15 minutes.
-- **Save:** one multi-path update of `config/*` (+ `installerPins/{id}` on the first setup or a PIN
+- **Save:** one multi-path update of `config` (+ `installerPins/{id}` on the first setup or a PIN
   change), then the app deletes its attempt.
 - **Forgot PIN:** CINZO runs `npm run reset-pin -- --id RP-XXXXXX` in `firebase/`.
 - The PIN stops family members (who share the one account) from changing the wiring layout by
   mistake. It is 4 digits, so it is not strong security.
 
-## Migration from v1
+## Older data
 
-v1 config: `{ tankCount, low, high, maxRunMin, tanks: [{ emptyCm, fullCm, litres, name }] }`.
-
-1. **App** (`normalizeConfig`) reads both shapes: without `semi`, the first `tankCount` entries of
-   `tanks` become semi tanks with `sensor = valve = true`, `mode = 'pump'`, no PHE / main.
-2. **Firmware v2**, on first connect, if `config/semi` is missing, writes `semi`, `mode`, `main`,
-   `phe` once (rules allow the device only while they don't exist). `tankCount` and `tanks` stay
-   for old app versions and are ignored afterwards.
-3. The installer's first Save writes the full v2 config.
+v1 controllers already use this shape (`tankCount` + `tanks`, no `main`), so nothing needs to be
+migrated: a missing `main` means "no main tank sensor", missing `name`/`litres`/`heightFt` mean
+unknown. The earlier 8-tank / PHE draft (`semi`, `phe`, `mode`, `info.ports`) was never deployed
+and is rejected by the rules.
 
 ## Accounts
 

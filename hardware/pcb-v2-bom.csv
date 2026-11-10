@@ -1,0 +1,94 @@
+Ref,Value,Footprint,What it does
+U1,"ESP32-DevKitC-32E (WROOM, not WROVER)","2 × 1×19 female header, 2.54 mm, rows 25.4 mm apart","Controller, plugs in, USB for flashing"
+J1,12V IN,Screw terminal 2P 5.08 mm 10 A,12 V 5 A supply input
+F1,Fuse 5 A,Blade fuse holder (mini) or 5 A PTC 1812,Input fuse
+D1,SS54,SMA/SMC,Reverse-polarity protection (series)
+D2,SMBJ15A,SMB,TVS on the 12 V rail
+C1,470 µF 25 V,Radial 10 mm,12 V bulk
+C2,10 µF 25 V X5R,1206,12 V ceramic
+U2,5 V 3 A buck module (MP1584EN mini),"4-pin module, 22 × 17 mm",12 V → 5 V for ESP32 and sensors
+C3,100 µF 10 V,Radial 6.3 mm,5 V bulk
+C4,10 µF 10 V X5R,0805,5 V ceramic
+LED8,Green LED,0805,5 V power indicator
+R38,1 kΩ,0603,Power LED resistor
+J2,V1 valve,Screw terminal 2P 5.08 mm 10 A,Output V1
+Q1,AO3400A,SOT-23,"Low-side switch V1 (30 V, 5.7 A, logic level)"
+R7,100 Ω,0603,Gate series V1
+R13,10 kΩ,0603,Gate pull-down V1 (OFF at boot)
+D3,SS34,SMA,Flyback V1
+R1,4.7 kΩ,0603,LED resistor V1
+LED1,Green LED,0805,ON indicator V1
+J3,V2 valve,Screw terminal 2P 5.08 mm 10 A,Output V2
+Q2,AO3400A,SOT-23,"Low-side switch V2 (30 V, 5.7 A, logic level)"
+R8,100 Ω,0603,Gate series V2
+R14,10 kΩ,0603,Gate pull-down V2 (OFF at boot)
+D4,SS34,SMA,Flyback V2
+R2,4.7 kΩ,0603,LED resistor V2
+LED2,Green LED,0805,ON indicator V2
+J4,V3 valve,Screw terminal 2P 5.08 mm 10 A,Output V3
+Q3,AO3400A,SOT-23,"Low-side switch V3 (30 V, 5.7 A, logic level)"
+R9,100 Ω,0603,Gate series V3
+R15,10 kΩ,0603,Gate pull-down V3 (OFF at boot)
+D5,SS34,SMA,Flyback V3
+R3,4.7 kΩ,0603,LED resistor V3
+LED3,Green LED,0805,ON indicator V3
+J5,V4 valve,Screw terminal 2P 5.08 mm 10 A,Output V4
+Q4,AO3400A,SOT-23,"Low-side switch V4 (30 V, 5.7 A, logic level)"
+R10,100 Ω,0603,Gate series V4
+R16,10 kΩ,0603,Gate pull-down V4 (OFF at boot)
+D6,SS34,SMA,Flyback V4
+R4,4.7 kΩ,0603,LED resistor V4
+LED4,Green LED,0805,ON indicator V4
+J6,V5 valve,Screw terminal 2P 5.08 mm 10 A,Output V5
+Q5,AO3400A,SOT-23,"Low-side switch V5 (30 V, 5.7 A, logic level)"
+R11,100 Ω,0603,Gate series V5
+R17,10 kΩ,0603,Gate pull-down V5 (OFF at boot)
+D7,SS34,SMA,Flyback V5
+R5,4.7 kΩ,0603,LED resistor V5
+LED5,Green LED,0805,ON indicator V5
+J7,PUMP (to 12 V interface relay coil),Screw terminal 2P 5.08 mm 10 A,Output PUMP
+Q6,AO3400A,SOT-23,"Low-side switch PUMP (30 V, 5.7 A, logic level)"
+R12,100 Ω,0603,Gate series PUMP
+R18,10 kΩ,0603,Gate pull-down PUMP (OFF at boot)
+D8,SS34,SMA,Flyback PUMP
+R6,4.7 kΩ,0603,LED resistor PUMP
+LED6,Green LED,0805,ON indicator PUMP
+J8,RJ45 8P8C T1,"RJ45 through-hole, unshielded, tab down","Sensor port T1 (CAT6, T568B)"
+R31,100 Ω,0603,Trig series T1
+R19,1 kΩ,0603,Echo divider top T1
+R25,2 kΩ,0603,Echo divider bottom T1 (5 V → 3.3 V)
+D9,PESD5V0S2BT,SOT-23,ESD on the sensor lines T1
+J9,RJ45 8P8C T2,"RJ45 through-hole, unshielded, tab down","Sensor port T2 (CAT6, T568B)"
+R32,100 Ω,0603,Trig series T2
+R20,1 kΩ,0603,Echo divider top T2
+R26,2 kΩ,0603,Echo divider bottom T2 (5 V → 3.3 V)
+D10,PESD5V0S2BT,SOT-23,ESD on the sensor lines T2
+J10,RJ45 8P8C T3,"RJ45 through-hole, unshielded, tab down","Sensor port T3 (CAT6, T568B)"
+R33,100 Ω,0603,Trig series T3
+R21,1 kΩ,0603,Echo divider top T3
+R27,2 kΩ,0603,Echo divider bottom T3 (5 V → 3.3 V)
+D11,PESD5V0S2BT,SOT-23,ESD on the sensor lines T3
+J11,RJ45 8P8C T4,"RJ45 through-hole, unshielded, tab down","Sensor port T4 (CAT6, T568B)"
+R34,100 Ω,0603,Trig series T4
+R22,1 kΩ,0603,Echo divider top T4
+R28,2 kΩ,0603,Echo divider bottom T4 (5 V → 3.3 V)
+D12,PESD5V0S2BT,SOT-23,ESD on the sensor lines T4
+J12,RJ45 8P8C T5,"RJ45 through-hole, unshielded, tab down","Sensor port T5 (CAT6, T568B)"
+R35,100 Ω,0603,Trig series T5
+R23,1 kΩ,0603,Echo divider top T5
+R29,2 kΩ,0603,Echo divider bottom T5 (5 V → 3.3 V)
+D13,PESD5V0S2BT,SOT-23,ESD on the sensor lines T5
+J13,RJ45 8P8C MAIN,"RJ45 through-hole, unshielded, tab down","Sensor port MAIN (CAT6, T568B)"
+R36,100 Ω,0603,Trig series MAIN
+R24,1 kΩ,0603,Echo divider top MAIN
+R30,2 kΩ,0603,Echo divider bottom MAIN (5 V → 3.3 V)
+D14,PESD5V0S2BT,SOT-23,ESD on the sensor lines MAIN
+LED7,Teal/blue LED,0805,Status LED (G2)
+R37,1 kΩ,0603,Status LED resistor
+SW1,SETUP,"6 × 6 mm tactile, THT",G0: hold 5 s = forget Wi-Fi
+SW2,RESET,"6 × 6 mm tactile, THT",EN: restart
+J14,Spare,1×3 header 2.54 mm,Future use
+H1,M3,"3.2 mm plated hole, GND",Mounting
+H2,M3,"3.2 mm plated hole, GND",Mounting
+H3,M3,"3.2 mm plated hole, GND",Mounting
+H4,M3,"3.2 mm plated hole, GND",Mounting

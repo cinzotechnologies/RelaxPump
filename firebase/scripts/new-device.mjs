@@ -2,7 +2,8 @@
 // then writes secrets.h (for flashing) and the box QR label into firebase/out/<ID>/ (git-ignored).
 //
 //   npm run new-device                 # random id
-//   npm run new-device -- --id RP-3F2A9C --board v2   (v1 = today's 3-tank board, default)
+//   npm run new-device -- --id RP-3F2A9C --board v2   (label only: v1 = hand-wired board,
+//                                                       v2 = PCB; same pins, 1–5 tanks)
 import { createHash, randomInt } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -18,9 +19,8 @@ const HEX = '0123456789ABCDEF';
 const id = (arg('id') || `RP-${rand(6, HEX)}`).toUpperCase();
 if (!/^RP-[0-9A-F]{6}$/.test(id)) throw new Error('id must look like RP-3F2A9C');
 const board = arg('board', 'v1') === 'v2' ? 'v2' : 'v1';
-const ports = board === 'v2' ? { sensors: 8, valves: 8, phe: true, main: true } : { sensors: 3, valves: 3, phe: false, main: false };
-const maxTanks = ports.sensors;
-const startTanks = Math.min(3, maxTanks);
+const maxTanks = 5;
+const startTanks = 3;
 const pop = rand(8);
 const code = rand(12);
 const password = rand(24, ALNUM + 'abcdefghjkmnpqrstuvwxyz');
@@ -38,13 +38,12 @@ if (existing.exists()) throw new Error(`${id} already exists`);
 await auth.createUser({ uid: `dev-${id}`, email: `${id.toLowerCase()}@${DEVICE_DOMAIN}`, password, emailVerified: true });
 await db.ref().update({
   [`claims/${id}`]: { codeHash },
-  [`devices/${id}/info`]: { name: 'RelaxPump Controller', fw: '', board, maxTanks, ports },
-  // v2 layout; the installer changes it in the app (Installer setup).
+  [`devices/${id}/info`]: { name: 'RelaxPump Controller', fw: '', board, maxTanks },
+  // Default layout; the installer sets the real one in the app (Installer setup, PIN).
   [`devices/${id}/config`]: {
-    semi: Array.from({ length: startTanks }, () => ({ emptyCm: 120, fullCm: 30, sensor: true, valve: true })),
-    main: { enabled: false, sensor: false, minPct: 10 },
-    phe: { enabled: false, probeMin: 4, retryMin: 30 },
-    mode: 'pump',
+    tankCount: startTanks,
+    tanks: Array.from({ length: startTanks }, () => ({ emptyCm: 120, fullCm: 30 })),
+    main: { enabled: false, minPct: 10 },
     low: 20,
     high: 95,
     maxRunMin: 30,

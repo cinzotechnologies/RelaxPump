@@ -1,9 +1,11 @@
 // Builds database.rules.json from readable pieces. Edit THIS file, then `npm run build:rules`
 // (`npm test` and `npm run deploy:rules` run it first).
 //
-// v2 flexible system: docs/flexible-system.md §5. The installer PIN hash lives in
-// installerPins/{id} (never readable) instead of config, because the owner can read the whole
-// devices/{id} node and RTDB read rules cannot be taken away further down.
+// v2 customizable system (docs/flexible-system.md §3): 1–5 semi tanks (sensor + valve each; one
+// tank = sensor only), optional main-tank sensor, no PHE. The installer PIN hash lives in
+// installerPins/{id} (never readable) instead of config.installerPinHash: the owner can read the
+// whole devices/{id} node (RTDB read rules cannot be taken away further down), and a readable
+// 4-digit PIN hash is cracked in seconds.
 import { writeFileSync } from 'node:fs';
 
 const DEV = `auth != null && auth.token.email === $id.toLowerCase() + '@devices.relaxpump.app' && auth.token.email_verified === true`;
@@ -13,16 +15,27 @@ const ATTEMPT = (idVar) =>
   `root.child('pinAttempts').child(${idVar}).child(auth.uid).child('hash').val() === root.child('installerPins').child(${idVar}).child('hash').val() && root.child('pinAttempts').child(${idVar}).child(auth.uid).child('ts').val() > now - 900000`;
 /** No PIN set yet (first setup), or this user entered the right PIN in the last 15 minutes. */
 const PIN = (idVar = '$id') => `(!root.child('installerPins').child(${idVar}).exists() || (${ATTEMPT(idVar)}))`;
-const MAX = `root.child('devices').child($id).child('info/maxTanks').val()`;
+
+const MAX_TANKS = 5;
+/** config/tanks/$i: 0..4 and below the tankCount being written. */
+const TC = `newData.parent().parent().child('tankCount').val()`;
 const IDX =
-  `$i.matches(/^[0-7]$/) && ($i === '0'` +
-  [1, 2, 3, 4, 5, 6, 7].map((n) => ` || ($i === '${n}' && ${MAX} >= ${n + 1})`).join('') +
+  `$i.matches(/^[0-4]$/) && ($i === '0'` +
+  [1, 2, 3, 4].map((n) => ` || ($i === '${n}' && ${TC} >= ${n + 1})`).join('') +
   ')';
+/** config: tankCount = n → tanks 0..n-1 all exist (IDX forbids the rest). */
+const LEN =
+  `newData.child('tanks/0').exists()` +
+  [1, 2, 3, 4]
+    .map((n) => ` && (newData.child('tankCount').val() <= ${n} || newData.child('tanks/${n}').exists())`)
+    .join('');
+
 const HEX64 = `newData.isString() && newData.val().matches(/^[0-9a-f]{64}$/)`;
 const num = (lo, hi) => `newData.isNumber() && newData.val() >= ${lo} && newData.val() <= ${hi}`;
 const bool = { '.validate': 'newData.isBoolean()' };
 const no = { '.validate': false };
-const EVENTS = 'full|low|pump_on|pump_off|dry_run|timeout|sensor|phe_on|phe_off|phe_none|main_low|board_error|check_done';
+const NAME = { '.write': OWNER, '.validate': 'newData.isString() && newData.val().length >= 1 && newData.val().length <= 14' };
+const EVENTS = 'full|low|pump_on|pump_off|dry_run|timeout|sensor|main_low|board_error|check_done';
 
 const rules = {
   rules: {
@@ -107,17 +120,9 @@ const rules = {
           },
           name: { '.validate': 'newData.isString() && newData.val().length <= 40' },
           fw: { '.write': DEV, '.validate': 'newData.isString() && newData.val().length <= 20' },
+          // Label only (v1 = hand-wired board, v2 = PCB); both use the same pins.
           board: { '.write': DEV, '.validate': "newData.isString() && newData.val().matches(/^v[12]$/)" },
-          maxTanks: { '.write': DEV, '.validate': num(1, 8) },
-          ports: {
-            '.write': DEV,
-            '.validate': "newData.hasChildren(['sensors', 'valves', 'phe', 'main'])",
-            sensors: { '.validate': num(1, 8) },
-            valves: { '.validate': num(1, 8) },
-            phe: bool,
-            main: bool,
-            $other: no,
-          },
+          maxTanks: { '.write': DEV, '.validate': num(1, MAX_TANKS) },
           $other: no,
         },
 
@@ -129,78 +134,40 @@ const rules = {
 
         config: {
           '.read': DEV,
-          // Layout (tanks, sensors, valves, main, PHE, max run) = installer, needs the PIN.
+          // Layout (tank count, sensor distances, heights, main tank, max run) = installer, PIN.
           '.write': `${OWNER} && ${PIN()}`,
-          '.validate': "newData.hasChildren(['low', 'high', 'maxRunMin'])",
-          // ---- customer fields: owner, no PIN
+          '.validate': `newData.hasChildren(['tankCount', 'tanks', 'low', 'high', 'maxRunMin']) && ${LEN}`,
+          // ---- customer fields: owner, no PIN (also tanks/$i/name|litres, main/litres)
           low: {
             '.write': OWNER,
             '.validate': `${num(5, 80)} && newData.val() + 10 <= newData.parent().child('high').val()`,
           },
           high: { '.write': OWNER, '.validate': num(20, 100) },
-          mode: {
-            '.write': `${OWNER} || (${DEV} && !data.exists())`,
-            '.validate':
-              "newData.isString() && newData.val().matches(/^(auto|phe|pump)$/) && (newData.val() !== 'phe' || newData.parent().child('phe/enabled').val() === true)",
-          },
           // ---- installer fields
           maxRunMin: { '.validate': num(5, 180) },
-          semi: {
-            // The device may write semi/main/phe once, to migrate a v1 config (tankCount + tanks).
-            '.write': `${DEV} && !data.exists()`,
-            '.validate': "newData.hasChild('0')",
+          // Never more tanks than the firmware reports (old 3-tank firmware: maxTanks 3).
+          tankCount: {
+            '.validate': `${num(1, MAX_TANKS)} && newData.val() <= root.child('devices').child($id).child('info/maxTanks').val()`,
+          },
+          tanks: {
             $i: {
-              '.validate': [
-                IDX,
-                "newData.hasChildren(['sensor', 'valve', 'emptyCm', 'fullCm'])",
-                // no sensor → fill by timer
-                "(newData.child('sensor').val() === true || newData.child('fillMin').isNumber())",
-                // 2+ tanks → every tank has a valve
-                "(newData.child('valve').val() === true || ($i === '0' && !newData.parent().child('1').exists()))",
-                "($i === '0' || newData.parent().child('0/valve').val() === true)",
-              ].join(' && '),
-              name: { '.write': OWNER, '.validate': 'newData.isString() && newData.val().length >= 1 && newData.val().length <= 14' },
+              '.validate': `${IDX} && newData.hasChildren(['emptyCm', 'fullCm'])`,
+              name: NAME,
               litres: { '.write': OWNER, '.validate': num(0, 999999) },
-              sensor: bool,
-              valve: bool,
               emptyCm: { '.validate': 'newData.isNumber() && newData.val() > 0 && newData.val() <= 500' },
               fullCm: { '.validate': num(20, 500) },
               heightFt: { '.validate': num(0, 300) },
-              fillMin: { '.validate': num(1, 120) },
               $other: no,
             },
           },
           main: {
-            '.write': `${DEV} && !data.exists()`,
-            '.validate':
-              "newData.hasChildren(['enabled', 'sensor', 'minPct']) && (newData.child('enabled').val() === false || root.child('devices').child($id).child('info/ports/main').val() === true)",
+            '.validate': "newData.hasChildren(['enabled', 'minPct'])",
             enabled: bool,
-            sensor: bool,
             litres: { '.write': OWNER, '.validate': num(0, 999999) },
-            emptyCm: { '.validate': 'newData.isNumber() && newData.val() > 0 && newData.val() <= 500' },
+            emptyCm: { '.validate': 'newData.isNumber() && newData.val() > 0 && newData.val() <= 800' },
             fullCm: { '.validate': num(20, 500) },
             minPct: { '.validate': num(5, 40) },
             $other: no,
-          },
-          phe: {
-            '.write': `${DEV} && !data.exists()`,
-            '.validate':
-              "newData.hasChildren(['enabled', 'probeMin', 'retryMin']) && (newData.child('enabled').val() === false || root.child('devices').child($id).child('info/ports/phe').val() === true)",
-            enabled: bool,
-            probeMin: { '.validate': num(1, 15) },
-            retryMin: { '.validate': num(5, 240) },
-            $other: no,
-          },
-          // ---- v1 shape, still read by old firmware and migrated by v2 firmware
-          tankCount: { '.validate': `newData.isNumber() && newData.val() >= 1 && newData.val() <= ${MAX}` },
-          tanks: {
-            $i: {
-              emptyCm: { '.validate': 'newData.isNumber() && newData.val() > 0 && newData.val() <= 500' },
-              fullCm: { '.validate': num(20, 500) },
-              litres: { '.validate': num(0, 999999) },
-              name: { '.validate': 'newData.isString() && newData.val().length >= 1 && newData.val().length <= 14' },
-              $other: no,
-            },
           },
           $other: no,
         },
@@ -210,24 +177,17 @@ const rules = {
           '.write': `auth != null && ((root.child('devices').child($id).child('info/ownerUid').val() === auth.uid && newData.exists()) || (${DEV} && !newData.exists()))`,
           '.validate': "newData.hasChild('ts')",
           pump: bool,
-          phe: bool,
           auto: bool,
           pumpCheck: bool,
           valve: {
             '.validate': "newData.hasChildren(['i', 'open'])",
-            i: { '.validate': num(0, 7) },
+            i: { '.validate': num(0, MAX_TANKS - 1) },
             open: bool,
-            $other: no,
-          },
-          fill: {
-            '.validate': "newData.hasChildren(['i', 'src'])",
-            i: { '.validate': num(0, 7) },
-            src: { '.validate': 'newData.isString() && newData.val().matches(/^(pump|phe)$/)' },
             $other: no,
           },
           test: {
             '.validate': "newData.hasChildren(['port', 'ms'])",
-            port: { '.validate': 'newData.isString() && newData.val().matches(/^(V[1-8]|PHE|PUMP)$/)' },
+            port: { '.validate': 'newData.isString() && newData.val().matches(/^(V[1-5]|PUMP)$/)' },
             ms: { '.validate': num(100, 3000) },
             $other: no,
           },

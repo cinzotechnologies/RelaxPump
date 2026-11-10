@@ -33,9 +33,12 @@ const COOLDOWN_MS = 60000;
 const FILL_PER_S = fast ? 4 : 0.4; // % per second
 const DRAIN_PER_S = 0.02;
 
-let cfg = { tankCount: 3, low: 20, high: 95, maxRunMin: 30, tanks: [] };
-const levels = [60, 35, 80, 50, 50, 50, 50, 50];
-const valves = Array(8).fill(false);
+// v2 customizable system: 1–5 tanks (one tank = no valve, the pump fills it directly) + optional
+// main tank sensor (the pump never runs below main.minPct).
+let cfg = { tankCount: 3, low: 20, high: 95, maxRunMin: 30, tanks: [], main: { enabled: false, minPct: 10 } };
+const levels = [60, 35, 80, 50, 50];
+const valves = Array(5).fill(false);
+let mainPct = 70;
 let pump = false;
 let auto = true;
 let msg = '';
@@ -46,6 +49,8 @@ let active = -1;
 let pumpAuto = false;
 
 const n = () => cfg.tankCount;
+const single = () => n() === 1;
+const mainLow = () => cfg.main?.enabled && mainPct < cfg.main.minPct;
 const day = () => new Date().toISOString().slice(0, 10);
 const event = (type, tank, extra = {}) =>
   push(ref(db, `${base}/events`), { type, tank, ts: Date.now(), ...extra }).catch((e) => console.error(e.message));
@@ -59,15 +64,23 @@ async function pushState() {
     pump,
     auto,
     msg,
-    tanks: Array.from({ length: n() }, (_, i) => ({ pct: Math.round(levels[i]), valve: valves[i], ok: true })),
+    active: pump ? active : null,
+    tanks: Array.from({ length: n() }, (_, i) => ({ pct: Math.round(levels[i]), valve: !single() && valves[i], ok: true })),
+    main: cfg.main?.enabled ? { pct: Math.round(mainPct), ok: true } : null,
+    detected: { tanks: [0, 1, 2, 3, 4].map((i) => i < n()), main: !!cfg.main?.enabled },
   }).catch((e) => console.error('state:', e.message));
 }
 
 async function startFill(t, isAuto) {
   if (busy) return;
+  if (mainLow()) {
+    msg = 'Main tank low';
+    event('main_low', -1);
+    return;
+  }
   busy = true;
   valves.fill(false);
-  valves[t] = true;
+  if (!single()) valves[t] = true; // one tank: no valve, pump on at once
   await pushState();
   setTimeout(async () => {
     pump = true;
@@ -75,10 +88,11 @@ async function startFill(t, isAuto) {
     pumpAuto = isAuto;
     pumpStart = Date.now();
     busy = false;
+    msg = '';
     event('pump_on', t, { auto: isAuto });
     console.log(`Pump ON → Tank ${t + 1}`);
     await pushState();
-  }, VALVE_LEAD_MS);
+  }, single() ? 0 : VALVE_LEAD_MS);
 }
 
 async function stopPump(reason) {
@@ -110,9 +124,6 @@ async function stopPump(reason) {
 onValue(ref(db, `${base}/config`), (s) => {
   if (s.exists()) {
     const v = s.val();
-    // v2 config (semi[]) → the simple shape this simulator uses (every tank with sensor + valve).
-    if (v.semi) v.tanks = Object.values(v.semi);
-    if (v.semi) v.tankCount = v.tanks.length;
     cfg = { ...cfg, ...v };
   }
   console.log(`Config: ${cfg.tankCount} tanks, start <${cfg.low}%, stop ${cfg.high}%`);
@@ -127,8 +138,9 @@ onValue(ref(db, `${base}/cmd`), async (s) => {
   if (typeof c.pump === 'boolean') {
     auto = false;
     if (c.pump && !pump) {
-      const open = valves.findIndex(Boolean);
+      const open = single() ? 0 : valves.findIndex(Boolean);
       if (open < 0) msg = 'Open a valve first';
+      else if (mainLow()) msg = 'Main tank low';
       else {
         pump = true;
         active = open;
@@ -143,7 +155,7 @@ onValue(ref(db, `${base}/cmd`), async (s) => {
     auto = false;
     const openCount = valves.filter(Boolean).length;
     if (!open && pump && openCount === 1 && valves[i]) await stopPump();
-    else if (i < n()) {
+    else if (i < n() && !single()) {
       valves[i] = open;
       if (pump && open) active = i;
     }
@@ -157,13 +169,19 @@ setInterval(async () => {
   for (let i = 0; i < n(); i++) if (!(pump && i === active)) levels[i] = Math.max(0, levels[i] - DRAIN_PER_S);
   if (pump && active >= 0) {
     levels[active] = Math.min(100, levels[active] + FILL_PER_S);
-    if (levels[active] >= cfg.high) {
+    mainPct = Math.max(0, mainPct - FILL_PER_S / 4);
+    if (mainLow()) {
+      event('main_low', -1);
+      msg = 'Main tank low';
+      await stopPump();
+    } else if (levels[active] >= cfg.high) {
       event('full', active);
       await stopPump();
     } else if (Date.now() - pumpStart > cfg.maxRunMin * 60000) {
       await stopPump('timeout');
     }
-  } else if (auto && !busy && Date.now() - lastStop > (lastStop ? COOLDOWN_MS : 0)) {
+  } else if (cfg.main?.enabled && mainPct < 100) mainPct = Math.min(100, mainPct + 0.05);
+  if (!pump && auto && !busy && !mainLow() && Date.now() - lastStop > (lastStop ? COOLDOWN_MS : 0)) {
     let low = -1;
     for (let i = 0; i < n(); i++) if (levels[i] < cfg.low && (low < 0 || levels[i] < levels[low])) low = i;
     if (low >= 0) {

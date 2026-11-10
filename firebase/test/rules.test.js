@@ -11,7 +11,8 @@ const CODE = 'K7QM2XPA9TRD';
 const hash = (id, code) => createHash('sha256').update(`${id}:${code}`).digest('hex');
 const DEVICE_EMAIL = `${ID.toLowerCase()}@devices.relaxpump.app`;
 
-const config = { tankCount: 3, low: 20, high: 95, maxRunMin: 30, tanks: [{ emptyCm: 120, fullCm: 30, litres: 1000 }] };
+const t0 = { emptyCm: 120, fullCm: 30, litres: 1000 };
+const config = { tankCount: 3, low: 20, high: 95, maxRunMin: 30, tanks: [t0, t0, t0] };
 const state = { online: true, lastSeen: 1, rssi: -55, ssid: 'Home', pump: false, auto: true, msg: '', tanks: [] };
 
 let env;
@@ -129,7 +130,7 @@ describe('owner', () => {
 
   it('accepts a tank name up to 14 characters', async () => {
     const db = user('alice');
-    const named = (name) => ({ ...config, tanks: [{ emptyCm: 120, fullCm: 30, litres: 1000, name }] });
+    const named = (name) => ({ ...config, tanks: [{ ...t0, name }, t0, t0] });
     await assertSucceeds(set(ref(db, `devices/${ID}/config`), named('Kitchen roof')));
     await assertFails(set(ref(db, `devices/${ID}/config`), named('A very long tank name')));
     await assertFails(set(ref(db, `devices/${ID}/config`), named(42)));
@@ -149,24 +150,22 @@ describe('owner', () => {
   });
 });
 
-// ---------------------------------------------------------------- v2 flexible system
-const tank = (o = {}) => ({ name: 'Roof', litres: 1000, emptyCm: 120, fullCm: 30, sensor: true, valve: true, ...o });
-const v2 = (semi, o = {}) => ({
+// ---------------------------------------------------------------- v2 customizable system (1–5 tanks)
+const tank = (o = {}) => ({ name: 'Roof', litres: 1000, emptyCm: 120, fullCm: 30, heightFt: 20, ...o });
+const v2 = (n, o = {}) => ({
+  tankCount: n,
+  tanks: Array.from({ length: n }, () => tank()),
   low: 20,
   high: 95,
   maxRunMin: 30,
-  mode: 'auto',
-  semi,
-  main: { enabled: false, sensor: false, minPct: 10 },
-  phe: { enabled: false, probeMin: 4, retryMin: 30 },
+  main: { enabled: false, minPct: 10 },
   ...o,
 });
 const pinHash = (pin) => hash(ID, `pin:${pin}`); // sha256("<id>:pin:<pin>")
-const ports8 = { sensors: 8, valves: 8, phe: true, main: true };
 
-async function asV2Board(ports = ports8) {
+async function maxTanks(n = 5) {
   await env.withSecurityRulesDisabled(async (ctx) => {
-    await update(ref(ctx.database(), `devices/${ID}/info`), { board: 'v2', maxTanks: ports.sensors, ports });
+    await update(ref(ctx.database(), `devices/${ID}/info`), { maxTanks: n });
   });
 }
 async function setPin(pin) {
@@ -179,67 +178,59 @@ const attempt = (db, uid, pin, ts = Date.now()) => set(ref(db, `pinAttempts/${ID
 describe('v2 layout validation', () => {
   beforeEach(async () => {
     await giveTo('alice');
-    await asV2Board();
+    await maxTanks(5);
   });
   const save = (cfg) => set(ref(user('alice'), `devices/${ID}/config`), cfg);
 
-  it('accepts 1 to 8 tanks within the ports', async () => {
-    await assertSucceeds(save(v2([tank()])));
-    await assertSucceeds(save(v2(Array.from({ length: 8 }, () => tank()))));
+  it('accepts 1 to 5 tanks', async () => {
+    for (const n of [1, 2, 3, 4, 5]) await assertSucceeds(save(v2(n)));
   });
-  it('rejects more tanks than the board has', async () => {
-    await asV2Board({ sensors: 3, valves: 3, phe: false, main: false });
-    await assertSucceeds(save(v2([tank(), tank(), tank()])));
-    await assertFails(save(v2([tank(), tank(), tank(), tank()])));
+  it('rejects 0 or 6 tanks', async () => {
+    await assertFails(save(v2(0)));
+    await assertFails(save({ ...v2(5), tankCount: 6, tanks: Array.from({ length: 6 }, () => tank()) }));
   });
-  it('one tank may have no valve and no sensor, with a fill time', async () => {
-    await assertSucceeds(save(v2([tank({ valve: false })])));
-    await assertSucceeds(save(v2([tank({ valve: false, sensor: false, fillMin: 10 })])));
-    await assertFails(save(v2([tank({ valve: false, sensor: false })])));
+  it('tanks length must equal tankCount', async () => {
+    await assertFails(save({ ...v2(3), tankCount: 2 })); // one tank too many
+    await assertFails(save({ ...v2(2), tankCount: 3 })); // one tank missing
+    await assertFails(save({ ...v2(3), tanks: { 0: tank(), 2: tank(), 3: tank() } }));
   });
-  it('a tank without a sensor needs fillMin 1–120', async () => {
-    await assertSucceeds(save(v2([tank(), tank({ sensor: false, fillMin: 15 })])));
-    await assertFails(save(v2([tank(), tank({ sensor: false })])));
-    await assertFails(save(v2([tank(), tank({ sensor: false, fillMin: 121 })])));
+  it('never more tanks than the firmware reports', async () => {
+    await maxTanks(3);
+    await assertSucceeds(save(v2(3)));
+    await assertFails(save(v2(4)));
   });
-  it('with 2+ tanks every tank needs a valve', async () => {
-    await assertFails(save(v2([tank(), tank({ valve: false })])));
-    await assertFails(save(v2([tank({ valve: false }), tank()])));
+  it('main tank sensor: minPct 5–40', async () => {
+    const main = (o) => v2(2, { main: { enabled: true, minPct: 10, emptyCm: 200, fullCm: 30, litres: 5000, ...o } });
+    await assertSucceeds(save(main({})));
+    await assertSucceeds(save(main({ minPct: 40 })));
+    await assertFails(save(main({ minPct: 4 })));
+    await assertFails(save(main({ minPct: 45 })));
+    await assertFails(save(v2(2, { main: { enabled: true } })));
   });
-  it('a single field write cannot break the valve rule', async () => {
-    await assertSucceeds(save(v2([tank(), tank()])));
-    await assertFails(set(ref(user('alice'), `devices/${ID}/config/semi/0/valve`), false));
+  it('a single field write cannot break the length rule', async () => {
+    await assertSucceeds(save(v2(2)));
+    await assertFails(set(ref(user('alice'), `devices/${ID}/config/tankCount`), 3));
+    await assertFails(set(ref(user('alice'), `devices/${ID}/config/tanks/1`), null));
+    await assertFails(set(ref(user('alice'), `devices/${ID}/config/tanks/2`), tank()));
   });
-  it('main and PHE only when the board has the port', async () => {
-    const withExtras = v2([tank()], {
-      main: { enabled: true, sensor: true, minPct: 10, emptyCm: 200, fullCm: 30, litres: 5000 },
-      phe: { enabled: true, probeMin: 4, retryMin: 30 },
-      mode: 'phe',
-    });
-    await assertSucceeds(save(withExtras));
-    await asV2Board({ sensors: 3, valves: 3, phe: false, main: false });
-    await assertFails(save(withExtras));
-  });
-  it('mode "phe" needs the PHE line', async () => {
-    await assertFails(save(v2([tank()], { mode: 'phe' })));
-    await assertFails(save(v2([tank()], { mode: 'tap' })));
-    await assertSucceeds(save(v2([tank()], { mode: 'pump' })));
-  });
-  it('rejects unknown fields', async () => {
-    await assertFails(save(v2([tank({ colour: 'blue' })])));
-    await assertFails(save(v2([tank()], { installerPinHash: 'x' })));
+  it('rejects the old 8-tank / PHE fields and unknown fields', async () => {
+    await assertFails(save(v2(1, { phe: { enabled: false, probeMin: 4, retryMin: 30 } })));
+    await assertFails(save(v2(1, { mode: 'pump' })));
+    await assertFails(save(v2(1, { semi: [tank()] })));
+    await assertFails(save({ ...v2(1), tanks: [tank({ sensor: true })] }));
+    await assertFails(save(v2(1, { installerPinHash: 'x' })));
   });
 });
 
 describe('installer PIN', () => {
   beforeEach(async () => {
     await giveTo('alice');
-    await asV2Board();
+    await maxTanks(5);
     await env.withSecurityRulesDisabled(async (ctx) => {
-      await set(ref(ctx.database(), `devices/${ID}/config`), v2([tank(), tank()]));
+      await set(ref(ctx.database(), `devices/${ID}/config`), v2(2));
     });
   });
-  const layout = (db) => set(ref(db, `devices/${ID}/config/semi/2`), tank({ name: 'Garden' }));
+  const layout = (db) => update(ref(db, `devices/${ID}/config`), { tankCount: 3, 'tanks/2': tank({ name: 'Garden' }) });
 
   it('first setup: the owner sets the PIN, strangers cannot', async () => {
     await assertFails(set(ref(user('bob'), `installerPins/${ID}`), { hash: pinHash('1234') }));
@@ -279,65 +270,62 @@ describe('installer PIN', () => {
     await assertSucceeds(set(ref(db, `installerPins/${ID}`), { hash: pinHash('5555') }));
     await assertFails(set(ref(db, `installerPins/${ID}`), null));
   });
-  it('customer fields need no PIN', async () => {
+  it('customer fields need no PIN: names, litres, low/high', async () => {
     await setPin('1234');
     const db = user('alice');
-    await assertSucceeds(set(ref(db, `devices/${ID}/config/semi/1/name`), 'Kitchen'));
-    await assertSucceeds(set(ref(db, `devices/${ID}/config/semi/1/litres`), 500));
+    await assertSucceeds(set(ref(db, `devices/${ID}/config/tanks/1/name`), 'Kitchen'));
+    await assertSucceeds(set(ref(db, `devices/${ID}/config/tanks/1/litres`), 500));
+    await assertSucceeds(set(ref(db, `devices/${ID}/config/main/litres`), 5000));
     await assertSucceeds(set(ref(db, `devices/${ID}/config/low`), 30));
-    await assertSucceeds(set(ref(db, `devices/${ID}/config/mode`), 'pump'));
-    await assertFails(set(ref(db, `devices/${ID}/config/semi/1/sensor`), false));
+    await assertSucceeds(set(ref(db, `devices/${ID}/config/high`), 90));
+    await assertFails(set(ref(db, `devices/${ID}/config/tanks/1/emptyCm`), 150));
+    await assertFails(set(ref(db, `devices/${ID}/config/tanks/1/heightFt`), 40));
+    await assertFails(set(ref(db, `devices/${ID}/config/main/enabled`), true));
     await assertFails(set(ref(db, `devices/${ID}/config/maxRunMin`), 60));
-    await assertFails(set(ref(db, `devices/${ID}/config/semi/1`), null));
-    await assertFails(set(ref(user('bob'), `devices/${ID}/config/semi/1/name`), 'x'));
+    await assertFails(set(ref(user('bob'), `devices/${ID}/config/tanks/1/name`), 'x'));
   });
 });
 
 describe('v2 commands, events and device info', () => {
   beforeEach(async () => {
     await giveTo('alice');
-    await asV2Board();
+    await maxTanks(5);
   });
   const cmd = (c) => set(ref(user('alice'), `devices/${ID}/cmd`), { ...c, ts: Date.now() });
 
-  it('accepts fill, phe, test and pumpCheck', async () => {
-    await assertSucceeds(cmd({ fill: { i: 7, src: 'phe' } }));
-    await assertSucceeds(cmd({ phe: false }));
-    await assertSucceeds(cmd({ test: { port: 'V8', ms: 1000 } }));
+  it('accepts valve 0–4, test V1–V5 / PUMP, pumpCheck, auto', async () => {
+    await assertSucceeds(cmd({ valve: { i: 4, open: true } }));
+    await assertSucceeds(cmd({ test: { port: 'V5', ms: 1000 } }));
     await assertSucceeds(cmd({ test: { port: 'PUMP', ms: 2000 } }));
     await assertSucceeds(cmd({ pumpCheck: true }));
+    await assertSucceeds(cmd({ auto: false }));
   });
-  it('rejects bad fill / test commands', async () => {
-    await assertFails(cmd({ fill: { i: 8, src: 'pump' } }));
-    await assertFails(cmd({ fill: { i: 0, src: 'river' } }));
-    await assertFails(cmd({ test: { port: 'V9', ms: 1000 } }));
+  it('rejects valve 5, V6, PHE, long pulses and the old fill command', async () => {
+    await assertFails(cmd({ valve: { i: 5, open: true } }));
+    await assertFails(cmd({ test: { port: 'V6', ms: 1000 } }));
+    await assertFails(cmd({ test: { port: 'PHE', ms: 1000 } }));
     await assertFails(cmd({ test: { port: 'PUMP', ms: 5000 } }));
+    await assertFails(cmd({ phe: true }));
+    await assertFails(cmd({ fill: { i: 0, src: 'pump' } }));
   });
-  it('device writes the new event types', async () => {
-    for (const type of ['phe_on', 'phe_off', 'phe_none', 'main_low', 'board_error', 'check_done']) {
+  it('device writes the event types; PHE events are gone', async () => {
+    for (const type of ['main_low', 'board_error', 'check_done', 'dry_run']) {
       await assertSucceeds(set(ref(device(), `devices/${ID}/events/${type}`), { type, tank: -1, ts: 1 }));
     }
+    await assertFails(set(ref(device(), `devices/${ID}/events/p`), { type: 'phe_on', tank: -1, ts: 1 }));
   });
-  it('device reports fw, board and ports; the owner cannot', async () => {
+  it('device reports fw, board and maxTanks ≤ 5; the owner cannot', async () => {
     const db = device();
-    await assertSucceeds(set(ref(db, `devices/${ID}/info/fw`), '2.0.0'));
+    await assertSucceeds(set(ref(db, `devices/${ID}/info/fw`), '2.1.0'));
     await assertSucceeds(set(ref(db, `devices/${ID}/info/board`), 'v1'));
-    await assertSucceeds(set(ref(db, `devices/${ID}/info/ports`), { sensors: 3, valves: 3, phe: false, main: false }));
-    await assertFails(set(ref(db, `devices/${ID}/info/board`), 'v3'));
-    await assertFails(set(ref(user('alice'), `devices/${ID}/info/ports`), ports8));
-    await assertFails(set(ref(user('alice'), `devices/${ID}/info/maxTanks`), 8));
+    await assertSucceeds(set(ref(db, `devices/${ID}/info/maxTanks`), 5));
+    await assertFails(set(ref(db, `devices/${ID}/info/maxTanks`), 8));
+    await assertFails(set(ref(db, `devices/${ID}/info/ports`), { sensors: 5 }));
+    await assertFails(set(ref(user('alice'), `devices/${ID}/info/maxTanks`), 5));
   });
-  it('device migrates a v1 config once', async () => {
-    const db = device();
-    const mig = {
-      [`devices/${ID}/config/semi`]: [tank(), tank()],
-      [`devices/${ID}/config/mode`]: 'pump',
-      [`devices/${ID}/config/main`]: { enabled: false, sensor: false, minPct: 10 },
-      [`devices/${ID}/config/phe`]: { enabled: false, probeMin: 4, retryMin: 30 },
-    };
-    await assertSucceeds(update(ref(db), mig));
-    await assertFails(update(ref(db), mig));
-    await assertFails(set(ref(db, `devices/${ID}/config/low`), 30));
+  it('the device can never write config', async () => {
+    await assertFails(set(ref(device(), `devices/${ID}/config`), v2(1)));
+    await assertFails(set(ref(device(), `devices/${ID}/config/tankCount`), 1));
   });
 });
 
