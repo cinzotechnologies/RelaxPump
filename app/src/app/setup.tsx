@@ -723,11 +723,21 @@ export default function Setup() {
 
   return (
     <Screen onBack={back} contentStyle={{ paddingBottom: insets.bottom }}>
-      {phase === 'loading' || phase === 'saving' ? (
+      {phase === 'loading' && !deviceId ? (
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: s(10), padding: s(24) }}>
+          <Txt size={16} weight={600} style={{ textAlign: 'center' }}>
+            No controller yet
+          </Txt>
+          <Txt size={14} color={colors.muted} style={{ textAlign: 'center' }}>
+            First add the controller: tap the Bluetooth button, then Set up device. Installer setup opens
+            after that.
+          </Txt>
+        </View>
+      ) : phase === 'loading' || phase === 'saving' ? (
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: s(14) }}>
           <Spinner size={28} width={3} track={alpha(colors.glow, 0.2)} color={colors.glow} />
           <Txt size={14} color={colors.muted}>
-            {phase === 'saving' ? 'Saving…' : !deviceId ? 'Waiting for the controller…' : 'Loading…'}
+            {phase === 'saving' ? 'Saving…' : 'Loading…'}
           </Txt>
         </View>
       ) : null}
