@@ -1,0 +1,7 @@
+Read CLAUDE.md (all of it, especially §10), then docs/flexible-system.md, then every file in reference/design-v2/ (the new app screens — read the markup and the script), then the current code in firmware/, app/src/ and firebase/.
+
+First: commit and push the files that are not on GitHub yet (git add -A, commit "Website brief, designs, kit calculator, v2 flexible-system plan"). If the push is rejected, run git pull --rebase origin main, fix any conflicts, and push again. Do not commit secrets.
+
+Then build the v2 flexible system exactly as docs/flexible-system.md says: 1–8 semi tanks with optional sensor/valve per tank, PHE line valve, main-tank sensor, pump, modes Auto / PHE only / Pump only, board v1 and v2 pin maps in one firmware, the app screens exactly as reference/design-v2/ shows (installer setup with PIN, Home and Tanks for 1–8 tanks, PHE and main tank, no-sensor tanks, Pump check, Account "My setup"), rules + emulator tests, and the docs. Keep every safety rule from CLAUDE.md §7 and keep the app's approved design and theme.
+
+Show me your milestone plan (F1–F7) first. After each milestone: typecheck, lint, tests, commit and push to main. Stop and give me short numbered steps whenever you need me to flash the board, wire something, or change Firebase.

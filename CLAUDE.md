@@ -202,3 +202,13 @@ The public website, store and admin panel are a separate part of this repo: a Ne
 Cloudflare Workers (OpenNext) with Cloudflare D1 + R2. Everything about it — design files in
 `reference/website/`, theme, sections, data, admin, the forgot-password → WhatsApp flow and the
 milestones — is in **`docs/website-brief.md`**. Read it before touching `web/`.
+
+---
+
+## 10. v2 flexible system (1–8 semi tanks, PHE line, main tank)
+
+The product is now flexible: one controller supports up to 8 semi tanks (valve V1–V8 + sensor
+S1–S8, each optional per tank), a PHE line valve, a main-tank sensor and the pump; the firmware is
+flashed once and the app's installer setup decides what is connected. **`docs/flexible-system.md`
+replaces the fixed 3-tank parts of §4 and §7** (data model, pins, behaviour). Read it before
+changing the firmware, the app's tank screens, the rules or the docs.

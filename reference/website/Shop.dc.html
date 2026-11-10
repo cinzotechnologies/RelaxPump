@@ -142,6 +142,41 @@ a{color:#035360}a:hover{color:#037788}
 .xb:active{transform:translateY(2px);box-shadow:0 1px 0 #B5CDD1}
 .pay.on{box-shadow:inset 0 0 0 2px #037788,inset 0 3px 8px rgba(2,26,32,.15);background:#E3F5F7}
 .btn[disabled],.btn[disabled]:hover,.btn[disabled]:active{transform:none;background:#DCE7E9;color:#5E777B;box-shadow:none}
+.plan{padding:56px 0 64px;background:#FFFFFF;border-top:1px solid #E1EDEF}
+.caps{margin-top:22px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.cap{padding:16px 18px;border:1px solid #CFE3E7;border-radius:18px;background:#FFFFFF;display:flex;flex-direction:column;gap:6px}
+.cap b{font:500 26px/1 Outfit,sans-serif;color:#035360}
+.cap span{font-size:13px;line-height:1.4;color:#48656A}
+.calc{margin-top:28px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px;align-items:start}
+.cbox{border:1px solid #CFE3E7;border-radius:24px;background:#FFFFFF;padding:24px;display:flex;flex-direction:column;gap:20px}
+.q{display:flex;flex-direction:column;gap:10px}
+.ql{display:flex;justify-content:space-between;align-items:center;gap:12px;font:600 14px/1.3 Inter,sans-serif;color:#021A20}
+.ql b{font:500 20px/1 Outfit,sans-serif;color:#035360}
+.opts{display:flex;flex-wrap:wrap;gap:8px}
+.opt{height:40px;padding:0 16px;border-radius:999px;border:1px solid #8FB3B8;background:#FFFFFF;color:#021A20;font:500 14px/1 Inter,sans-serif;cursor:pointer;touch-action:manipulation;transition:transform .12s}
+.opt:active{transform:scale(.95)}
+.opt.on{background:#E6F4F6;border-color:#035360;font-weight:700}
+.rng{width:100%;accent-color:#035360;height:28px;cursor:pointer}
+.tgl{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;border:1px solid #CFE3E7;border-radius:14px;font:500 14px/1.3 Inter,sans-serif}
+.sw{position:relative;width:52px;height:30px;flex-shrink:0;border-radius:999px;border:0;padding:0;background:#C6D5D8;cursor:pointer;touch-action:manipulation;transition:background-color .25s}
+.sw i{position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:#FFFFFF;box-shadow:0 1px 3px rgba(2,26,32,.25);transition:transform .4s cubic-bezier(.34,1.56,.64,1)}
+.sw.on{background:#037788}
+.sw.on i{transform:translateX(22px)}
+.res{background:#F3F9FA}
+.rbig{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.rcard{padding:16px;border-radius:18px;background:#FFFFFF;border:1px solid #CFE3E7;display:flex;flex-direction:column;gap:6px}
+.rcard span{font-size:13px;color:#48656A}
+.rcard b{font:500 28px/1.05 Outfit,sans-serif;color:#021A20}
+.rcard small{font-size:12px;color:#48656A}
+.warn{padding:12px 14px;border-radius:14px;background:#FFF7E6;border:1px solid #F6DFAE;color:#5C3B00;font-size:14px;line-height:1.5}
+.klist{display:flex;flex-direction:column;border:1px solid #CFE3E7;border-radius:18px;background:#FFFFFF;overflow:hidden}
+.kr{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;border-bottom:1px solid #EEF4F5;font-size:15px}
+.kr:last-child{border-bottom:0}
+.kr b{font-weight:600}
+.kq{min-width:34px;height:28px;padding:0 10px;border-radius:999px;background:#E3F5F7;color:#035360;font:700 13px/28px Inter,sans-serif;text-align:center}
+.fine{font-size:12px;line-height:1.5;color:#48656A}
+@container site (max-width:1100px){.caps{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@container site (max-width:820px){.plan{padding:40px 0 48px}.calc{grid-template-columns:minmax(0,1fr)}.cbox{padding:18px}.rcard b{font-size:24px}}
 /* flat white buttons, thin outline, no shadows */
 .nav{background:rgba(255,255,255,.97)!important;border-bottom:1px solid #CFE3E7!important;box-shadow:0 10px 28px -20px rgba(2,26,32,.35)}
 .btn,.btn:hover,.btn-p,.btn-p:hover,.btn-s,.btn-s:hover,.nav-in>.btn-p,.nav-in>.btn-p:hover{background:#FFFFFF!important;color:#035360!important;box-shadow:inset 0 0 0 1px #035360!important;transform:none!important}
@@ -207,9 +242,54 @@ a{color:#035360}a:hover{color:#037788}
 <div class="wrap" style="display: flex; flex-direction: column; gap: 22px">
 <div class="crumb in d1"><a href="Main.dc.html">Home</a><span aria-hidden="true">/</span><span>Store</span></div>
 <h1 class="h1 in d2">RelaxPump <em>Store</em></h1>
+<a class="btn btn-s in d3" href="#plan" style="align-self: flex-start">Plan your kit</a>
 <div class="note in d4">
 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#B45309" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink: 0"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg>
 <span><b>Online orders open soon.</b> Order now: <a href="tel:+919863262589" style="color: #7A4A00; font-weight: 600">+91 98632 62589</a></span>
+</div>
+</div>
+</section>
+
+<section class="plan" id="plan">
+<div class="wrap">
+<span class="kicker">Plan your kit</span>
+<h2 style="margin-top: 14px; font-size: 44px; font-weight: 500; line-height: 1.05; letter-spacing: -0.02em">What do you need?</h2>
+<div class="caps">
+<div class="cap"><b>8</b><span>semi tanks on one controller</span></div>
+<div class="cap"><b>8 + 8</b><span>valves and sensors, buy only what you use</span></div>
+<div class="cap"><b>+ PHE</b><span>own valve for the PHE line</span></div>
+<div class="cap"><b>+ Main</b><span>sensor for the main tank, and the pump</span></div>
+</div>
+<div class="calc">
+<div class="cbox">
+<div class="q"><span class="ql">Semi tanks<b>{{cTanks}}</b></span>
+<div class="step" style="align-self: flex-start"><button type="button" aria-label="One less tank" onClick="{{tankDec}}">−</button><span>{{cTanks}}</span><button type="button" aria-label="One more tank" onClick="{{tankInc}}">+</button></div></div>
+<div class="q"><span class="ql">Size of each tank</span>
+<div class="opts"><sc-for list="{{litreOpts}}" as="o" hint-placeholder-count="4"><button class="opt {{o.cls}}" type="button" onClick="{{o.go}}">{{o.label}}</button></sc-for></div></div>
+<div class="q"><label class="ql" for="hgt">Height of the highest tank<b>{{cHeight}} ft</b></label>
+<input class="rng" id="hgt" type="range" min="5" max="120" step="5" value="{{cHeight}}" onChange="{{setHeight}}"></div>
+<div class="q"><span class="ql">Main tank</span>
+<div class="opts"><sc-for list="{{mainOpts}}" as="o" hint-placeholder-count="2"><button class="opt {{o.cls}}" type="button" onClick="{{o.go}}">{{o.label}}</button></sc-for></div>
+<sc-if value="{{isUnder}}" hint-placeholder-val="{{ false }}"><label class="ql" for="dep" style="font-weight: 500">How deep<b>{{cDepth}} ft</b></label><input class="rng" id="dep" type="range" min="2" max="40" step="1" value="{{cDepth}}" onChange="{{setDepth}}"></sc-if></div>
+<div class="q"><span class="ql">Pipe size</span>
+<div class="opts"><sc-for list="{{pipeOpts}}" as="o" hint-placeholder-count="4"><button class="opt {{o.cls}}" type="button" onClick="{{o.go}}">{{o.label}}</button></sc-for></div></div>
+<div class="tgl"><span>PHE line</span><button class="sw {{pheCls}}" type="button" aria-label="PHE line" aria-pressed="{{pheOn}}" onClick="{{togglePhe}}"><i></i></button></div>
+<div class="tgl"><span>Sensor in the main tank</span><button class="sw {{mainCls}}" type="button" aria-label="Sensor in the main tank" aria-pressed="{{mainOn}}" onClick="{{toggleMain}}"><i></i></button></div>
+</div>
+<div class="cbox res">
+<div class="rbig">
+<div class="rcard"><span>Pump</span><b>{{rPump}}</b><small>{{rPumpNote}}</small></div>
+<div class="rcard"><span>Lift</span><b>{{rHead}} m</b><small>height + pipe losses</small></div>
+<div class="rcard"><span>One tank fills in</span><b>{{rOne}}</b><small>about {{rFlow}} L/min</small></div>
+<div class="rcard"><span>All tanks, from empty</span><b>{{rAll}}</b><small>one tank at a time</small></div>
+</div>
+<sc-if value="{{hasWarn}}" hint-placeholder-val="{{ false }}"><div class="warn">{{rWarn}}</div></sc-if>
+<div class="klist">
+<sc-for list="{{kitList}}" as="k" hint-placeholder-count="4"><div class="kr"><span style="display: flex; flex-direction: column; gap: 2px"><b>{{k.name}}</b><span class="fine">{{k.note}}</span></span><span class="kq">× {{k.q}}</span></div></sc-for>
+</div>
+<button class="btn btn-p" type="button" onClick="{{addKit}}" style="width: 100%">Add this kit to cart</button>
+<p class="fine">Estimate from typical pump curves. Check the head and flow on your pump label, or call +91 98632 62589.</p>
+</div>
 </div>
 </div>
 </section>
@@ -349,11 +429,11 @@ a{color:#035360}a:hover{color:#037788}
 </aside>
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":2200}}'>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":3200}}'>
 class Component extends DCLogic {
   constructor(p) {
     super(p);
-    this.state = { cat: 'All', cart: {}, open: false, step: 'cart', pay: 'cod', menu: false };
+    this.state = { cat: 'All', cart: {}, open: false, step: 'cart', pay: 'cod', menu: false, c: { tanks: 3, litres: 1000, height: 30, under: false, depth: 8, pipe: 1, phe: false, main: false } };
   }
   setQty(id, q) {
     const cart = { ...this.state.cart };
@@ -363,19 +443,73 @@ class Component extends DCLogic {
   renderVals() {
     const s = this.state;
     const ICON = {
-      kit: 'M4 5h16v14H4z M8 9h5v4H8z M16 9h.01',
+      ctrl: 'M4 5h16v14H4z M8 9h5v4H8z M16 9h.01',
+      tank: 'M2 13h20 M9 9h6v8H9z M10 5h4v4h-4z',
+      phe: 'M2 13h20 M9 9h6v8H9z M10 5h4v4h-4z',
+      main: 'M4 8h16v8H4z M9 12h.01 M15 12h.01',
+      pump: 'M5 5h14v14H5z M13 2l-3 6h4l-3 6',
       sensor: 'M4 8h16v8H4z M9 12h.01 M15 12h.01',
       valve: 'M2 13h20 M9 9h6v8H9z M10 5h4v4h-4z',
       relay: 'M5 5h14v14H5z M13 2l-3 6h4l-3 6',
       install: 'M3 11l9-7 9 7v9H3z M9 20v-6h6v6'
     };
     const P = [
-      { id: 'kit', cat: 'Kits', name: 'RelaxPump Controller Kit', desc: 'The ESP32 controller that runs your pump and up to 3 tanks.', tag: 'Start here', isCtrl: true },
-      { id: 'sensor', cat: 'Add-ons', name: 'Ultrasonic Level Sensor', desc: 'One sensor per tank shows its level live in the app.', tag: 'Add-on', isSensor: true },
-      { id: 'valve', cat: 'Add-ons', name: 'Solenoid Valve', desc: 'Opens and closes the line to each tank, so one tank fills at a time.', tag: 'Add-on', isValve: true },
-      { id: 'relay', cat: 'Add-ons', name: 'Pump Relay + Contactor', desc: 'Switches your pump safely from the controller.', tag: 'Add-on', isRelay: true },
-      { id: 'install', cat: 'Service', name: 'Home Installation', desc: 'Our team fits the kit, wires the pump and sets up the app with you.', tag: 'Service', isInstall: true }
+      { id: 'ctrl', cat: 'Kits', name: 'RelaxPump Controller', desc: 'Up to 8 tanks, PHE and pump.', tag: 'One per home', isCtrl: true },
+      { id: 'tank', cat: 'Kits', name: 'Semi Tank Kit', desc: 'One sensor and one valve.', tag: 'Per tank', isValve: true },
+      { id: 'phe', cat: 'Kits', name: 'PHE Kit', desc: 'Valve and check valve for the PHE line.', tag: 'PHE line', isValve: true },
+      { id: 'main', cat: 'Kits', name: 'Main Tank Kit', desc: 'Sensor for the main tank.', tag: 'Main tank', isSensor: true },
+      { id: 'pump', cat: 'Kits', name: 'Pump Kit', desc: 'Contactor sized to your pump.', tag: 'Pump', isRelay: true },
+      { id: 'sensor', cat: 'Add-ons', name: 'Level Sensor', desc: 'Sensor only.', tag: 'Add-on', isSensor: true },
+      { id: 'valve', cat: 'Add-ons', name: 'Solenoid Valve 12 V', desc: 'Valve only.', tag: 'Add-on', isValve: true },
+      { id: 'install', cat: 'Service', name: 'Home Installation', desc: 'Our team fits it and sets up the app.', tag: 'Service', isInstall: true }
     ];
+
+    const c = s.c;
+    const setC = (o) => this.setState({ c: { ...this.state.c, ...o } });
+    const PUMPS = [
+      { hp: '0.5 HP', q: 40, h: 25, ct: '9 A' },
+      { hp: '1 HP', q: 60, h: 35, ct: '12 A' },
+      { hp: '1.5 HP', q: 90, h: 40, ct: '18 A' },
+      { hp: '2 HP', q: 120, h: 45, ct: '25 A' }
+    ];
+    const PIPES = [{ v: 0.5, label: '½"', cap: 21 }, { v: 0.75, label: '¾"', cap: 38 }, { v: 1, label: '1"', cap: 59 }, { v: 1.25, label: '1¼"', cap: 96 }];
+    const pipe = PIPES.find(x => x.v === c.pipe) || PIPES[2];
+    const depthM = c.under ? c.depth / 3.28 : 0;
+    const head = Math.round(((c.height / 3.28) * 1.2 + (c.under ? depthM : 0.5)) * 10) / 10;
+    const flowOf = (x) => Math.min(x.q * (1 - head / x.h), pipe.cap);
+    const ok = PUMPS.filter(x => x.h * 0.75 >= head);
+    const pump = ok.find(x => flowOf(x) >= Math.min(25, pipe.cap * 0.9)) || ok[ok.length - 1];
+    let warn = '';
+    if (c.under && depthM > 6) warn = 'The main tank is deeper than 6 m (20 ft). A surface pump cannot lift from there — use a submersible pump. Call us to plan it.';
+    else if (!pump) warn = 'This is higher than a 2 HP pump lifts well. You need a high-head or booster pump — call us to plan it.';
+    const flow = pump ? Math.max(5, Math.round(Math.min(pump.q * (1 - head / pump.h), pipe.cap))) : 0;
+    const oneMin = flow ? Math.round(c.litres / flow) : 0;
+    const allMin = flow ? c.tanks * oneMin + (c.tanks - 1) : 0;
+    const fmt = (m) => (m >= 60 ? Math.floor(m / 60) + ' h ' + (m % 60) + ' min' : m + ' min');
+    const tanksMax = 8;
+    const kitList = [
+      { id: 'ctrl', name: 'RelaxPump Controller', note: 'One per home', q: 1 },
+      { id: 'tank', name: 'Semi Tank Kit', note: 'Sensor + valve for each tank', q: c.tanks },
+      c.phe ? { id: 'phe', name: 'PHE Kit', note: 'Valve + check valve', q: 1 } : null,
+      c.main ? { id: 'main', name: 'Main Tank Kit', note: 'Sensor for the main tank', q: 1 } : null,
+      { id: 'pump', name: 'Pump Kit', note: pump ? 'Contactor ' + pump.ct + ' for a ' + pump.hp + ' pump' : 'We size it with you', q: 1 }
+    ].filter(Boolean);
+    const calcVals = {
+      cTanks: c.tanks, cHeight: c.height, cDepth: c.depth, isUnder: c.under,
+      tankDec: () => setC({ tanks: Math.max(1, c.tanks - 1) }),
+      tankInc: () => setC({ tanks: Math.min(tanksMax, c.tanks + 1) }),
+      litreOpts: [500, 1000, 1500, 2000].map(l => ({ label: l.toLocaleString('en-IN') + ' L', cls: c.litres === l ? 'on' : '', go: () => setC({ litres: l }) })),
+      mainOpts: [{ label: 'At ground level', u: false }, { label: 'Underground', u: true }].map(o => ({ label: o.label, cls: c.under === o.u ? 'on' : '', go: () => setC({ under: o.u }) })),
+      pipeOpts: PIPES.map(x => ({ label: x.label, cls: c.pipe === x.v ? 'on' : '', go: () => setC({ pipe: x.v }) })),
+      setHeight: (e) => setC({ height: Number(e.target.value) }),
+      setDepth: (e) => setC({ depth: Number(e.target.value) }),
+      pheCls: c.phe ? 'on' : '', pheOn: c.phe ? 'true' : 'false', togglePhe: () => setC({ phe: !c.phe }),
+      mainCls: c.main ? 'on' : '', mainOn: c.main ? 'true' : 'false', toggleMain: () => setC({ main: !c.main }),
+      rPump: warn ? 'Call us' : pump.hp, rPumpNote: warn ? 'Special pump needed' : 'or bigger',
+      rHead: head, rFlow: flow, rOne: warn ? '—' : fmt(oneMin), rAll: warn ? '—' : fmt(allMin),
+      hasWarn: !!warn, rWarn: warn, kitList,
+      addKit: () => { const cart = {}; kitList.forEach(k => { cart[k.id] = k.q; }); this.setState({ cart, open: true, step: 'cart' }); }
+    };
     const cats = ['All', 'Kits', 'Add-ons', 'Service'].map(c => ({ label: c, cls: c === s.cat ? 'on' : '', sel: c === s.cat ? 'true' : 'false', go: () => this.setState({ cat: c }) }));
     const shown = P.filter(p => s.cat === 'All' || p.cat === s.cat);
     const products = shown.map((p, i) => {
@@ -388,6 +522,7 @@ class Component extends DCLogic {
     });
     const count = Object.values(s.cart).reduce((a, b) => a + b, 0);
     return {
+      ...calcVals,
       cats, products, lines, count,
       hasItems: count > 0, isEmpty: count === 0,
       showCta: s.cat === 'All' || s.cat === 'Service',

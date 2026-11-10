@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RelaxPump app v2 — Installer setup</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;family=Outfit:wght@300;500;600&amp;display=swap">
+<style>
+body{margin:0;background:#021A20}
+.ph{position:relative;width:390px;height:844px;overflow:hidden;background:#021A20;color:#E8F6F7;font-family:Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.ph *{box-sizing:border-box}
+.ph p{margin:0}
+.sc{position:absolute;inset:0;overflow-y:auto;scrollbar-width:none;padding:0 0 120px}
+.sc::-webkit-scrollbar{display:none}
+.pad{padding:56px 16px 0}
+.ttl{font:500 26px/1.1 Outfit,sans-serif;letter-spacing:-.3px}
+.mut{color:#8FB3B8}
+.card{background:#0A242B;border-radius:22px}
+.lbl{font:600 11px/1 Inter,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#7FE3EC}
+.press{transition:transform .14s cubic-bezier(.22,1,.36,1);touch-action:manipulation;cursor:pointer}
+.press:active{transform:scale(.96)}
+.cta{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;height:52px;border:0;border-radius:999px;background:linear-gradient(90deg,#A8F3F8,#7FE3EC,#2FB6C6);color:#021A20;font:600 15px/1 Inter,sans-serif}
+.cta[disabled]{opacity:.45;cursor:not-allowed}
+.ghost{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:40px;padding:0 16px;border-radius:999px;border:1px solid rgba(127,227,236,.4);background:transparent;color:#7FE3EC;font:600 13px/1 Inter,sans-serif}
+.seg{display:grid;height:42px;padding:4px;border-radius:999px;background:#06171C}
+.seg button{border:0;border-radius:999px;background:transparent;color:#8FB3B8;font:600 13px/1 Inter,sans-serif}
+.seg button.on{background:#037788;color:#FFFFFF}
+.sw{position:relative;width:46px;height:28px;flex-shrink:0;border:0;padding:0;border-radius:999px;background:#2A4A50;transition:background-color .25s}
+.sw i{position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#FFFFFF;transition:transform .4s cubic-bezier(.34,1.56,.64,1)}
+.sw.on{background:#037788}
+.sw.on i{transform:translateX(18px)}
+.nav{position:absolute;left:12px;right:12px;bottom:16px;height:62px;border-radius:22px;background:rgba(6,23,28,.96);border:1px solid rgba(3,119,136,.7);display:grid;grid-template-columns:repeat(5,minmax(0,1fr));align-items:center;justify-items:center;z-index:20}
+.navc{margin-top:-28px;width:54px;height:54px;border-radius:50%;background:#0A242B;border:1.5px solid #037788;display:flex;align-items:center;justify-content:center}
+.fade{animation:fu .5s cubic-bezier(.22,1,.36,1) both}
+@keyframes fu{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+.top{position:absolute;left:0;right:0;top:0;padding:52px 16px 12px;background:#021A20;z-index:5;display:flex;flex-direction:column;gap:12px}
+.dots{display:flex;gap:6px}
+.dots i{flex:1 1 0;height:4px;border-radius:4px;background:rgba(127,227,236,.15);transition:background-color .3s}
+.dots i.on{background:#7FE3EC}
+.body{position:absolute;left:0;right:0;top:128px;bottom:96px;overflow-y:auto;scrollbar-width:none;padding:6px 16px 20px;display:flex;flex-direction:column;gap:12px}
+.foot{position:absolute;left:0;right:0;bottom:0;padding:14px 16px 26px;background:linear-gradient(180deg,rgba(2,26,32,0),#021A20 30%);display:flex;gap:10px;z-index:5}
+.foot .ghost{height:52px;padding:0 22px}
+.big{display:flex;align-items:center;justify-content:center;gap:28px;padding:26px 0}
+.rnd{width:56px;height:56px;border-radius:50%;border:1px solid rgba(127,227,236,.4);background:transparent;color:#7FE3EC;font:500 28px/1 Inter,sans-serif}
+.tk{padding:14px;border-radius:20px;background:#0A242B;display:flex;flex-direction:column;gap:12px}
+.inp{height:44px;width:100%;border-radius:12px;border:1px solid rgba(127,227,236,.3);background:#06171C;color:#E8F6F7;padding:0 12px;font:500 15px Inter,sans-serif}
+.inp:focus{outline:none;border-color:#7FE3EC}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.ch{height:32px;padding:0 12px;border-radius:999px;border:1px solid rgba(127,227,236,.3);background:transparent;color:#8FB3B8;font:600 12px/1 Inter,sans-serif}
+.ch.on{background:#037788;border-color:#037788;color:#FFFFFF}
+.trow{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:14px}
+.port{height:22px;padding:0 8px;border-radius:6px;background:#06171C;color:#7FE3EC;font:700 11px/22px ui-monospace,monospace}
+.err{padding:10px 12px;border-radius:12px;background:rgba(252,165,165,.12);color:#FCA5A5;font-size:12px;line-height:1.4}
+.mini{display:flex;align-items:center;gap:10px}
+.mini button{width:34px;height:34px;border-radius:50%;border:1px solid rgba(127,227,236,.4);background:transparent;color:#7FE3EC;font:600 18px/1 Inter,sans-serif}
+.ok{color:#7FE3EC;font-weight:700}.bad{color:#FCA5A5;font-weight:700}
+.key{height:62px;border:0;border-radius:18px;background:#0A242B;color:#E8F6F7;font:500 24px/1 Outfit,sans-serif}
+.pd{width:16px;height:16px;border-radius:50%;border:1.5px solid #7FE3EC;transition:background-color .2s}
+.pd.on{background:#7FE3EC}
+
+</style>
+</helmet>
+<div class="ph">
+<sc-if value="{{isPin}}" hint-placeholder-val="{{ false }}">
+<div class="fade" style="position: absolute; inset: 0; padding: 90px 28px 40px; display: flex; flex-direction: column; align-items: center; gap: 18px">
+<span style="width: 64px; height: 64px; border-radius: 50%; background: rgba(127,227,236,0.12); display: flex; align-items: center; justify-content: center"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#7FE3EC" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 11h14v10H5z M8 11V7a4 4 0 0 1 8 0v4"></path></svg></span>
+<span class="ttl">Installer setup</span>
+<span style="font-size: 14px" class="mut">Enter the installer PIN</span>
+<div style="display: flex; gap: 16px; margin: 6px 0 18px"><sc-for list="{{pinDots}}" as="d" hint-placeholder-count="4"><span class="pd {{d.cls}}"></span></sc-for></div>
+<div style="width: 100%; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px">
+<sc-for list="{{keys}}" as="k" hint-placeholder-count="12"><button class="key press" type="button" aria-label="{{k.aria}}" onClick="{{k.go}}" style="visibility: {{k.vis}}">{{k.label}}</button></sc-for>
+</div>
+</div>
+</sc-if>
+<sc-if value="{{isDone}}" hint-placeholder-val="{{ false }}">
+<div class="fade" style="position: absolute; inset: 0; padding: 0 28px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; text-align: center">
+<span style="width: 84px; height: 84px; border-radius: 50%; background: linear-gradient(180deg, #B5F4F8, #7FE3EC, #1FA9B9); box-shadow: 0 0 40px rgba(127,227,236,0.45); display: flex; align-items: center; justify-content: center"><svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="#021A20" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10"></path></svg></span>
+<span class="ttl">Saved</span>
+<span style="font-size: 14px; line-height: 1.5" class="mut">{{summary}}<br>The controller is updated — no re-flash needed.</span>
+<button class="cta press" type="button" onClick="{{restart}}" style="margin-top: 12px">Go to Home</button>
+</div>
+</sc-if>
+<sc-if value="{{isWizard}}" hint-placeholder-val="{{ true }}">
+<div class="top"><div style="display: flex; align-items: center; justify-content: space-between"><span class="ttl">{{stepTitle}}</span><span style="font-size: 12px" class="mut">Step {{stepNo}} of 5</span></div><div class="dots"><sc-for list="{{dots}}" as="d" hint-placeholder-count="5"><i class="{{d.cls}}"></i></sc-for></div></div>
+<div class="body">
+
+<sc-if value="{{s0}}" hint-placeholder-val="{{ true }}">
+<div class="fade" style="display: flex; flex-direction: column; gap: 12px">
+<span style="font-size: 15px" class="mut">How many semi tanks are connected?</span>
+<div class="big"><button class="rnd press" type="button" aria-label="One less" onClick="{{dec}}">−</button><span style="font-family: Outfit, sans-serif; font-size: 72px; font-weight: 500; line-height: 1; min-width: 60px; text-align: center">{{n}}</span><button class="rnd press" type="button" aria-label="One more" onClick="{{inc}}">+</button></div>
+<div class="tk"><span class="lbl">This controller</span>
+<div class="trow"><span>Semi tank valves</span><span class="port">V1–V8</span></div>
+<div class="trow"><span>Semi tank sensors</span><span class="port">S1–S8</span></div>
+<div class="trow"><span>PHE line valve</span><span class="port">PHE</span></div>
+<div class="trow"><span>Main tank sensor</span><span class="port">MAIN</span></div>
+<div class="trow"><span>Pump</span><span class="port">PUMP</span></div>
+</div>
+<p style="font-size: 12px; line-height: 1.5" class="mut">Tank 1 uses S1 and V1, tank 2 uses S2 and V2, and so on.</p>
+</div>
+</sc-if>
+
+<sc-if value="{{s1}}" hint-placeholder-val="{{ false }}">
+<sc-for list="{{tankRows}}" as="t" hint-placeholder-count="3">
+<div class="tk fade" style="animation-delay: {{t.delay}}">
+<div class="trow"><b style="font-size: 15px">Tank {{t.no}}</b><span style="display: flex; gap: 6px"><span class="port">S{{t.no}}</span><span class="port">V{{t.no}}</span></span></div>
+<input class="inp" type="text" aria-label="Tank name" value="{{t.name}}" onChange="{{t.setName}}">
+<div class="chips"><sc-for list="{{t.sizes}}" as="z" hint-placeholder-count="4"><button class="ch press {{z.cls}}" type="button" onClick="{{z.go}}">{{z.label}}</button></sc-for></div>
+<div class="trow"><span>Sensor</span><button class="sw press {{t.sCls}}" type="button" aria-label="Sensor" onClick="{{t.togS}}"><i></i></button></div>
+<div class="trow"><span>Valve</span><button class="sw press {{t.vCls}}" type="button" aria-label="Valve" onClick="{{t.togV}}"><i></i></button></div>
+<sc-if value="{{t.needTime}}" hint-placeholder-val="{{ false }}"><div class="trow"><span>Fill time (no sensor)</span><span class="mini"><button class="press" type="button" aria-label="Less time" onClick="{{t.minDec}}">−</button><b>{{t.fillMin}} min</b><button class="press" type="button" aria-label="More time" onClick="{{t.minInc}}">+</button></span></div></sc-if>
+<sc-if value="{{t.hasErr}}" hint-placeholder-val="{{ false }}"><div class="err">{{t.err}}</div></sc-if>
+</div>
+</sc-for>
+</sc-if>
+
+<sc-if value="{{s2}}" hint-placeholder-val="{{ false }}">
+<div class="tk fade"><div class="trow"><span style="display: flex; flex-direction: column; gap: 3px"><b>Main tank sensor</b><span style="font-size: 12px" class="mut">Port MAIN · protects the pump</span></span><button class="sw press {{mainCls}}" type="button" aria-label="Main tank sensor" onClick="{{togMain}}"><i></i></button></div>
+<sc-if value="{{mainOn}}" hint-placeholder-val="{{ true }}"><div class="trow"><span>Stop the pump below</span><span class="mini"><button class="press" type="button" aria-label="Lower" onClick="{{minDec}}">−</button><b>{{minPct}}%</b><button class="press" type="button" aria-label="Higher" onClick="{{minInc}}">+</button></span></div></sc-if></div>
+<div class="tk fade" style="animation-delay: 60ms"><div class="trow"><span style="display: flex; flex-direction: column; gap: 3px"><b>PHE line</b><span style="font-size: 12px" class="mut">Port PHE · public water supply</span></span><button class="sw press {{pheCls}}" type="button" aria-label="PHE line" onClick="{{togPhe}}"><i></i></button></div>
+<sc-if value="{{pheOn}}" hint-placeholder-val="{{ true }}"><p style="font-size: 12px; line-height: 1.5" class="mut">Fit a check valve on the PHE line and on the pump line.</p></sc-if></div>
+</sc-if>
+
+<sc-if value="{{s3}}" hint-placeholder-val="{{ false }}">
+<div class="tk fade"><span class="lbl">Sensors</span>
+<sc-for list="{{sensorChecks}}" as="c" hint-placeholder-count="3"><div class="trow"><span style="display: flex; align-items: center; gap: 8px"><span class="port">{{c.port}}</span>{{c.name}}</span><span class="{{c.cls}}">{{c.label}}</span></div></sc-for>
+</div>
+<div class="tk fade" style="animation-delay: 60ms"><span class="lbl">Valves and pump</span>
+<sc-for list="{{outChecks}}" as="c" hint-placeholder-count="3"><div class="trow"><span style="display: flex; align-items: center; gap: 8px"><span class="port">{{c.port}}</span>{{c.name}}</span><button class="ghost press" type="button" onClick="{{c.go}}" style="height: 32px; padding: 0 12px">{{c.label}}</button></div></sc-for>
+<p style="font-size: 12px; line-height: 1.5" class="mut">Tap Test and listen for the click. The pump test runs 2 seconds.</p>
+</div>
+</sc-if>
+
+<sc-if value="{{s4}}" hint-placeholder-val="{{ false }}">
+<div class="fade" style="display: flex; flex-direction: column; gap: 12px">
+<span style="font-size: 15px" class="mut">Where should the water come from?</span>
+<div class="seg" style="grid-template-columns: repeat({{modeCols}}, minmax(0, 1fr))"><sc-for list="{{modes}}" as="m" hint-placeholder-count="3"><button class="press {{m.cls}}" type="button" onClick="{{m.go}}">{{m.label}}</button></sc-for></div>
+<p style="font-size: 13px; line-height: 1.5" class="mut">{{modeHelp}}</p>
+<div class="tk"><span class="lbl">Summary</span>
+<sc-for list="{{sumRows}}" as="r" hint-placeholder-count="4"><div class="trow"><span class="mut">{{r.k}}</span><b>{{r.v}}</b></div></sc-for>
+</div>
+</div>
+</sc-if>
+
+</div>
+<div class="foot">
+<sc-if value="{{canBack}}" hint-placeholder-val="{{ true }}"><button class="ghost press" type="button" onClick="{{back}}">Back</button></sc-if>
+<button class="cta press" type="button" onClick="{{next}}" disabled="{{blocked}}">{{nextLabel}}<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></button>
+</div>
+</sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(p) {
+    super(p);
+    const names = ['Roof', 'Kitchen', 'Bathroom', 'Garden', 'Guest', 'Office', 'Store', 'Terrace'];
+    this.state = { step: -1, pin: '', n: 3, main: true, phe: true, minPct: 10, mode: 'auto', tested: {},
+      tanks: names.map((name, i) => ({ name, litres: 1000, sensor: i !== 2, valve: true, fillMin: 10 })) };
+  }
+  setTank(i, o) { const t = this.state.tanks.slice(); t[i] = { ...t[i], ...o }; this.setState({ tanks: t }); }
+  renderVals() {
+    const s = this.state;
+    const T = s.tanks.slice(0, s.n);
+    const errOf = (t) => (s.n > 1 && !t.valve ? 'Needs a valve — you have more than one tank.' : '');
+    const errors = T.some(t => errOf(t));
+    const TITLES = ['Semi tanks', 'Your tanks', 'Main tank & PHE', 'Check wiring', 'Water source'];
+    const keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', '⌫'].map(k => ({
+      label: k, aria: k === '⌫' ? 'Delete' : (k || 'blank'), vis: k ? 'visible' : 'hidden',
+      go: () => {
+        if (!k) return;
+        if (k === '⌫') return this.setState({ pin: s.pin.slice(0, -1) });
+        const pin = (s.pin + k).slice(0, 4);
+        this.setState({ pin });
+        if (pin.length === 4) setTimeout(() => this.setState({ step: 0, pin: '' }), 180);
+      }
+    }));
+    const modes = [{ k: 'auto', l: 'Auto' }].concat(s.phe ? [{ k: 'phe', l: 'PHE only' }] : []).concat([{ k: 'pump', l: 'Pump only' }]);
+    const mode = modes.find(m => m.k === s.mode) ? s.mode : 'auto';
+    const HELP = { auto: s.phe ? 'Uses PHE water when it comes. If no water arrives in 4 minutes, it switches to the pump.' : 'Fills any tank that drops below its start level, using the pump.', phe: 'Fills only from the PHE line. The pump is never started.', pump: 'Fills only with the pump from the main tank.' };
+    const withSensor = T.filter(t => t.sensor).length;
+    const sumRows = [
+      { k: 'Semi tanks', v: String(s.n) }, { k: 'With sensor', v: withSensor + ' of ' + s.n },
+      { k: 'Main tank sensor', v: s.main ? 'Yes · stop below ' + s.minPct + '%' : 'No' },
+      { k: 'PHE line', v: s.phe ? 'Yes' : 'No' }, { k: 'Mode', v: modes.find(m => m.k === mode).l }
+    ];
+    const outs = T.map((t, i) => ({ port: 'V' + (i + 1), name: t.name, has: t.valve })).filter(o => o.has)
+      .concat(s.phe ? [{ port: 'PHE', name: 'PHE line' }] : []).concat([{ port: 'PUMP', name: 'Pump' }]);
+    return {
+      isPin: s.step === -1, isDone: s.step === 5, isWizard: s.step >= 0 && s.step <= 4,
+      pinDots: [0, 1, 2, 3].map(i => ({ cls: i < s.pin.length ? 'on' : '' })), keys,
+      stepTitle: TITLES[Math.max(0, Math.min(4, s.step))], stepNo: s.step + 1,
+      dots: [0, 1, 2, 3, 4].map(i => ({ cls: i <= s.step ? 'on' : '' })),
+      s0: s.step === 0, s1: s.step === 1, s2: s.step === 2, s3: s.step === 3, s4: s.step === 4,
+      n: s.n, dec: () => this.setState({ n: Math.max(1, s.n - 1) }), inc: () => this.setState({ n: Math.min(8, s.n + 1) }),
+      tankRows: T.map((t, i) => ({
+        no: i + 1, name: t.name, delay: (i * 50) + 'ms',
+        setName: (e) => this.setTank(i, { name: e.target.value }),
+        sizes: [500, 1000, 1500, 2000].map(l => ({ label: l.toLocaleString('en-IN') + ' L', cls: t.litres === l ? 'on' : '', go: () => this.setTank(i, { litres: l }) })),
+        sCls: t.sensor ? 'on' : '', vCls: t.valve ? 'on' : '',
+        togS: () => this.setTank(i, { sensor: !t.sensor }), togV: () => this.setTank(i, { valve: !t.valve }),
+        needTime: !t.sensor, fillMin: t.fillMin,
+        minDec: () => this.setTank(i, { fillMin: Math.max(5, t.fillMin - 5) }), minInc: () => this.setTank(i, { fillMin: Math.min(120, t.fillMin + 5) }),
+        hasErr: !!errOf(t), err: errOf(t)
+      })),
+      mainCls: s.main ? 'on' : '', mainOn: s.main, togMain: () => this.setState({ main: !s.main }),
+      pheCls: s.phe ? 'on' : '', pheOn: s.phe, togPhe: () => this.setState({ phe: !s.phe }),
+      minPct: s.minPct, minDec: () => this.setState({ minPct: Math.max(5, s.minPct - 5) }), minInc: () => this.setState({ minPct: Math.min(40, s.minPct + 5) }),
+      sensorChecks: T.map((t, i) => ({ t, i })).filter(x => x.t.sensor).map(({ t, i }) => ({ port: 'S' + (i + 1), name: t.name, ok: i !== 1, cls: i !== 1 ? 'ok' : 'bad', label: i !== 1 ? 'Found ✓' : 'No answer — check cable' }))
+        .concat(s.main ? [{ port: 'MAIN', name: 'Main tank', cls: 'ok', label: 'Found ✓' }] : []),
+      outChecks: outs.map(o => ({ port: o.port, name: o.name, label: s.tested[o.port] ? 'Clicked ✓' : 'Test', go: () => this.setState({ tested: { ...s.tested, [o.port]: true } }) })),
+      modes: modes.map(m => ({ label: m.l, cls: mode === m.k ? 'on' : '', go: () => this.setState({ mode: m.k }) })), modeCols: modes.length, modeHelp: HELP[mode], sumRows,
+      canBack: s.step > 0, back: () => this.setState({ step: s.step - 1 }),
+      blocked: s.step === 1 && errors,
+      nextLabel: s.step === 4 ? 'Save' : 'Next',
+      next: () => this.setState({ step: s.step + 1 }),
+      summary: s.n + ' semi tanks' + (s.phe ? ' · PHE' : '') + (s.main ? ' · main tank sensor' : '') + '.',
+      restart: () => this.setState({ step: -1, tested: {} })
+    };
+  }
+}
+</script>
+</body>
+</html>

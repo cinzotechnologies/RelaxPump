@@ -219,3 +219,28 @@ Never commit secrets: `.dev.vars`, service-account JSON, `wrangler` tokens. Comm
 4. Ask me before anything that costs money, changes Cloudflare/Firebase/DNS, or deletes files.
 5. When something needs me (`wrangler login`, Cloudflare dashboard clicks, secrets, domain),
    stop and give short numbered steps.
+
+---
+
+## 9. "Plan your kit" calculator (Store page, `#plan`)
+
+In `Shop.dc.html` (section `.plan`, logic in `renderVals()` → `calcVals`). Build it exactly:
+
+- **Inputs:** semi tanks 1–8 (stepper), litres per tank (500 / 1,000 / 1,500 / 2,000), height of the
+  highest tank 5–120 ft (slider), main tank at ground level or underground (+ depth 2–40 ft),
+  pipe size (½", ¾", 1", 1¼"), PHE line on/off, main-tank sensor on/off.
+- **Maths** (keep the constants in one config file, editable later from the admin):
+  - lift `head = height_ft / 3.28 × 1.2 + (underground ? depth_ft / 3.28 : 0.5)` metres
+  - pump table `{0.5 HP: 40 L/min, 25 m, 9 A}`, `{1 HP: 60, 35, 12 A}`, `{1.5 HP: 90, 40, 18 A}`,
+    `{2 HP: 120, 45, 25 A}`; a pump qualifies when `0.75 × maxHead ≥ head`; flow
+    `= min(q × (1 − head / maxHead), pipeCap)` with pipe caps ½" 21, ¾" 38, 1" 59, 1¼" 96 L/min;
+    pick the smallest qualifying pump with flow ≥ min(25, 0.9 × pipeCap)
+  - one tank = litres / flow; all tanks = n × one tank + 1 min per switch
+  - underground deeper than 6 m → "submersible pump, call us"; no qualifying pump → "call us"
+- **Outputs:** pump HP, lift (m), one-tank time + L/min, all-tanks time, kit list (Controller ×1,
+  Semi Tank Kit ×n, PHE Kit, Main Tank Kit, Pump Kit with contactor size) and
+  "Add this kit to cart". Note under it: estimate only, check your pump label.
+- **Capability strip:** 8 semi tanks per controller · 8 valves + 8 sensors · own PHE valve ·
+  main-tank sensor + pump.
+- Store products now follow the kit plan: Controller, Semi Tank Kit, PHE Kit, Main Tank Kit,
+  Pump Kit, Level Sensor, Solenoid Valve 12 V, Home Installation.
