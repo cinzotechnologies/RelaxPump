@@ -59,6 +59,8 @@ type DeviceStore = {
   setTankName: (i: number, text: string) => void;
   runPumpCheck: () => void;
   testPort: (port: TestPort) => void;
+  /** Controller forgets its Wi-Fi and restarts into Bluetooth setup. False when unreachable. */
+  resetWifi: () => boolean;
 };
 
 let unsubs: Unsub[] = [];
@@ -288,6 +290,11 @@ export const useDevice = create<DeviceStore>((set, get) => {
     testPort: (port) => {
       if (!reachable()) return;
       send({ test: { port, ms: port === 'PUMP' ? 2000 : 1000 } });
+    },
+    resetWifi: () => {
+      if (!reachable()) return false;
+      send({ wifiReset: true });
+      return true;
     },
   };
 });

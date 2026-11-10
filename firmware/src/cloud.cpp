@@ -58,6 +58,10 @@ static void applyCmdJson(const String &json) {
     eng.cmdTest(testPort(doc["test"]["port"] | ""), doc["test"]["ms"] | 1000, now);
   if (doc["pumpCheck"] == true) eng.cmdPumpCheck(now);
   db.remove(aClient, BASE + "/cmd", onResult, "cmdDel");
+  if (doc["wifiReset"] == true) {
+    Serial.println("[CLOUD] Wi-Fi reset from the app");
+    requestWifiReset();  // main loop: everything off, forget Wi-Fi, restart into Bluetooth setup
+  }
 }
 
 // ------------------------------------------------------------------ results
@@ -181,6 +185,12 @@ void Cloud::pushState() {
   JsonArray det = doc["detected"]["tanks"].to<JsonArray>();
   for (int i = 0; i < rp::MAX_TANKS; i++) det.add(e.detected[i]);
   doc["detected"]["main"] = e.detected[rp::MAIN];
+  // Live distance per port (T1–T5, MAIN): the installer setup measures the tank with it.
+  JsonArray cm = doc["cm"].to<JsonArray>();
+  for (int i = 0; i < rp::N_SENSORS; i++) {
+    if (e.detected[i]) cm.add(roundf(e.distCm[i]));
+    else cm.add(nullptr);
+  }
 
   bool anyCheck = e.checkRun;
   for (int i = 0; i < e.cfg.n; i++) anyCheck |= e.check[i].done;

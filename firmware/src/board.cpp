@@ -66,13 +66,14 @@ static float readOnceCm(int trig, int echo) {
 
 float readCm(int idx) {
   if (idx < 0 || idx >= rp::N_SENSORS) return -1;
-  // Median of 3 readings inside 20–450 cm (below 20 cm is the blind zone).
+  // Median of 3 readings inside 20–450 cm (below 20 cm is the blind zone). 60 ms between pings:
+  // JSN-SR04T needs it, and a shorter gap lets the last echo come back as a false short reading.
   float v[3];
   int n = 0;
   for (int i = 0; i < 3; i++) {
     float d = readOnceCm(TRIG[idx], ECHO[idx]);
     if (d >= 20 && d <= 450) v[n++] = d;
-    delay(40);
+    delay(60);
   }
   if (n == 0) return -1;
   for (int i = 0; i < n - 1; i++)

@@ -19,10 +19,13 @@ import { go } from '@/state/nav';
 import { useSession } from '@/state/session';
 import {
   countHelp,
+  depthOf,
+  DIST_STEP,
   draftFrom,
   draftToConfig,
   HEIGHT_DEFAULT,
   HEIGHT_STEP,
+  levelAt,
   MIN_PCT_STEP,
   outputsOf,
   reduce,
@@ -350,6 +353,90 @@ function StepCount({ d, dispatch }: StepProps) {
   );
 }
 
+/**
+ * Tank height and where the sensor sits: the level % (and the litres shown) come from these, and
+ * tanks differ, so each one is entered. Live reading to check it, or to set "empty" exactly.
+ */
+function SensorRows({ d, dispatch, i }: StepProps & { i: number }) {
+  const t = d.tanks[i];
+  const depth = depthOf(t);
+  const live = useDevice((st) => (st.online ? (st.state?.cm[i] ?? null) : null));
+  return (
+    <>
+      <Row
+        left={
+          <View style={{ flex: 1, gap: s(2) }}>
+            <Txt size={14}>Tank height</Txt>
+            <Txt size={11} color={colors.muted}>
+              Bottom to the full water line
+            </Txt>
+          </View>
+        }
+        right={
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: s(6) }}>
+            <TextInput
+              key={`depth-${i}-${depth}`}
+              defaultValue={String(depth)}
+              keyboardType="number-pad"
+              maxLength={3}
+              selectTextOnFocus
+              accessibilityLabel={`Tank ${i + 1} height in centimetres`}
+              onEndEditing={(e) => {
+                const cm = parseInt(e.nativeEvent.text.replace(/\D/g, ''), 10);
+                if (cm > 0) dispatch({ type: 'depth', i, cm });
+              }}
+              selectionColor={colors.glow}
+              style={{
+                width: s(64),
+                height: s(40),
+                borderRadius: s(12),
+                borderWidth: 1,
+                borderColor: alpha(colors.glow, 0.3),
+                backgroundColor: colors.deepCard,
+                color: colors.text,
+                textAlign: 'center',
+                fontSize: s(15),
+                ...font(600),
+              }}
+            />
+            <Txt size={13} color={colors.muted}>
+              cm
+            </Txt>
+          </View>
+        }
+      />
+      <Row
+        left="Sensor above full water"
+        right={
+          <Mini
+            value={`${t.fullCm} cm`}
+            labels={['Less', 'More']}
+            onDec={() => dispatch({ type: 'gap', i, cm: t.fullCm - DIST_STEP })}
+            onInc={() => dispatch({ type: 'gap', i, cm: t.fullCm + DIST_STEP })}
+          />
+        }
+      />
+      {live !== null ? (
+        <>
+          <Txt size={12} color={colors.muted}>
+            {`Sensor reads ${Math.round(live)} cm now → ${levelAt(t, live)}%${
+              t.litres ? ` (${fmtNum(Math.round((levelAt(t, live) * t.litres) / 100))} L)` : ''
+            }`}
+          </Txt>
+          <Ghost
+            label="Tank is empty now: use this reading"
+            onPress={() => dispatch({ type: 'emptyAt', i, cm: live })}
+          />
+        </>
+      ) : (
+        <Txt size={12} color={colors.dim}>
+          {`No reading from port T${i + 1} yet. Measure with a tape from the sensor face.`}
+        </Txt>
+      )}
+    </>
+  );
+}
+
 function StepTanks({ d, dispatch }: StepProps) {
   return (
     <>
@@ -421,6 +508,7 @@ function StepTanks({ d, dispatch }: StepProps) {
                 />
               }
             />
+            <SensorRows d={d} dispatch={dispatch} i={i} />
           </Card>
         </FadeUp>
       ))}

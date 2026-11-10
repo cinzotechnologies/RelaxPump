@@ -37,6 +37,7 @@ export function normalizeState(v: Raw): DeviceState | null {
     tanks,
     main: m ? { pct: m.ok && numOrNull(m.pct) !== null ? Math.round(num(m.pct)) : null, ok: !!m.ok } : null,
     detected: det ? { tanks: list<unknown>(det.tanks).map(Boolean), main: !!det.main } : null,
+    cm: Array.from({ length: MAX_TANKS + 1 }, (_, i) => numOrNull(list<unknown>(v.cm)[i])),
     check: chk
       ? {
           run: !!chk.run,

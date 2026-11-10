@@ -137,17 +137,23 @@ static void startProvisioning() {
   }
 }
 
+static uint32_t wifiResetAt = 0;
+void requestWifiReset() { wifiResetAt = millis() | 1; }
+
+/** Forget the saved Wi-Fi and restart: the controller comes back in Bluetooth setup. */
+static void forgetWifiAndRestart(const char *why) {
+  Serial.printf("[PROV] %s: forgetting Wi-Fi, restarting into Bluetooth setup\n", why);
+  board::allOff();
+  WiFi.disconnect(true, true);  // erase saved credentials
+  delay(300);
+  ESP.restart();
+}
+
 static void checkBootButton() {
   static uint32_t downAt = 0;
   if (digitalRead(PIN_BOOT) == LOW) {
     if (!downAt) downAt = millis();
-    if (millis() - downAt > BOOT_HOLD_MS) {
-      Serial.println("[PROV] BOOT held: forgetting Wi-Fi, restarting into Bluetooth setup");
-      board::allOff();
-      WiFi.disconnect(true, true);  // erase saved credentials
-      delay(300);
-      ESP.restart();
-    }
+    if (millis() - downAt > BOOT_HOLD_MS) forgetWifiAndRestart("BOOT held");
   } else {
     downAt = 0;
   }
@@ -326,6 +332,8 @@ void loop() {
   }
   cloud.loop();
   if (cloud.started() && !cloud.ready()) eng.offlineGuard(cloud.offlineMs(), millis());
+  // Give the cmd delete 1.5 s to reach the database, or the reset would repeat after the restart.
+  if (wifiResetAt && millis() - wifiResetAt > 1500) forgetWifiAndRestart("Wi-Fi reset from the app");
 
   led();
   static uint32_t lastPrint = 0;

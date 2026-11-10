@@ -4,7 +4,9 @@ import { mockLayout } from '@/services/mockBackend';
 import {
   countHelp,
   draftFrom,
+  depthOf,
   draftToConfig,
+  levelAt,
   outputsOf,
   reduce,
   sensorChecksOf,
@@ -106,5 +108,36 @@ describe('installer setup draft', () => {
       expect(d.mainOn).toBe(cfg.main.enabled);
       expect(draftToConfig(d).tanks).toHaveLength(cfg.tanks.length);
     }
+  });
+});
+
+describe('sensor distances', () => {
+  it('stores tank height as emptyCm = gap above the water + height, per tank', () => {
+    let d = draftFrom(DEFAULT_LAYOUT); // gap 30 cm
+    d = reduce(d, { type: 'depth', i: 0, cm: 110 });
+    d = reduce(d, { type: 'depth', i: 1, cm: 75 });
+    expect(d.tanks[0]).toMatchObject({ fullCm: 30, emptyCm: 140 });
+    expect(d.tanks[1]).toMatchObject({ fullCm: 30, emptyCm: 105 });
+    expect(depthOf(d.tanks[0])).toBe(110);
+    d = reduce(d, { type: 'gap', i: 0, cm: 10 }); // blind zone: at least 25
+    expect(d.tanks[0]).toMatchObject({ fullCm: 25, emptyCm: 135 });
+    d = reduce(d, { type: 'depth', i: 0, cm: 2 });
+    expect(depthOf(d.tanks[0])).toBe(10);
+    expect(draftToConfig(d).tanks[1]).toMatchObject({ emptyCm: 105, fullCm: 30 });
+  });
+  it('sets the bottom from a live reading of the empty tank', () => {
+    let d = draftFrom(DEFAULT_LAYOUT);
+    d = reduce(d, { type: 'emptyAt', i: 0, cm: 93.4 });
+    expect(d.tanks[0].emptyCm).toBe(93);
+    d = reduce(d, { type: 'emptyAt', i: 0, cm: 20 }); // not above the full line
+    expect(d.tanks[0].emptyCm).toBe(40);
+  });
+  it('turns a reading into the level the controller shows', () => {
+    const t = { emptyCm: 130, fullCm: 30 };
+    expect(levelAt(t, 130)).toBe(0);
+    expect(levelAt(t, 80)).toBe(50);
+    expect(levelAt(t, 30)).toBe(100);
+    expect(levelAt(t, 20)).toBe(100);
+    expect(levelAt(t, 200)).toBe(0);
   });
 });

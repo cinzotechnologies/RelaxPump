@@ -34,6 +34,8 @@ export type DeviceState = {
   main: { pct: number | null; ok: boolean } | null;
   /** Which sensor ports answer (installer setup "Check wiring"): T1–T5, MAIN. */
   detected: { tanks: boolean[]; main: boolean } | null;
+  /** Live sensor distance in cm per port (T1–T5, MAIN), null = no echo. Firmware 2.3+. */
+  cm: (number | null)[];
   check: PumpCheck | null;
 };
 
@@ -55,6 +57,8 @@ export type DeviceCommand = {
   valve?: { i: number; open: boolean };
   test?: { port: TestPort; ms: number };
   pumpCheck?: boolean;
+  /** Forget the home Wi-Fi and restart into Bluetooth setup (firmware 2.3+). */
+  wifiReset?: boolean;
   ts: number;
 };
 

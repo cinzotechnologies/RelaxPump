@@ -3,7 +3,7 @@
 #pragma once
 #include <Arduino.h>
 
-#define FW_VERSION "2.2.0"
+#define FW_VERSION "2.3.0"
 
 // Bluetooth setup. Same values in the app (services/provisioning.ts). The PoP is shared by all
 // controllers: it encrypts the session, it does not prove ownership.

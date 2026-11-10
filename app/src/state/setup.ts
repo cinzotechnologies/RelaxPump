@@ -24,6 +24,25 @@ export const HEIGHT_MIN = 5;
 export const HEIGHT_MAX = 100;
 export const HEIGHT_DEFAULT = 20;
 export const MIN_PCT_STEP = 5;
+/**
+ * Level = where the water is between the tank bottom and the full line, seen from the sensor on
+ * the lid. Stored as distances from the sensor: fullCm (sensor → full line, the gap above the
+ * water) and emptyCm = fullCm + tank height (water depth when full).
+ */
+export const DIST_STEP = 5;
+export const FULL_CM_MIN = 25; // ultrasonic blind zone
+export const EMPTY_CM_MAX = 500;
+export const DEPTH_MIN = 10;
+const DIST_GAP = 10;
+
+/** Tank height in cm (bottom → full water line). */
+export const depthOf = (t: Pick<TankConfig, 'emptyCm' | 'fullCm'>) => t.emptyCm - t.fullCm;
+
+/** Level the controller would show for a sensor reading with these distances (0–100, rounded). */
+export function levelAt(t: Pick<TankConfig, 'emptyCm' | 'fullCm'>, cm: number): number {
+  const span = Math.max(5, t.emptyCm - t.fullCm);
+  return Math.round(Math.min(100, Math.max(0, ((t.emptyCm - cm) * 100) / span)));
+}
 
 export type Draft = {
   n: number;
@@ -59,6 +78,12 @@ export type Action =
   | { type: 'count'; n: number }
   | { type: 'tank'; i: number; patch: Partial<TankConfig> }
   | { type: 'height'; i: number; delta: number }
+  /** Tank height in cm (bottom → full water line). */
+  | { type: 'depth'; i: number; cm: number }
+  /** Sensor → full water line in cm (keeps the tank height). */
+  | { type: 'gap'; i: number; cm: number }
+  /** Sensor → tank bottom, from a live reading of the empty tank. */
+  | { type: 'emptyAt'; i: number; cm: number }
   | { type: 'main'; on: boolean }
   | { type: 'minPct'; delta: number };
 
@@ -77,6 +102,24 @@ export function reduce(d: Draft, a: Action): Draft {
       const tanks = d.tanks.slice();
       const cur = tanks[a.i].heightFt ?? HEIGHT_DEFAULT;
       tanks[a.i] = { ...tanks[a.i], heightFt: clamp(cur + a.delta, HEIGHT_MIN, HEIGHT_MAX) };
+      return { ...d, tanks };
+    }
+    case 'depth':
+    case 'gap':
+    case 'emptyAt': {
+      const tanks = d.tanks.slice();
+      const t = tanks[a.i];
+      const cm = Math.round(a.cm);
+      if (a.type === 'depth') {
+        const depth = clamp(cm, DEPTH_MIN, EMPTY_CM_MAX - t.fullCm);
+        tanks[a.i] = { ...t, emptyCm: t.fullCm + depth };
+      } else if (a.type === 'gap') {
+        const depth = depthOf(t);
+        const fullCm = clamp(cm, FULL_CM_MIN, EMPTY_CM_MAX - depth);
+        tanks[a.i] = { ...t, fullCm, emptyCm: fullCm + depth };
+      } else {
+        tanks[a.i] = { ...t, emptyCm: clamp(cm, t.fullCm + DIST_GAP, EMPTY_CM_MAX) };
+      }
       return { ...d, tanks };
     }
     case 'main':

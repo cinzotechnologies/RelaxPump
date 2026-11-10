@@ -199,6 +199,9 @@
           "pumpCheck": {
             ".validate": "newData.isBoolean()"
           },
+          "wifiReset": {
+            ".validate": "newData.isBoolean()"
+          },
           "valve": {
             ".validate": "newData.hasChildren(['i', 'open'])",
             "i": {

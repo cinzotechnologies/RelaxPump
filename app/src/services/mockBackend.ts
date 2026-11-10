@@ -164,6 +164,13 @@ export function createMockBackend(spec = process.env.EXPO_PUBLIC_MOCK_LAYOUT): B
     main: config.main.enabled ? { pct: Math.round(mainPct), ok: true } : null,
     // Ports T1–T4 and MAIN answer in the demo; T5 has no cable.
     detected: { tanks: Array.from({ length: MAX_TANKS }, (_, i) => i < 4), main: true },
+    // Distance the level would give with each tank's sensor distances (T5: no cable).
+    cm: Array.from({ length: MAX_TANKS + 1 }, (_, i) => {
+      if (i === MAX_TANKS) return config.main.enabled ? 60 : null;
+      const t = config.tanks[i];
+      if (i >= 4 || !t) return i < 4 ? 80 : null;
+      return Math.round(t.emptyCm - (levels[i] / 100) * (t.emptyCm - t.fullCm));
+    }),
     check,
   });
 

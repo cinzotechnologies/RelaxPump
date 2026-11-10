@@ -25,10 +25,14 @@ import { useSession } from '@/state/session';
 import { useUi } from '@/state/ui';
 import { alpha, colors, s, Txt } from '@/theme';
 
-type Step = 'status' | 'search' | 'found' | 'nets' | 'join';
+type Step = 'status' | 'restart' | 'search' | 'found' | 'nets' | 'join';
+
+/** Controller: forget Wi-Fi, restart, start Bluetooth setup. */
+const RESTART_WAIT_MS = 8000;
 
 const TITLE: Record<Step, string> = {
   status: 'Device',
+  restart: 'Restarting controller',
   search: 'Searching via Bluetooth',
   found: 'Controller found',
   nets: 'Wi-Fi',
@@ -84,13 +88,26 @@ export function BleSheet() {
     showToast(text);
   };
 
+  const resetWifi = useDevice((d) => d.resetWifi);
+
+  /** Online controller: ask it to forget its Wi-Fi first, then it shows up over Bluetooth. */
+  const startSetup = async () => {
+    if (online && provisioner().real && resetWifi()) {
+      setStep('restart');
+      await new Promise((r) => setTimeout(r, RESTART_WAIT_MS));
+      if (!alive.current) return;
+    }
+    search();
+  };
+
   const search = async () => {
     setController(null);
     setStep('search');
     try {
       const list = await provisioner().search();
       if (!alive.current) return;
-      if (!list.length) return fail('No controller found');
+      if (!list.length)
+        return fail('No controller found. Hold its BOOT button 5 s to restart setup, then try again.');
       setFound(list);
       setStep('found');
     } catch (e) {
@@ -232,12 +249,16 @@ export function BleSheet() {
               ))}
             </View>
           ) : null}
-          <PrimaryButton label={online ? 'Change Wi-Fi' : 'Set up device'} onPress={search} />
+          <PrimaryButton label={online ? 'Change Wi-Fi' : 'Set up device'} onPress={startSetup} />
           {/* Which app update is running, for support (e.g. "app 2f76f635"). */}
           <Txt size={11} color={colors.faint} style={{ textAlign: 'center' }}>
             app {Updates.updateId ? Updates.updateId.slice(0, 8) : 'built-in'}
           </Txt>
         </Fade>
+      ) : null}
+
+      {step === 'restart' ? (
+        <Waiting text="The controller forgets its Wi-Fi and restarts in Bluetooth setup. Keep your phone close." />
       ) : null}
 
       {step === 'search' ? (

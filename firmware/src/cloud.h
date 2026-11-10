@@ -26,3 +26,5 @@ extern Cloud cloud;
 extern rp::Engine eng;
 /** Apply a config JSON (from the cloud or flash). Defined in main.cpp. */
 void applyConfig(const String &json, bool fromCloud);
+/** App asked to change Wi-Fi: main.cpp turns everything off, forgets Wi-Fi and restarts. */
+void requestWifiReset();

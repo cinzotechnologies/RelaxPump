@@ -179,6 +179,8 @@ const rules = {
           pump: bool,
           auto: bool,
           pumpCheck: bool,
+          // Firmware 2.3: forget the home Wi-Fi, restart into Bluetooth setup (owner only).
+          wifiReset: bool,
           valve: {
             '.validate': "newData.hasChildren(['i', 'open'])",
             i: { '.validate': num(0, MAX_TANKS - 1) },
