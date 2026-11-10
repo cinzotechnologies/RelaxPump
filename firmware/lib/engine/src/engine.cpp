@@ -312,6 +312,12 @@ void Engine::logUsage(bool stopped, uint32_t now) {
 }
 
 void Engine::beginStop(uint32_t now, const char *reason) {
+  // Already stopping: keep the running pump-off → valve wait (and so the cooldown). Starting a new
+  // stop here would close the valves at once and forget that the pump just ran.
+  if (ph == Phase::Stopping && !pumpOn) {
+    if (reason) ev(reason, active >= 0 ? active : 0);
+    return;
+  }
   bool wasOn = pumpOn;
   stopWaitMs = wasOn ? tm.pumpStopMs : 0;
   setPump(false);

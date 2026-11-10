@@ -429,6 +429,28 @@ void test_valve_without_sensor_does_not_pump() {
   TEST_ASSERT_TRUE(s.out.pumpOn);
 }
 
+void test_second_stop_keeps_valve_wait_and_cooldown() {
+  Sim s(layout(3));
+  s.set(1, 10);
+  s.e.cmdValve(1, true, s.t);
+  s.run(5000);
+  TEST_ASSERT_TRUE(s.out.pumpOn);
+  s.e.cmdAuto(true, s.t);  // manual → Auto: stop first
+  TEST_ASSERT_FALSE(s.out.pumpOn);
+  s.run(1000);
+  s.e.cmdAuto(true, s.t);  // the app sends Auto again while stopping
+  s.e.cmdPump(false, s.t);
+  TEST_ASSERT_TRUE(s.out.v[1]);  // still the 3 s pump-off → valve wait
+  s.run(3000);
+  TEST_ASSERT_FALSE(s.out.v[1]);
+  s.e.cmdAuto(true, s.t);
+  s.run(30000);
+  TEST_ASSERT_FALSE(s.out.pumpOn);  // 60 s rest after the pump ran
+  s.run(40000);
+  TEST_ASSERT_TRUE(s.out.pumpOn);  // Auto fills tank 2 after the rest
+  TEST_ASSERT_EQUAL(0, violations);
+}
+
 void test_full_tank_valve_not_opened() {
   Sim s(layout(3));
   s.set(1, 97);
@@ -695,6 +717,7 @@ int main() {
   RUN_TEST(test_sensor_lost_closes_that_valve_only);
   RUN_TEST(test_valve_without_sensor_does_not_pump);
   RUN_TEST(test_full_tank_valve_not_opened);
+  RUN_TEST(test_second_stop_keeps_valve_wait_and_cooldown);
   RUN_TEST(test_cooldown_before_restart);
   RUN_TEST(test_dry_run_lockout_and_clear);
   RUN_TEST(test_max_run_lockout);
