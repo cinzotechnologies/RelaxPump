@@ -211,14 +211,13 @@ export const useDevice = create<DeviceStore>((set, get) => {
         return;
       }
       ui.setMsg('');
-      // Idle: one valve open at a time (the controller closes the others).
-      const idle = !s.pump;
+      // Opening a valve starts the pump (the controller adds its 2 s lead); others stay open.
       patch({
         auto: false,
-        tanks: s.tanks.map((t, j) =>
-          j === i ? { ...t, valve: d.open } : idle && d.open ? { ...t, valve: false } : t,
-        ),
+        pump: d.open ? true : s.pump,
+        tanks: s.tanks.map((t, j) => (j === i ? { ...t, valve: d.open } : t)),
       });
+      if (d.open) ui.showToast('Pump on');
       send({ valve: { i, open: d.open } });
     },
     setAuto: (on) => {

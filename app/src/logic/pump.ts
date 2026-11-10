@@ -41,12 +41,18 @@ export function fillCommand(i: number, tankCount: number): Omit<DeviceCommand, '
 
 export type ValveDecision =
   | { kind: 'toggle'; open: boolean }
-  /** Closing the valve of the tank being filled: stop the pump first. */
+  /** Closing the last open valve while the pump runs: the pump stops first. */
   | { kind: 'stopPumpFirst'; msg: string };
 
+/**
+ * Firmware 2.2: opening a valve starts the pump, several valves may be open together. Closing one
+ * of several leaves the pump running; closing the last one stops the pump first.
+ */
 export function decideValve(i: number, s: Live): ValveDecision {
-  if (s.tanks[i]?.valve && activeTank(s) === i) return { kind: 'stopPumpFirst', msg: 'Pump stopped first' };
-  return { kind: 'toggle', open: !s.tanks[i]?.valve };
+  const open = !!s.tanks[i]?.valve;
+  if (open && s.pump && s.tanks.filter((t) => t.valve).length <= 1)
+    return { kind: 'stopPumpFirst', msg: 'Pump stopped first' };
+  return { kind: 'toggle', open: !open };
 }
 
 const snap = (v: number) => Math.round(v / STEP) * STEP;

@@ -4,13 +4,16 @@
 // readings and the time, and turns its output calls into pins.
 // Unit-tested on the host: firmware/test/ (pio test -e native, or scripts/test-native.sh).
 //
-// Safety (CLAUDE.md §7, kept exactly):
+// Safety (CLAUDE.md §7):
 //   open the tank valve → 2 s → pump on … pump off → 3 s → close the valve
-//   one tank at a time; never pump with all valves closed (except one tank: no valve, the pump
-//   fills it directly); max run time; dry-run stop (< 2 % in 5 min); 60 s cooldown before the
-//   pump restarts; stop on sensor failure; everything off when offline longer than the max run.
-// v2 additions: never more than 2 valves on at once (only while switching tanks); the pump never
-//   starts, and stops, when the main tank is below main.minPct.
+//   never pump with all valves closed (except one tank: no valve, the pump fills it directly);
+//   max run time; dry-run stop (< 2 % in 5 min); 60 s cooldown before the pump restarts; stop on
+//   sensor failure; everything off when offline longer than the max run; the pump never starts,
+//   and stops, when the main tank is below main.minPct.
+// Manual (2026-11-11, owner's choice): opening a valve starts the pump by itself, and any number
+//   of valves may be open together. A tank that reaches Stop, loses its sensor or does not rise
+//   has its valve closed; when the last open valve closes, the pump stops first. Auto and the pump
+//   check still fill one tank at a time.
 #pragma once
 #include <stdint.h>
 
@@ -20,7 +23,6 @@ constexpr int MAX_TANKS = 5;
 constexpr int MAIN = 5;       // sensor index of the main tank
 constexpr int N_SENSORS = 6;  // T1–T5 + MAIN
 constexpr int PORT_PUMP = 5;  // test ports: 0..4 = V1..V5, 5 = PUMP
-constexpr int MAX_VALVES_ON = 2;
 
 enum class Phase : uint8_t { Idle, Opening, Filling, Switching, Stopping, Locked, Testing };
 
@@ -126,6 +128,8 @@ class Engine {
 
   Phase phase() const { return ph; }
   int activeTank() const { return active; }
+  /** Manual fill with any number of valves open (opening a valve started the pump). */
+  bool multiFill() const { return multi; }
   bool mainLow() const;
   int valvesOn() const;
   bool changed();  // true once after something the app shows changed
@@ -150,6 +154,10 @@ class Engine {
   // test pulse
   int testPort = -1, testStage = 0;
   uint32_t testMs = 0;
+  // manual fill, several valves: per tank since its valve opened
+  bool multi = false;
+  uint32_t openAt[MAX_TANKS], riseAtT[MAX_TANKS];
+  float openPct[MAX_TANKS], riseRef[MAX_TANKS];
 
   void go(Phase p, uint32_t now);
   void say(const char *fmt, ...);
@@ -174,6 +182,11 @@ class Engine {
   void finishCheckRow(uint32_t now);
   int nextCheckTank(int after);
   void testTick(uint32_t now);
+  int firstOpen() const;
+  void trackOpen(int i, uint32_t now);
+  void closeFromFill(int i, uint32_t now);
+  void usageOf(int i, uint32_t now);
+  void multiTick(uint32_t now);
   bool configured(int idx) const;
   bool busy() const { return pumpOn || ph == Phase::Opening || ph == Phase::Switching; }
 };

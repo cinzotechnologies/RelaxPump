@@ -215,7 +215,7 @@ static void printStatus() {
 static void serialHelp() {
   Serial.println(
       "s            status\n"
-      "v<n>         toggle valve n (1-5)\n"
+      "v<n>         open/close valve n (1-5); opening starts the pump\n"
       "f<n>         fill tank n (opens its valve, then the pump)\n"
       "p            pump on/off (one tank: pump only)\n"
       "t<port>      test pulse 1 s: tV1 … tV5, tPUMP\n"

@@ -48,9 +48,10 @@ command `board 1` / `board 2` (kept in flash).
 
 - Every output is written OFF **before** it becomes an output, so nothing switches on at boot.
 - Relay module: COM ← +12 V, NO → valve +; valve − → GND.
-- **Valves:** 12 V DC normally-closed solenoids. The firmware never has more than **2 valves on at
-  once** (only for a moment while switching tanks). Power: 12 V **3 A** for ≤ 12 W valves,
-  12 V **5 A** for brass 20 W valves; plus a 5 V 3 A buck for the ESP32 and the sensors.
+- **Valves:** 12 V DC normally-closed solenoids. Since firmware 2.2, **all valves may be on at
+  once** (manual fill), so size the 12 V supply for every valve together: ≤ 12 W valves need
+  1 A each, brass 20 W valves 1.7 A each (3 brass valves → 12 V 6 A, 5 → 12 V 10 A), plus a 5 V
+  3 A buck for the ESP32 and the sensors.
 - **Pump:** the PUMP output switches the **contactor coil** only; the contactor carries the pump
   current. Size it to the pump: 0.5 HP 9 A · 1 HP 12 A · 1.5 HP 18 A · 2 HP 25 A; MCB; overload
   relay from 1.5 HP. Or use the output as a dry contact in an existing starter. RC snubber on the

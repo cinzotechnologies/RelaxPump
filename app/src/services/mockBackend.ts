@@ -129,6 +129,7 @@ export function createMockBackend(spec = process.env.EXPO_PUBLIC_MOCK_LAYOUT): B
   let pump = false;
   let active = -1;
   let runAuto = false;
+  let manyOpen = false; // manual fill: every open valve fills
   let autoMode = true;
   let msg = '';
   const valves = new Array<boolean>(MAX_TANKS).fill(false);
@@ -212,6 +213,7 @@ export function createMockBackend(spec = process.env.EXPO_PUBLIC_MOCK_LAYOUT): B
       });
     pump = false;
     active = -1;
+    manyOpen = false;
     setTimeout(() => {
       if (!pump) valves.fill(false);
       stateCh.emit();
@@ -231,6 +233,25 @@ export function createMockBackend(spec = process.env.EXPO_PUBLIC_MOCK_LAYOUT): B
     mainPct = Math.min(100, mainPct + (pump ? -0.25 : 0.05));
     if (check?.run) {
       // handled by the pumpCheck timer
+    } else if (pump && manyOpen) {
+      // Manual fill (firmware 2.2): every open valve fills; a full tank closes its valve,
+      // the last one stops the pump.
+      if (mainLow()) {
+        msg = 'Main tank is low. Pump stopped.';
+        addEvent({ type: 'main_low', tank: -1 });
+        stop();
+      } else {
+        for (let i = 0; i < n(); i++) {
+          if (!valves[i]) continue;
+          levels[i] = Math.min(100, levels[i] + 1.2);
+          if (levels[i] >= config.high) {
+            addEvent({ type: 'full', tank: i });
+            if (valves.filter((v, k) => v && k < n()).length <= 1) stop();
+            else valves[i] = false;
+          }
+        }
+        if (pump) active = valves.findIndex((v, k) => v && k < n());
+      }
     } else if (pump && active >= 0) {
       if (mainLow()) {
         msg = 'Main tank is low. Pump stopped.';
@@ -263,20 +284,19 @@ export function createMockBackend(spec = process.env.EXPO_PUBLIC_MOCK_LAYOUT): B
     msg = '';
     if (cmd.auto !== undefined) autoMode = cmd.auto;
     if (cmd.pump !== undefined || cmd.valve) autoMode = false;
-    if (cmd.valve && valved()) {
+    if (cmd.valve && valved() && cmd.valve.i < n()) {
+      // Firmware 2.2: opening a valve starts the pump; several valves may be open together.
       const { i, open } = cmd.valve;
-      if (!open && pump && active === i) {
-        msg = 'Pump stopped first';
-        stop();
-      } else if (open && pump && i !== active) {
+      const openCount = valves.filter((v, k) => v && k < n()).length;
+      if (open && levels[i] >= config.high) msg = `Tank ${i + 1} is already full.`;
+      else if (open && pump) {
         valves[i] = true;
-        const prev = active;
-        active = i;
-        setTimeout(() => (valves[prev] = false), 1000);
-      } else if (!pump && i < n()) {
-        if (open) valves.fill(false); // idle: one valve open at a time
-        valves[i] = open;
-      }
+        manyOpen = true;
+      } else if (open) {
+        start(i, false);
+        manyOpen = pump;
+      } else if (pump && openCount <= 1) stop();
+      else valves[i] = false;
     }
     if (cmd.pump === false) stop();
     if (cmd.pump && !pump) {

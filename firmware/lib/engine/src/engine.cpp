@@ -35,7 +35,11 @@ Engine::Engine() {
     ok[i] = detected[i] = lowSent[i] = false;
     fails[i] = detFails[i] = 0;
   }
-  for (int i = 0; i < MAX_TANKS; i++) valveOn[i] = false;
+  for (int i = 0; i < MAX_TANKS; i++) {
+    valveOn[i] = false;
+    openAt[i] = riseAtT[i] = 0;
+    openPct[i] = riseRef[i] = 0;
+  }
   msg[0] = 0;
 }
 
@@ -97,19 +101,24 @@ int Engine::valvesOn() const {
   return n;
 }
 
-/** Water can go somewhere: the active tank's valve is open, or it is the single tank (no valve). */
+/** Water can go somewhere: a filling valve is open, or it is the single tank (no valve). */
 bool Engine::pathOpen() const {
+  if (!hasValves(cfg)) return active >= 0 && active < cfg.n;
+  if (multi) return valvesOn() > 0;
   if (active < 0 || active >= cfg.n) return false;
-  if (!hasValves(cfg)) return true;
   return valveOn[active];
 }
 
+int Engine::firstOpen() const {
+  for (int i = 0; i < cfg.n; i++)
+    if (valveOn[i]) return i;
+  return -1;
+}
+
 // ------------------------------------------------------------------ outputs (with guards)
-/** Opening is refused when 2 valves are already on (hard limit: valve power supply). */
 bool Engine::setValve(int i, bool on) {
   if (i < 0 || i >= MAX_TANKS) return false;
   if (valveOn[i] == on) return true;
-  if (on && valvesOn() >= MAX_VALVES_ON) return false;
   valveOn[i] = on;
   if (out) out->valve(i, on);
   dirty = true;
@@ -242,6 +251,19 @@ void Engine::startPump(uint32_t now) {
     beginStop(now);
     return;
   }
+  if (multi) {
+    // A tank whose sensor does not answer is not filled blind: close its valve.
+    for (int k = 0; k < cfg.n; k++)
+      if (valveOn[k] && !ok[k]) {
+        setValve(k, false);
+        say("Tank %d sensor not answering. Its valve is closed.", k + 1);
+      }
+    active = firstOpen();
+    if (active < 0) {
+      beginStop(now);
+      return;
+    }
+  }
   setPump(true);
   if (!pumpOn) {
     beginStop(now);
@@ -249,11 +271,38 @@ void Engine::startPump(uint32_t now) {
   }
   runStart = tankStart = riseAt = now;
   startPct = risePct = level[active];
+  if (multi)
+    for (int k = 0; k < cfg.n; k++)
+      if (valveOn[k]) trackOpen(k, now);
   ev("pump_on", active);
   go(Phase::Filling, now);
 }
 
+void Engine::trackOpen(int i, uint32_t now) {
+  openAt[i] = riseAtT[i] = now;
+  openPct[i] = riseRef[i] = level[i] < 0 ? 0 : level[i];
+}
+
+void Engine::usageOf(int i, uint32_t now) {
+  float minutes = (now - openAt[i]) / 60000.0f;
+  float rise = level[i] >= 0 ? fmaxf(0.0f, level[i] - openPct[i]) : 0;
+  if (sink) sink->usage(i, minutes, cfg.tank[i].litres * rise / 100.0f);
+}
+
+/** Close one of several filling valves (the pump keeps running for the others). */
+void Engine::closeFromFill(int i, uint32_t now) {
+  if (pumpOn) usageOf(i, now);
+  setValve(i, false);
+  active = firstOpen();
+}
+
 void Engine::logUsage(bool stopped, uint32_t now) {
+  if (multi) {
+    for (int k = 0; k < MAX_TANKS; k++)
+      if (valveOn[k]) usageOf(k, now);
+    if (stopped) ev("pump_off", active >= 0 ? active : 0, (now - runStart) / 60000.0f);
+    return;
+  }
   if (active < 0) return;
   float minutes = (now - tankStart) / 60000.0f;
   float rise = level[active] >= 0 ? fmaxf(0.0f, level[active] - startPct) : 0;
@@ -289,7 +338,72 @@ void Engine::switchTo(int t, uint32_t now) {
   go(Phase::Switching, now);
 }
 
+void Engine::multiTick(uint32_t now) {
+  if (!pumpOn || valvesOn() == 0) {
+    beginStop(now);
+    return;
+  }
+  if (mainLow()) {
+    mainHold = true;
+    say("Main tank is low. Pump stopped.");
+    beginStop(now);
+    return;
+  }
+  if (now - runStart > (uint32_t)cfg.maxRunMin * 60000UL) {
+    lockout("timeout", active, now);
+    say("Pump ran %d min. Check the main tank and pipes.", cfg.maxRunMin);
+    return;
+  }
+  // Per tank: sensor lost, not rising, or full → close that valve; the last one stops the pump first.
+  for (int k = 0; k < cfg.n; k++) {
+    if (!valveOn[k]) continue;
+    const bool last = valvesOn() == 1;
+    if (!ok[k]) {
+      active = k;
+      if (last) {
+        lockout("sensor", k, now);
+        say("Tank %d sensor error. Pump stopped.", k + 1);
+        return;
+      }
+      ev("sensor", k);
+      say("Tank %d sensor error. Its valve is closed.", k + 1);
+      closeFromFill(k, now);
+      continue;
+    }
+    if (now - riseAtT[k] > tm.noRiseMs) {
+      if (level[k] - riseRef[k] < tm.noRisePct) {
+        active = k;
+        if (last) {
+          lockout("dry_run", k, now);
+          say("Tank %d not rising. Check the main tank.", k + 1);
+          return;
+        }
+        ev("dry_run", k);
+        say("Tank %d not rising. Its valve is closed.", k + 1);
+        closeFromFill(k, now);
+        continue;
+      }
+      riseAtT[k] = now;
+      riseRef[k] = level[k];
+    }
+    if (level[k] >= cfg.high) {
+      ev("full", k);
+      active = k;
+      if (last) {
+        beginStop(now);
+        return;
+      }
+      closeFromFill(k, now);
+    }
+  }
+  active = firstOpen();
+}
+
 void Engine::fillTick(uint32_t now) {
+  if (multi) {
+    multiTick(now);
+    return;
+  }
   int t = active;
   if (t < 0 || !pathOpen() || !pumpOn) {
     beginStop(now);
@@ -480,8 +594,11 @@ void Engine::loop(uint32_t now) {
       if (in >= stopWaitMs) {
         for (int i = 0; i < MAX_TANKS; i++) setValve(i, false);
         active = next = -1;
-        lastStop = now;
-        stoppedOnce = true;
+        multi = false;
+        if (stopWaitMs > 0) {  // the pump ran: it rests before the next start
+          lastStop = now;
+          stoppedOnce = true;
+        }
         bool lock = lockAfterStop;
         lockAfterStop = false;
         go(lock ? Phase::Locked : Phase::Idle, now);
@@ -499,6 +616,7 @@ void Engine::loop(uint32_t now) {
 void Engine::reset(uint32_t now) {
   allOff();
   active = next = -1;
+  multi = false;
   checkRun = false;
   testPort = -1;
   lockAfterStop = false;
@@ -530,39 +648,69 @@ void Engine::cmdPump(bool on, uint32_t now) {
     say("Busy. Try again in a moment.");
     return;
   }
-  int t = -1;
-  if (!hasValves(cfg)) t = 0;  // the only tank: no valve to choose
-  else
-    for (int i = 0; i < cfg.n; i++)
-      if (valveOn[i]) {
-        t = i;
-        break;
-      }
+  if (!pumpAllowed(now, false)) return;
+  if (!hasValves(cfg)) {  // the only tank: no valve to choose
+    startFill(0, false, now);
+    return;
+  }
+  int t = firstOpen();
   if (t < 0) {
     say("Open a valve first");
     return;
   }
-  if (!pumpAllowed(now, false)) return;
-  startFill(t, false, now);
+  multi = true;  // fills every valve that is open
+  runAuto = false;
+  active = t;
+  go(Phase::Opening, now);
 }
 
+/** Manual: opening a valve starts the pump (after the 2 s lead); several may be open together. */
 void Engine::cmdValve(int i, bool open, uint32_t now) {
   if (i < 0 || i >= cfg.n || !hasValves(cfg)) return;  // one tank: there is no valve
   manual(now);
-  if (!open && valveOn[i] && busy() && active == i) {
-    say("Pump stopped first");
-    beginStop(now);  // pump off → wait → valve closes
+  if (open) {
+    if (ph == Phase::Stopping || ph == Phase::Switching || ph == Phase::Testing) {
+      say("Busy. Try again in a moment.");
+      return;
+    }
+    if (valveOn[i] && ph != Phase::Idle) return;  // already filling
+    if (ok[i] && level[i] >= cfg.high) {
+      say("Tank %d is already full.", i + 1);
+      return;
+    }
+    if (ph == Phase::Opening || ph == Phase::Filling) {
+      if (!multi) {  // an Auto fill becomes a manual one: keep its tank, add this one
+        multi = true;
+        runAuto = false;
+        for (int k = 0; k < cfg.n; k++)
+          if (valveOn[k]) trackOpen(k, now);
+      }
+      setValve(i, true);
+      trackOpen(i, now);
+      active = firstOpen();
+      return;
+    }
+    // Idle: open, then the pump starts after the valve lead.
+    if (!pumpAllowed(now, false)) return;  // resting or main tank low: the valve stays closed
+    multi = true;
+    runAuto = false;
+    setValve(i, true);
+    trackOpen(i, now);
+    active = firstOpen();
+    go(Phase::Opening, now);
     return;
   }
-  if (open && ph == Phase::Filling && i != active) {
-    switchTo(i, now);  // one tank at a time: open the new one, then close the old one
+  if (!valveOn[i]) return;
+  if (ph == Phase::Idle) {
+    setValve(i, false);
     return;
   }
-  if (ph != Phase::Idle) return;  // busy
-  if (open)
-    for (int k = 0; k < MAX_TANKS; k++)
-      if (k != i) setValve(k, false);  // idle: only one valve open
-  setValve(i, open);
+  if (!busy()) return;
+  if (valvesOn() <= 1 || !multi) {
+    beginStop(now);  // the last open valve: pump off → wait → valve closes
+    return;
+  }
+  closeFromFill(i, now);  // others stay open, the pump keeps running
 }
 
 void Engine::cmdAuto(bool on, uint32_t now) {
@@ -584,8 +732,10 @@ void Engine::setLayout(const Layout &l, uint32_t now) {
   bool hadValves = hasValves(cfg);
   cfg = l;
   sanitize(cfg);
-  // The tank was removed, or one tank ↔ several (the water path changed): stop safely.
-  if (busy() && (active >= cfg.n || hadValves != hasValves(cfg))) beginStop(now);
+  // A filling tank was removed, or one tank ↔ several (the water path changed): stop safely.
+  bool lost = active >= cfg.n;
+  for (int k = cfg.n; k < MAX_TANKS; k++) lost |= valveOn[k];
+  if (busy() && (lost || hadValves != hasValves(cfg))) beginStop(now);
   for (int i = 0; i < N_SENSORS; i++)
     if (!configured(i)) {
       ok[i] = false;

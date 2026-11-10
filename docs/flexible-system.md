@@ -50,9 +50,9 @@ Pump Kit (contactor sized to the pump) · Home Installation · spare Level Senso
 - Relay module: **6-channel** (or 8-channel with 2 unused), **active LOW**; write HIGH before
   `pinMode(OUTPUT)` at boot. LED G2, BOOT G0 (unchanged). Spare: G5.
 - One tank: V1 is not used; the pump fills the tank directly.
-- Valves: 12 V DC normally-closed solenoids. **At most 2 valves on at once** (only while switching
-  tanks) — the firmware refuses a 3rd. Power: 12 V 3 A for ≤ 12 W valves, **12 V 5 A** for brass
-  20 W valves. 5 V 3 A buck for the ESP32 and sensors.
+- Valves: 12 V DC normally-closed solenoids. Since firmware 2.2 (2026-11-11) all valves may be on
+  at once in a manual fill: size the 12 V supply for every valve together (see `docs/wiring.md`).
+  5 V 3 A buck for the ESP32 and sensors.
 - Pump relay switches the **contactor coil** only; the contactor carries the pump current
   (0.5 HP 9 A · 1 HP 12 A · 1.5 HP 18 A · 2 HP 25 A; MCB; overload relay ≥ 1.5 HP). Or use the
   relay as a dry contact in an existing starter. RC snubber on the coil.
@@ -107,7 +107,10 @@ usage:  unchanged (perTank up to 5)
 - `cmd.test`: pulse one output for `ms` (≤ 3000) for the setup wizard; refused while filling.
 - `cmd.pumpCheck`: fill each tank for 2 min, measure %/min → L/min (needs litres) and time to
   full, write `state.check`, mark `slow` when it rises < 2 % in 5 min.
-- Hard limit: never more than 2 valve relays on at once.
+- Manual (firmware 2.2, owner's choice 2026-11-11): opening a valve starts the pump after the 2 s
+  lead; any number of valves may be open. A tank that reaches `high`, loses its sensor or does not
+  rise gets its valve closed; closing the last open valve stops the pump first (pump off → 3 s →
+  valve). A valve whose sensor does not answer is not filled. The 2-valve limit is gone.
 - Keep: max run time, 60 s cooldown, offline guard, lockout, BOOT 5 s, BLE provisioning, serial
   bench commands (extend to 5 tanks + MAIN). Unit-test the decision logic on the host
   (PlatformIO `native`) for 1, 2 and 5 tanks, with and without the main sensor.

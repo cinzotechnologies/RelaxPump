@@ -91,26 +91,21 @@ struct Sim {
     feed(8);
   }
   bool single() const { return e.cfg.n == 1; }
-  int flowingTank() const {
-    if (single()) return 0;  // no valve: the pump fills tank 1 directly
-    for (int i = 0; i < MAX_TANKS; i++)
-      if (out.v[i]) return i;
-    return -1;
-  }
   void invariants() {
     int open = 0;
     for (int i = 0; i < MAX_TANKS; i++) open += out.v[i];
     if (out.pumpOn && open == 0 && !single()) violations++;  // never pump against closed valves
-    if (open > MAX_VALVES_ON) violations++;                  // hard limit
-    if (open == 2 && e.phase() != Phase::Switching) violations++;  // 2 only while switching
+    // Auto fills one tank at a time (2 only while switching); manual may open any number.
+    if (open >= 2 && e.phase() != Phase::Switching && !e.multiFill()) violations++;
     if (single() && open > 0 && e.phase() != Phase::Testing) violations++;  // one tank: no valve
   }
-  /** Advance time in 1 s ticks, with the plant model. */
+  /** Advance time in 1 s ticks, with the plant model (every open valve fills its tank). */
   void run(uint32_t ms) {
     for (uint32_t s = 0; s < ms; s += 1000) {
       t += 1000;
-      int f = flowingTank();
-      if (f >= 0 && out.pumpOn) lvl[f] += pumpRate[f] / 60.0f;
+      if (out.pumpOn)
+        for (int f = 0; f < MAX_TANKS; f++)
+          if (single() ? f == 0 : out.v[f]) lvl[f] += pumpRate[f] / 60.0f;
       if (out.pumpOn) lvl[MAIN] -= mainDrop / 60.0f;
       for (int i = 0; i < N_SENSORS; i++) lvl[i] = lvl[i] > 100 ? 100 : lvl[i] < 0 ? 0 : lvl[i];
       feed();
@@ -318,26 +313,128 @@ void test_layout_change_one_to_two_tanks_stops() {
   TEST_ASSERT_EQUAL(0, violations);
 }
 
-// ------------------------------------------------------------------ valve limit
-void test_never_more_than_two_valves() {
+// ------------------------------------------------------------------ manual: many valves
+void test_opening_a_valve_starts_the_pump() {
+  Sim s(layout(3));
+  s.e.cmdValve(1, true, s.t);  // no pump command
+  TEST_ASSERT_TRUE(s.out.v[1]);
+  TEST_ASSERT_FALSE(s.out.pumpOn);
+  s.run(1000);
+  TEST_ASSERT_FALSE(s.out.pumpOn);  // 2 s valve lead
+  s.run(2000);
+  TEST_ASSERT_TRUE(s.out.pumpOn);
+  TEST_ASSERT_TRUE(s.sink.has("pump_on:1"));
+  TEST_ASSERT_EQUAL(0, violations);
+}
+
+void test_manual_many_valves_open_together() {
   Sim s(layout(5));
+  for (int i = 0; i < 5; i++) s.set(i, 30 + i);
   s.e.cmdValve(0, true, s.t);
-  s.e.cmdValve(3, true, s.t);  // idle: opening another closes the first
-  TEST_ASSERT_FALSE(s.out.v[0]);
-  TEST_ASSERT_TRUE(s.out.v[3]);
-  // while switching, a third request is refused by the guard
-  s.e.cmdPump(true, s.t);
+  s.run(3000);
+  s.e.cmdValve(3, true, s.t);
+  s.e.cmdValve(1, true, s.t);
+  s.e.cmdValve(2, true, s.t);
+  s.e.cmdValve(4, true, s.t);
+  TEST_ASSERT_EQUAL(5, s.e.valvesOn());
+  s.run(10000);
+  TEST_ASSERT_TRUE(s.out.pumpOn);
+  TEST_ASSERT_EQUAL(1, s.pumpStarts());
+  for (int i = 0; i < 5; i++) TEST_ASSERT_TRUE(s.out.v[i]);
+  TEST_ASSERT_EQUAL(0, violations);
+}
+
+void test_full_tank_closes_its_valve_last_one_stops_pump() {
+  Sim s(layout(3));
+  s.set(0, 60);
+  s.set(1, 30);
+  s.pumpRate[0] = 20;
+  s.pumpRate[1] = 5;
+  s.e.cmdValve(0, true, s.t);
+  s.e.cmdValve(1, true, s.t);
   s.run(3000);
   TEST_ASSERT_TRUE(s.out.pumpOn);
-  s.e.cmdValve(1, true, s.t);  // switch 4 → 2: V2 opens, V4 still on
-  TEST_ASSERT_TRUE(s.out.v[1] && s.out.v[3]);
-  s.e.cmdValve(2, true, s.t);  // third valve: refused
-  TEST_ASSERT_FALSE(s.out.v[2]);
-  TEST_ASSERT_EQUAL(2, s.e.valvesOn());
-  s.run(2000);
-  TEST_ASSERT_FALSE(s.out.v[3]);  // old valve closed after the switch
+  s.runMin(2.5f);  // tank 1: 60 → 95 %, tank 2 still filling
+  TEST_ASSERT_TRUE(s.sink.has("full:0"));
+  TEST_ASSERT_FALSE(s.out.v[0]);
+  TEST_ASSERT_TRUE(s.out.v[1]);
   TEST_ASSERT_TRUE(s.out.pumpOn);
+  for (int k = 0; k < 1200 && s.out.pumpOn; k++) s.run(1000);  // tank 2 full: last valve
+  TEST_ASSERT_TRUE(s.sink.has("full:1"));
+  TEST_ASSERT_FALSE(s.out.pumpOn);
+  TEST_ASSERT_TRUE(s.out.v[1]);  // pump off first, valve 3 s later
+  s.run(4000);
+  TEST_ASSERT_FALSE(s.out.v[1]);
+  TEST_ASSERT_TRUE(s.logIndex("pump off") < s.logIndex("close V2"));
+  TEST_ASSERT_TRUE(s.e.phase() == Phase::Idle);
   TEST_ASSERT_EQUAL(0, violations);
+}
+
+void test_closing_one_of_several_keeps_pump() {
+  Sim s(layout(3));
+  s.e.cmdValve(0, true, s.t);
+  s.e.cmdValve(2, true, s.t);
+  s.run(5000);
+  s.e.cmdValve(0, false, s.t);
+  TEST_ASSERT_FALSE(s.out.v[0]);
+  TEST_ASSERT_TRUE(s.out.v[2]);
+  TEST_ASSERT_TRUE(s.out.pumpOn);
+  s.e.cmdValve(2, false, s.t);  // the last one: pump off, then the valve
+  TEST_ASSERT_FALSE(s.out.pumpOn);
+  TEST_ASSERT_TRUE(s.out.v[2]);
+  s.run(4000);
+  TEST_ASSERT_FALSE(s.out.v[2]);
+  TEST_ASSERT_EQUAL(0, violations);
+}
+
+void test_power_off_closes_every_valve() {
+  Sim s(layout(3));
+  for (int i = 0; i < 3; i++) s.e.cmdValve(i, true, s.t);
+  s.run(5000);
+  s.e.cmdPump(false, s.t);
+  TEST_ASSERT_FALSE(s.out.pumpOn);
+  s.run(4000);
+  for (int i = 0; i < 3; i++) TEST_ASSERT_FALSE(s.out.v[i]);
+  TEST_ASSERT_TRUE(s.sink.has("pump_off:0"));
+  TEST_ASSERT_EQUAL(0, violations);
+}
+
+void test_sensor_lost_closes_that_valve_only() {
+  Sim s(layout(3));
+  s.e.cmdValve(0, true, s.t);
+  s.e.cmdValve(1, true, s.t);
+  s.run(5000);
+  s.echo[1] = false;
+  s.run(20000);
+  TEST_ASSERT_FALSE(s.out.v[1]);
+  TEST_ASSERT_TRUE(s.out.v[0]);
+  TEST_ASSERT_TRUE(s.out.pumpOn);
+  TEST_ASSERT_TRUE(s.sink.has("sensor:1"));
+  TEST_ASSERT_EQUAL(0, violations);
+}
+
+void test_valve_without_sensor_does_not_pump() {
+  Sim s(layout(3));
+  s.echo[2] = false;
+  s.feed(20);
+  s.e.cmdValve(2, true, s.t);
+  s.run(4000);
+  TEST_ASSERT_FALSE(s.out.pumpOn);
+  TEST_ASSERT_FALSE(s.out.v[2]);
+  TEST_ASSERT_TRUE(strstr(s.e.msg, "sensor") != nullptr);
+  s.echo[2] = true;
+  s.feed(4);
+  s.e.cmdValve(2, true, s.t);  // no cooldown: the pump never ran
+  s.run(3000);
+  TEST_ASSERT_TRUE(s.out.pumpOn);
+}
+
+void test_full_tank_valve_not_opened() {
+  Sim s(layout(3));
+  s.set(1, 97);
+  s.e.cmdValve(1, true, s.t);
+  TEST_ASSERT_FALSE(s.out.v[1]);
+  TEST_ASSERT_TRUE(strstr(s.e.msg, "already full") != nullptr);
 }
 
 // ------------------------------------------------------------------ safety
@@ -590,7 +687,14 @@ int main() {
   RUN_TEST(test_single_tank_manual_pump_and_valve_ignored);
   RUN_TEST(test_single_tank_safety_rules_still_apply);
   RUN_TEST(test_layout_change_one_to_two_tanks_stops);
-  RUN_TEST(test_never_more_than_two_valves);
+  RUN_TEST(test_opening_a_valve_starts_the_pump);
+  RUN_TEST(test_manual_many_valves_open_together);
+  RUN_TEST(test_full_tank_closes_its_valve_last_one_stops_pump);
+  RUN_TEST(test_closing_one_of_several_keeps_pump);
+  RUN_TEST(test_power_off_closes_every_valve);
+  RUN_TEST(test_sensor_lost_closes_that_valve_only);
+  RUN_TEST(test_valve_without_sensor_does_not_pump);
+  RUN_TEST(test_full_tank_valve_not_opened);
   RUN_TEST(test_cooldown_before_restart);
   RUN_TEST(test_dry_run_lockout_and_clear);
   RUN_TEST(test_max_run_lockout);

@@ -39,15 +39,21 @@ describe('start / stop filling', () => {
 });
 
 describe('valves', () => {
-  it('stops the pump first when the filling tank valve is closed', () => {
+  it('stops the pump first when the last open valve is closed', () => {
     expect(decideValve(1, live({ pump: true, active: 1, valves: [false, true, false] })).kind).toBe(
       'stopPumpFirst',
     );
   });
-  it('toggles otherwise', () => {
-    expect(decideValve(0, live({ pump: true, active: 1, valves: [true, true] }))).toEqual({
+  it('closes one of several open valves and keeps the pump', () => {
+    expect(decideValve(0, live({ pump: true, active: 0, valves: [true, true, false] }))).toEqual({
       kind: 'toggle',
       open: false,
+    });
+  });
+  it('opens another valve while filling', () => {
+    expect(decideValve(2, live({ pump: true, active: 0, valves: [true, false, false] }))).toEqual({
+      kind: 'toggle',
+      open: true,
     });
     expect(decideValve(2, live())).toEqual({ kind: 'toggle', open: true });
   });
