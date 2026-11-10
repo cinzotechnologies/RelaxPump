@@ -1,8 +1,9 @@
 /*
   RelaxPump controller v2 — engineered by CINZO.
-  One firmware for every home: 1–8 semi tanks (sensor and/or valve each), optional PHE line,
-  optional main-tank sensor, one pump. The installer setup in the app writes the layout to
-  `config`; nothing is re-flashed per customer. Board v1 or v2 pin map: see board.h.
+  One firmware for every home: 1–5 semi tanks (sensor + valve each; one tank = sensor only, the
+  pump fills it directly), optional main-tank sensor, 6 outputs (V1–V5 + pump). The installer
+  setup in the app writes the layout to `config`; nothing is re-flashed per customer.
+  Pins: see board.h (board 1 = relay module active LOW, board 2 = PCB active HIGH).
 
   - First start (no Wi-Fi saved): BLE provisioning "RelaxPump-XXXX" (security 1 + PoP from secrets.h).
     The app sends the home Wi-Fi. Hold BOOT 5 s to forget Wi-Fi and set up again.
@@ -35,16 +36,12 @@ static bool otaStarted = false;
 // ------------------------------------------------------------------ config
 void applyConfig(const String &json, bool fromCloud) {
   rp::Layout l = eng.cfg;
-  settings::Parsed p = settings::parse(json, l);
-  if (!p.ok) return;
+  if (!settings::parse(json, l)) return;
   eng.setLayout(l, millis());
   if (fromCloud) settings::saveConfig(json);
-  Serial.printf("[CFG] %d tanks%s%s, mode %s, start <%d%%, stop %d%%, max %d min\n", eng.cfg.n,
-                eng.cfg.phe.enabled ? " + PHE" : "", eng.cfg.main.enabled ? " + main" : "",
-                eng.cfg.mode == rp::Mode::Auto  ? "auto"
-                : eng.cfg.mode == rp::Mode::Phe ? "PHE only"
-                                                : "pump only",
-                eng.cfg.low, eng.cfg.high, eng.cfg.maxRunMin);
+  Serial.printf("[CFG] %d tank%s (%s)%s, start <%d%%, stop %d%%, max %d min\n", eng.cfg.n, eng.cfg.n == 1 ? "" : "s",
+                rp::hasValves(eng.cfg) ? "valve per tank" : "no valve, pump direct",
+                eng.cfg.main.enabled ? " + main tank sensor" : "", eng.cfg.low, eng.cfg.high, eng.cfg.maxRunMin);
 }
 
 // ------------------------------------------------------------------ Wi-Fi / BLE setup
@@ -111,17 +108,12 @@ static void readSensors() {
   static int cur = 0, spare = 0, step = 0;
   if (millis() - last < SENSOR_STEP_MS) return;
   last = millis();
-  rp::Ports p = board::ports();
-  auto inLayout = [&](int i) {
-    if (i == rp::MAIN) return eng.cfg.main.enabled && eng.cfg.main.sensor;
-    return i < eng.cfg.n && eng.cfg.semi[i].sensor;
-  };
-  auto exists = [&](int i) { return i == rp::MAIN ? p.main : i < p.sensors; };
+  auto inLayout = [&](int i) { return i == rp::MAIN ? eng.cfg.main.enabled : i < eng.cfg.n; };
   int idx = -1;
   if (++step % SPARE_PORT_EVERY == 0) {
     for (int k = 0; k < rp::N_SENSORS && idx < 0; k++) {
       spare = (spare + 1) % rp::N_SENSORS;
-      if (exists(spare) && !inLayout(spare)) idx = spare;
+      if (!inLayout(spare)) idx = spare;
     }
   }
   for (int k = 0; k < rp::N_SENSORS && idx < 0; k++) {
@@ -130,13 +122,6 @@ static void readSensors() {
   }
   if (idx < 0) return;
   eng.reading(idx, board::readCm(idx), millis());
-}
-
-static void checkBoard() {
-  static uint32_t last = 0;
-  if (board::version() != 2 || millis() - last < BOARD_CHECK_MS) return;
-  last = millis();
-  if (board::faultCheck()) eng.boardFault(millis());
 }
 
 // ------------------------------------------------------------------ LED
@@ -153,25 +138,24 @@ static void led() {
 // ------------------------------------------------------------------ Serial (bench tests)
 static void printStatus() {
   for (int i = 0; i < eng.cfg.n; i++) {
-    const rp::SemiCfg &c = eng.cfg.semi[i];
-    Serial.printf("Tank %d [%s%s]: ", i + 1, c.sensor ? "S" : "-", c.valve ? "V" : "-");
-    if (!c.sensor) Serial.printf("no sensor, timer %d min", c.fillMin);
-    else if (eng.ok[i]) Serial.printf("%.1f cm  %.0f%%", eng.distCm[i], eng.level[i]);
+    Serial.printf("Tank %d (T%d): ", i + 1, i + 1);
+    if (eng.ok[i]) Serial.printf("%.1f cm  %.0f%%", eng.distCm[i], eng.level[i]);
     else Serial.print("sensor error");
-    Serial.printf("  valve %s\n", eng.valveOn[i] ? "OPEN" : "closed");
+    if (rp::hasValves(eng.cfg)) Serial.printf("  V%d %s\n", i + 1, eng.valveOn[i] ? "OPEN" : "closed");
+    else Serial.println("  (no valve)");
   }
-  if (eng.cfg.main.enabled && eng.cfg.main.sensor) {
+  if (eng.cfg.main.enabled) {
     if (eng.ok[rp::MAIN]) Serial.printf("Main: %.1f cm  %.0f%% (stop below %d%%)\n", eng.distCm[rp::MAIN],
                                         eng.level[rp::MAIN], eng.cfg.main.minPct);
     else Serial.println("Main: sensor error");
   }
   Serial.print("Ports answering:");
   for (int i = 0; i < rp::N_SENSORS; i++)
-    if (eng.detected[i]) Serial.printf(i == rp::MAIN ? " MAIN" : " S%d", i + 1);
+    if (eng.detected[i]) Serial.printf(i == rp::MAIN ? " MAIN" : " T%d", i + 1);
   Serial.println();
-  Serial.printf("Board v%d%s | Pump %s | PHE %s | Auto %s | %s | cloud %s | heap %u\n", board::version(),
-                board::faulted() ? " (VALVE BOARD ERROR)" : "", eng.pumpOn ? "ON" : "off", eng.pheOn ? "ON" : "off",
-                eng.autoMode ? "ON" : "off", eng.phaseName(), cloud.ready() ? "online" : "offline",
+  Serial.printf("Board %d (%s) | Pump %s | Valves on %d | Auto %s | %s | cloud %s | heap %u\n", board::version(),
+                board::version() == 2 ? "PCB, active HIGH" : "relays, active LOW", eng.pumpOn ? "ON" : "off",
+                eng.valvesOn(), eng.autoMode ? "ON" : "off", eng.phaseName(), cloud.ready() ? "online" : "offline",
                 ESP.getFreeHeap());
   if (eng.msg[0]) Serial.printf("Msg: %s\n", eng.msg);
 }
@@ -179,10 +163,10 @@ static void printStatus() {
 static void serialHelp() {
   Serial.println(
       "s            status\n"
-      "v<n>         toggle valve n (1-8)\n"
-      "f<n>         fill tank n (source from the mode)\n"
-      "p / e        pump on/off / PHE on/off\n"
-      "t<port>      test pulse 1 s: tV3, tPHE, tPUMP\n"
+      "v<n>         toggle valve n (1-5)\n"
+      "f<n>         fill tank n (opens its valve, then the pump)\n"
+      "p            pump on/off (one tank: pump only)\n"
+      "t<port>      test pulse 1 s: tV1 … tV5, tPUMP\n"
       "c            pump check\n"
       "a            auto on/off\n"
       "r            reset (clears a lockout, everything off)\n"
@@ -207,16 +191,14 @@ static void serialCmd() {
     else if (c == "s") printStatus();
     else if (c[0] == 'v' && c.length() == 2) {
       int i = c[1] - '1';
-      if (i >= 0 && i < 8) eng.cmdValve(i, !eng.valveOn[i], now);
+      if (i >= 0 && i < rp::MAX_TANKS) eng.cmdValve(i, !eng.valveOn[i], now);
     } else if (c[0] == 'f' && c.length() == 2) {
       int i = c[1] - '1';
-      eng.cmdFill(i, eng.cfg.mode == rp::Mode::Phe || (eng.cfg.mode == rp::Mode::Auto && eng.cfg.phe.enabled)
-                         ? rp::Src::Phe
-                         : rp::Src::Pump,
-                  now);
+      if (i >= 0 && i < eng.cfg.n) {
+        if (rp::hasValves(eng.cfg)) eng.cmdValve(i, true, now);
+        eng.cmdPump(true, now);
+      }
     } else if (c == "p") eng.cmdPump(!eng.pumpOn, now);
-    else if (c == "e") eng.cmdPhe(!eng.pheOn, now);
-    else if (c == "tPHE") eng.cmdTest(rp::PORT_PHE, 1000, now);
     else if (c == "tPUMP") eng.cmdTest(rp::PORT_PUMP, 1000, now);
     else if (c[0] == 't' && c[1] == 'V' && c.length() == 3) eng.cmdTest(c[2] - '1', 1000, now);
     else if (c == "c") eng.cmdPumpCheck(now);
@@ -252,13 +234,11 @@ void setup() {
   delay(200);
   Serial.printf("\n=== RelaxPump %s  %s  board v%d ===\n", FW_VERSION, RP_DEVICE_ID, board::version());
 
-  eng.ports = board::ports();
   eng.begin(&outputs, &cloud);
   String saved = settings::loadConfig();
   if (saved.length()) applyConfig(saved, false);
-  else eng.setLayout(eng.cfg, millis());  // 3 tanks with sensor + valve until the app sets it up
+  else eng.setLayout(eng.cfg, millis());  // 3 tanks until the installer setup in the app
   eng.autoMode = settings::loadAuto();
-  if (board::faulted()) eng.boardFault(millis());
 
   WiFi.onEvent(onSysEvent);
   startProvisioning(false);
@@ -273,7 +253,6 @@ void loop() {
   checkBootButton();
   serialCmd();
   readSensors();
-  checkBoard();
   eng.loop(millis());
 
   static bool savedAuto = eng.autoMode;

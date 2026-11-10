@@ -23,29 +23,17 @@ static UserAuth userAuth(RP_FIREBASE_API_KEY, RP_DEVICE_EMAIL, RP_DEVICE_PASSWOR
 static FirebaseApp app;
 static RealtimeDatabase db;
 static const String BASE = String("/devices/") + RP_DEVICE_ID;
-static bool migrated = false;
 
 static void onResult(AsyncResult &r);
 
 // ------------------------------------------------------------------ config
-static void onConfigJson(const String &json) {
-  applyConfig(json, true);
-  rp::Layout probe;
-  settings::Parsed p = settings::parse(json, probe);
-  // v1 config (tankCount + tanks): write the v2 shape once. tankCount/tanks stay for old apps.
-  if (p.ok && p.v1 && !migrated) {
-    migrated = true;
-    Serial.println("[CLOUD] migrating config to v2 (semi/main/phe/mode)");
-    db.update<object_t>(aClient, BASE + "/config", object_t(p.migration), onResult, "migrate");
-  }
-}
+static void onConfigJson(const String &json) { applyConfig(json, true); }
 
 // ------------------------------------------------------------------ commands
 static int testPort(const char *p) {
   if (!p) return -1;
-  if (!strcmp(p, "PHE")) return rp::PORT_PHE;
   if (!strcmp(p, "PUMP")) return rp::PORT_PUMP;
-  if (p[0] == 'V' && p[1] >= '1' && p[1] <= '8' && !p[2]) return p[1] - '1';
+  if (p[0] == 'V' && p[1] >= '1' && p[1] <= '5' && !p[2]) return p[1] - '1';
   return -1;
 }
 
@@ -63,13 +51,9 @@ static void applyCmdJson(const String &json) {
   }
   const uint32_t now = millis();
   if (doc["auto"].is<bool>()) eng.cmdAuto(doc["auto"].as<bool>(), now);
-  if (doc["pump"].is<bool>()) eng.cmdPump(doc["pump"].as<bool>(), now);
-  if (doc["phe"].is<bool>()) eng.cmdPhe(doc["phe"].as<bool>(), now);
+  // valve before pump: "open tank 2 and start" arrives as one command
   if (doc["valve"].is<JsonObject>()) eng.cmdValve(doc["valve"]["i"] | -1, doc["valve"]["open"] | false, now);
-  if (doc["fill"].is<JsonObject>()) {
-    const char *src = doc["fill"]["src"] | "pump";
-    eng.cmdFill(doc["fill"]["i"] | -1, !strcmp(src, "phe") ? rp::Src::Phe : rp::Src::Pump, now);
-  }
+  if (doc["pump"].is<bool>()) eng.cmdPump(doc["pump"].as<bool>(), now);
   if (doc["test"].is<JsonObject>())
     eng.cmdTest(testPort(doc["test"]["port"] | ""), doc["test"]["ms"] | 1000, now);
   if (doc["pumpCheck"] == true) eng.cmdPumpCheck(now);
@@ -142,16 +126,11 @@ void Cloud::loop() {
   static bool infoSent = false;
   if (!infoSent) {
     infoSent = true;
-    // What this board can do: the app caps the installer setup by these ports.
-    rp::Ports p = board::ports();
+    // The rules cap config.tankCount by maxTanks (old 3-tank firmware reports 3).
     JsonDocument doc;
     doc["fw"] = FW_VERSION;
     doc["board"] = board::version() == 2 ? "v2" : "v1";
-    doc["maxTanks"] = p.sensors > p.valves ? p.sensors : p.valves;
-    doc["ports"]["sensors"] = p.sensors;
-    doc["ports"]["valves"] = p.valves;
-    doc["ports"]["phe"] = p.phe;
-    doc["ports"]["main"] = p.main;
+    doc["maxTanks"] = rp::MAX_TANKS;
     String body;
     serializeJson(doc, body);
     db.update<object_t>(aClient, BASE + "/info", object_t(body), onResult, "info");
@@ -180,40 +159,28 @@ void Cloud::pushState() {
   doc["rssi"] = WiFi.RSSI();
   doc["ssid"] = WiFi.SSID();
   doc["pump"] = e.pumpOn;
-  doc["phe"] = e.pheOn;
   doc["auto"] = e.autoMode;
   doc["msg"] = e.msg;
-  rp::Src s = e.source();
-  if (s == rp::Src::Pump) doc["src"] = "pump";
-  else if (s == rp::Src::Phe) doc["src"] = "phe";
-  else doc["src"] = nullptr;
   if (e.activeTank() >= 0) doc["active"] = e.activeTank();
   else doc["active"] = nullptr;
 
-  JsonArray semi = doc["semi"].to<JsonArray>();
-  JsonArray legacy = doc["tanks"].to<JsonArray>();  // v1 apps still read state.tanks
+  JsonArray tanks = doc["tanks"].to<JsonArray>();
   for (int i = 0; i < e.cfg.n; i++) {
-    JsonObject t = semi.add<JsonObject>();
-    bool hasSensor = e.cfg.semi[i].sensor;
-    putPct(t, e.level[i], hasSensor && e.ok[i]);
-    t["valve"] = e.valveOn[i];
-    t["ok"] = hasSensor ? e.ok[i] : true;
-    JsonObject o = legacy.add<JsonObject>();
-    o["pct"] = e.level[i] < 0 ? 0 : (int)roundf(e.level[i]);
-    o["valve"] = e.valveOn[i];
-    o["ok"] = e.ok[i];
+    JsonObject t = tanks.add<JsonObject>();
+    putPct(t, e.level[i], e.ok[i]);
+    t["valve"] = rp::hasValves(e.cfg) && e.valveOn[i];
+    t["ok"] = e.ok[i];
   }
-  if (e.cfg.main.enabled && e.cfg.main.sensor) {
+  if (e.cfg.main.enabled) {
     JsonObject m = doc["main"].to<JsonObject>();
     putPct(m, e.level[rp::MAIN], e.ok[rp::MAIN]);
     m["ok"] = e.ok[rp::MAIN];
   } else {
     doc["main"] = nullptr;
   }
-  JsonArray det = doc["detected"]["s"].to<JsonArray>();
-  rp::Ports p = board::ports();
-  for (int i = 0; i < rp::MAX_SEMI; i++) det.add(i < p.sensors && e.detected[i]);
-  doc["detected"]["main"] = p.main && e.detected[rp::MAIN];
+  JsonArray det = doc["detected"]["tanks"].to<JsonArray>();
+  for (int i = 0; i < rp::MAX_TANKS; i++) det.add(e.detected[i]);
+  doc["detected"]["main"] = e.detected[rp::MAIN];
 
   bool anyCheck = e.checkRun;
   for (int i = 0; i < e.cfg.n; i++) anyCheck |= e.check[i].done;
@@ -253,7 +220,7 @@ void Cloud::event(const char *type, int tank, bool autoRun, float minutes) {
   db.push<object_t>(aClient, BASE + "/events", object_t(body), onResult, "event");
 }
 
-void Cloud::usage(int tank, float minutes, float litres, bool phe) {
+void Cloud::usage(int tank, float minutes, float litres) {
   if (!ready() || tank < 0) return;
   struct tm t;
   if (!getLocalTime(&t, 0)) return;  // no clock yet
@@ -264,14 +231,8 @@ void Cloud::usage(int tank, float minutes, float litres, bool phe) {
   const String pt = "perTank/" + String(tank) + "/";
   doc["litres"][".sv"]["increment"] = l;
   doc[pt + "litres"][".sv"]["increment"] = l;
-  if (phe) {
-    doc["pheLitres"][".sv"]["increment"] = l;
-    doc["pumpMin"][".sv"]["increment"] = 0;  // the rules want pumpMin on every usage day
-    doc[pt + "pheLitres"][".sv"]["increment"] = l;
-  } else {
-    doc["pumpMin"][".sv"]["increment"] = m;
-    doc[pt + "pumpMin"][".sv"]["increment"] = m;
-  }
+  doc["pumpMin"][".sv"]["increment"] = m;
+  doc[pt + "pumpMin"][".sv"]["increment"] = m;
   String body;
   serializeJson(doc, body);
   db.update<object_t>(aClient, BASE + "/usage/" + day, object_t(body), onResult, "usage");

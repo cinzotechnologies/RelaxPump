@@ -1,31 +1,34 @@
-// Board pin maps. One firmware for both boards; the version comes from NVS ("board", set with the
-// serial command `board 1|2`), else RP_BOARD in secrets.h, else 1.
+// Pins (docs/flexible-system.md §2). One pin map for every controller; tanks 1–3 and the pump keep
+// the pins of the first board:
 //
-//  v1 (today's board): Trig G16/G18/G23, Echo G17/G19/G4, valve relays G25/G26/G27,
-//      pump relay G33. Relays are active LOW. 3 tanks, no PHE, no MAIN.
-//  v2 (new PCB, hardware/pcb-v2.md): V1–V8 on an MCP23017 (I2C G21/G22, GPA0–7) driving MOSFETs,
-//      PUMP G33 and PHE G32 direct, shared Trig G18, Echo S1–S8 G34/G35/G36/G39/G16/G17/G19/G23,
-//      Echo MAIN G4. Outputs are active HIGH.
+//   port   Trig  Echo  Valve        Echo goes through a 1k/2k divider (5 V → 3.3 V);
+//   T1     G16   G17   V1 = G25     G34/G35/G39 are input-only, fine for Echo.
+//   T2     G18   G19   V2 = G26
+//   T3     G23   G4    V3 = G27
+//   T4     G13   G34   V4 = G32
+//   T5     G14   G35   V5 = G22
+//   MAIN   G21   G39   —
+//   PUMP               G33          LED G2, BOOT G0, spare G5
+//
+// The board version only selects the output polarity:
+//   1 = relay module (6- or 8-channel), active LOW
+//   2 = PCB v2 (hardware/pcb-v2.md), MOSFET outputs, active HIGH
+// It comes from NVS ("board", serial command `board 1|2`), else RP_BOARD in secrets.h, else 1.
+// Every output is written OFF before it becomes an output.
 #pragma once
 #include <engine.h>
 
 namespace board {
 
-void begin(int version);  // every output OFF before it becomes an output
+void begin(int version);
 int version();
-rp::Ports ports();
 
-void valve(int i, bool on);  // 0..7
+void valve(int i, bool on);  // 0..4 = V1..V5
 void pump(bool on);
-void phe(bool on);
 void allOff();
 
-/** Distance in cm (median of 3, 20–450 cm), -1 = no echo or no such port. idx 8 = MAIN. */
+/** Distance in cm (median of 3, 20–450 cm), -1 = no echo. idx 0..4 = T1..T5, 5 = MAIN. */
 float readCm(int idx);
-
-/** v2: true when the valve board (MCP23017) stopped answering or lost its settings. */
-bool faultCheck();
-bool faulted();
 
 /** Version to use at boot: NVS → secrets.h → 1. */
 int storedVersion();
@@ -35,7 +38,6 @@ void storeVersion(int v);
 struct Outputs : rp::Outputs {
   void valve(int i, bool on) override { board::valve(i, on); }
   void pump(bool on) override { board::pump(on); }
-  void phe(bool on) override { board::phe(on); }
 };
 
 }  // namespace board

@@ -1,5 +1,5 @@
 // Firebase Realtime Database link (FirebaseClient by mobizt): device login, config/cmd streams,
-// info/ports on connect, state every 3 s and on change, events and usage.
+// info (fw, board, maxTanks) on connect, state every 3 s and on change, events and usage.
 #pragma once
 #include <Arduino.h>
 #include <engine.h>
@@ -13,7 +13,7 @@ class Cloud : public rp::Sink {
   uint32_t offlineMs() const;
 
   void event(const char *type, int tank, bool autoRun, float minutes) override;
-  void usage(int tank, float minutes, float litres, bool phe) override;
+  void usage(int tank, float minutes, float litres) override;
 
  private:
   rp::Engine *eng = nullptr;

@@ -1,6 +1,7 @@
-// Host tests for the fill engine (lib/engine). Every layout of docs/flexible-system.md §2, every
-// mode, and the safety rules of CLAUDE.md §7. A small "plant" model raises the level of the tank
-// whose path is open while the pump or PHE runs, and checks the invariants on every tick.
+// Host tests for the fill engine (lib/engine): 1, 2, 3 and 5 tanks, with and without the main
+// tank sensor (docs/flexible-system.md §4), and the safety rules of CLAUDE.md §7. A small "plant"
+// model raises the level of the tank whose path is open while the pump runs, and checks the
+// invariants on every tick.
 //
 //   pio test -e native                 (needs a host C++ compiler)
 //   scripts/test-native.sh             (any C++17 compiler, no PlatformIO)
@@ -13,7 +14,6 @@
 #include <string.h>
 
 #include <algorithm>
-
 #include <string>
 #include <vector>
 
@@ -23,8 +23,8 @@ using namespace rp;
 
 // ------------------------------------------------------------------ fakes
 struct Out : Outputs {
-  bool v[MAX_SEMI] = {};
-  bool pumpOn = false, pheOn = false;
+  bool v[MAX_TANKS] = {};
+  bool pumpOn = false;
   std::vector<std::string> log;
   void valve(int i, bool on) override {
     if (v[i] != on) log.push_back(std::string(on ? "open V" : "close V") + std::to_string(i + 1));
@@ -34,19 +34,15 @@ struct Out : Outputs {
     if (pumpOn != on) log.push_back(on ? "pump on" : "pump off");
     pumpOn = on;
   }
-  void phe(bool on) override {
-    if (pheOn != on) log.push_back(on ? "phe on" : "phe off");
-    pheOn = on;
-  }
 };
 
 struct Ev : Sink {
   std::vector<std::string> events;
-  float litres = 0, pheLitres = 0;
+  float litres = 0;
   void event(const char *type, int tank, bool, float) override {
     events.push_back(std::string(type) + ":" + std::to_string(tank));
   }
-  void usage(int, float, float l, bool phe) override { (phe ? pheLitres : litres) += l; }
+  void usage(int, float, float l) override { litres += l; }
   bool has(const std::string &e) const {
     for (auto &x : events)
       if (x == e) return true;
@@ -67,19 +63,16 @@ struct Sim {
   Ev sink;
   uint32_t t = 1000;
   float lvl[N_SENSORS];
-  float pumpRate[MAX_SEMI];  // % per minute while filling
-  float pheRate[MAX_SEMI];
+  float pumpRate[MAX_TANKS];  // % per minute while filling
   bool echo[N_SENSORS];
-  bool pheWater = true;
   float mainDrop = 0;  // main tank % per minute while the pump runs
 
-  Sim(Ports p, Layout l) {
+  explicit Sim(Layout l) {
     for (int i = 0; i < N_SENSORS; i++) {
       lvl[i] = 50;
       echo[i] = true;
     }
-    for (int i = 0; i < MAX_SEMI; i++) pumpRate[i] = pheRate[i] = 2;
-    e.ports = p;
+    for (int i = 0; i < MAX_TANKS; i++) pumpRate[i] = 2;
     e.begin(&out, &sink);
     e.setLayout(l, t);
     feed(6);
@@ -88,8 +81,8 @@ struct Sim {
   void feed(int times = 1) {
     for (int k = 0; k < times; k++)
       for (int i = 0; i < N_SENSORS; i++) {
-        float e0 = i == MAIN ? e.cfg.main.emptyCm : e.cfg.semi[i].emptyCm;
-        float f0 = i == MAIN ? e.cfg.main.fullCm : e.cfg.semi[i].fullCm;
+        float e0 = i == MAIN ? e.cfg.main.emptyCm : e.cfg.tank[i].emptyCm;
+        float f0 = i == MAIN ? e.cfg.main.fullCm : e.cfg.tank[i].fullCm;
         e.reading(i, echo[i] ? cmOf(lvl[i], e0, f0) : -1, t);
       }
   }
@@ -97,20 +90,20 @@ struct Sim {
     lvl[i] = pct;
     feed(8);
   }
+  bool single() const { return e.cfg.n == 1; }
   int flowingTank() const {
-    for (int i = 0; i < MAX_SEMI; i++)
+    if (single()) return 0;  // no valve: the pump fills tank 1 directly
+    for (int i = 0; i < MAX_TANKS; i++)
       if (out.v[i]) return i;
-    return e.cfg.n == 1 && !e.cfg.semi[0].valve ? 0 : -1;
+    return -1;
   }
   void invariants() {
-    if (out.pumpOn && out.pheOn) violations++;  // never together
     int open = 0;
-    for (int i = 0; i < MAX_SEMI; i++) open += out.v[i];
-    bool direct = e.cfg.n == 1 && !e.cfg.semi[0].valve;
-    if (out.pumpOn && open == 0 && !direct) violations++;  // never pump against closed valves
-    if (out.pheOn && open == 0 && !direct && e.phase() != Phase::Testing) violations++;
-    if (open > 2) violations++;                      // 2 only while switching
-    if (open == 2 && e.phase() != Phase::Switching) violations++;
+    for (int i = 0; i < MAX_TANKS; i++) open += out.v[i];
+    if (out.pumpOn && open == 0 && !single()) violations++;  // never pump against closed valves
+    if (open > MAX_VALVES_ON) violations++;                  // hard limit
+    if (open == 2 && e.phase() != Phase::Switching) violations++;  // 2 only while switching
+    if (single() && open > 0 && e.phase() != Phase::Testing) violations++;  // one tank: no valve
   }
   /** Advance time in 1 s ticks, with the plant model. */
   void run(uint32_t ms) {
@@ -118,7 +111,6 @@ struct Sim {
       t += 1000;
       int f = flowingTank();
       if (f >= 0 && out.pumpOn) lvl[f] += pumpRate[f] / 60.0f;
-      if (f >= 0 && out.pheOn && pheWater) lvl[f] += pheRate[f] / 60.0f;
       if (out.pumpOn) lvl[MAIN] -= mainDrop / 60.0f;
       for (int i = 0; i < N_SENSORS; i++) lvl[i] = lvl[i] > 100 ? 100 : lvl[i] < 0 ? 0 : lvl[i];
       feed();
@@ -127,6 +119,11 @@ struct Sim {
     }
   }
   void runMin(float m) { run((uint32_t)(m * 60000)); }
+  /** Manual fill, as the app does it: open the valve (2+ tanks), then start the pump. */
+  void fill(int i) {
+    if (!single()) e.cmdValve(i, true, t);
+    e.cmdPump(true, t);
+  }
   bool logHas(const char *s) const {
     for (auto &x : out.log)
       if (x == s) return true;
@@ -137,23 +134,18 @@ struct Sim {
       if (out.log[i] == s) return (int)i;
     return -1;
   }
+  int pumpStarts() const { return (int)std::count(out.log.begin(), out.log.end(), std::string("pump on")); }
 };
 
-static const Ports V1{3, 3, false, false};
-static const Ports V2{8, 8, true, true};
-
-static Layout layout(int n, int noSensor = -1) {
+static Layout layout(int n, bool main = false) {
   Layout l;
   l.n = n;
-  for (int i = 0; i < MAX_SEMI; i++) {
-    l.semi[i] = SemiCfg();
-    l.semi[i].litres = 1000;
+  for (int i = 0; i < MAX_TANKS; i++) {
+    l.tank[i] = TankCfg();
+    l.tank[i].litres = 1000;
   }
-  if (noSensor >= 0) {
-    l.semi[noSensor].sensor = false;
-    l.semi[noSensor].fillMin = 10;
-  }
-  l.mode = Mode::Pump;
+  l.main.enabled = main;
+  l.main.minPct = 10;
   l.low = 20;
   l.high = 95;
   return l;
@@ -163,39 +155,34 @@ void setUp() { violations = 0; }
 void tearDown() {}
 
 // ------------------------------------------------------------------ layout rules
-void test_sanitize_caps_to_ports() {
-  Layout l = layout(5);
-  l.phe.enabled = true;
-  l.main.enabled = l.main.sensor = true;
-  l.mode = Mode::Phe;
-  l.semi[1].sensor = false;
-  l.semi[1].fillMin = 0;
-  sanitize(l, V1);
-  TEST_ASSERT_EQUAL(3, l.n);
-  TEST_ASSERT_FALSE(l.phe.enabled);
-  TEST_ASSERT_FALSE(l.main.enabled);
-  TEST_ASSERT_TRUE(l.mode == Mode::Auto);
-  TEST_ASSERT_EQUAL(10, l.semi[1].fillMin);
+void test_sanitize() {
+  Layout l = layout(9);
+  l.main.minPct = 60;
+  l.low = 90;
+  l.high = 50;
+  l.tank[0].fullCm = 10;
+  sanitize(l);
+  TEST_ASSERT_EQUAL(5, l.n);
+  TEST_ASSERT_EQUAL(40, l.main.minPct);
+  TEST_ASSERT_EQUAL(80, l.low);
+  TEST_ASSERT_EQUAL(90, l.high);
+  TEST_ASSERT_EQUAL(25, (int)l.tank[0].fullCm);
+  Layout z = layout(0);
+  sanitize(z);
+  TEST_ASSERT_EQUAL(1, z.n);
 }
 
-void test_fillable_rules() {
-  Layout l = layout(2);
-  l.semi[1].valve = false;
-  TEST_ASSERT_TRUE(fillable(l, 0));
-  TEST_ASSERT_FALSE(fillable(l, 1));  // 2+ tanks: needs a valve
-  Layout one = layout(1);
-  one.semi[0].valve = false;
-  TEST_ASSERT_TRUE(fillable(one, 0));
-  TEST_ASSERT_TRUE(autoCapable(one, 0));
-  one.semi[0].sensor = false;
-  TEST_ASSERT_FALSE(autoCapable(one, 0));
+void test_valves_implied_by_count() {
+  TEST_ASSERT_FALSE(hasValves(layout(1)));
+  TEST_ASSERT_TRUE(hasValves(layout(2)));
+  TEST_ASSERT_TRUE(hasValves(layout(5)));
 }
 
-// ------------------------------------------------------------------ pump fills
+// ------------------------------------------------------------------ fills
 void test_pump_fill_sequence_and_timings() {
-  Sim s(V1, layout(3));
+  Sim s(layout(3));
   s.set(0, 50);
-  s.e.cmdFill(0, Src::Pump, s.t);
+  s.fill(0);
   TEST_ASSERT_TRUE(s.out.v[0]);
   TEST_ASSERT_FALSE(s.out.pumpOn);
   s.run(1000);
@@ -215,8 +202,16 @@ void test_pump_fill_sequence_and_timings() {
   TEST_ASSERT_EQUAL(0, violations);
 }
 
+void test_pump_needs_an_open_valve() {
+  Sim s(layout(2));
+  s.e.cmdPump(true, s.t);
+  s.run(3000);
+  TEST_ASSERT_FALSE(s.out.pumpOn);
+  TEST_ASSERT_TRUE(strstr(s.e.msg, "Open a valve") != nullptr);
+}
+
 void test_auto_lowest_first_then_switch() {
-  Sim s(V1, layout(3));
+  Sim s(layout(3));
   for (int i = 0; i < 3; i++) s.pumpRate[i] = 20;
   s.set(0, 15);
   s.set(1, 10);
@@ -229,7 +224,7 @@ void test_auto_lowest_first_then_switch() {
   // switched to tank 1 (index 0): opened V1 before closing V2, without stopping the pump
   int openV1 = s.logIndex("open V1"), closeV2 = s.logIndex("close V2");
   TEST_ASSERT_TRUE(openV1 >= 0 && closeV2 > openV1);
-  TEST_ASSERT_EQUAL(1, (int)std::count(s.out.log.begin(), s.out.log.end(), std::string("pump on")));
+  TEST_ASSERT_EQUAL(1, s.pumpStarts());
   TEST_ASSERT_TRUE(s.lvl[0] >= 95 && s.lvl[1] >= 95);
   TEST_ASSERT_TRUE(s.lvl[2] < 70);  // above Start: not filled
   TEST_ASSERT_TRUE(s.e.phase() == Phase::Idle);
@@ -238,9 +233,9 @@ void test_auto_lowest_first_then_switch() {
 
 void test_auto_tie_prefers_lower_tank() {
   Layout l = layout(2);
-  l.semi[0].heightFt = 30;
-  l.semi[1].heightFt = 12;
-  Sim s(V2, l);
+  l.tank[0].heightFt = 30;
+  l.tank[1].heightFt = 12;
+  Sim s(l);
   s.set(0, 10);
   s.set(1, 10);
   s.e.cmdAuto(true, s.t);
@@ -249,55 +244,30 @@ void test_auto_tie_prefers_lower_tank() {
   TEST_ASSERT_FALSE(s.out.v[0]);
 }
 
-void test_auto_skips_tank_without_sensor() {
-  Sim s(V2, layout(3, 1));
-  s.set(0, 90);
-  s.set(2, 90);
-  s.lvl[1] = 0;  // no sensor: Auto never fills it
-  s.e.cmdAuto(true, s.t);
-  s.runMin(2);
-  TEST_ASSERT_FALSE(s.out.pumpOn);
-  TEST_ASSERT_FALSE(s.out.v[1]);
-}
-
-void test_every_layout_1_to_8_tanks_auto() {
-  for (int n = 1; n <= 8; n++) {
-    Sim s(V2, layout(n));
-    for (int i = 0; i < n; i++) {
-      s.pumpRate[i] = 25;
-      s.set(i, 5 + i);
+void test_layouts_1_2_3_5_tanks_with_and_without_main() {
+  const int counts[] = {1, 2, 3, 5};
+  for (int main = 0; main <= 1; main++)
+    for (int n : counts) {
+      Sim s(layout(n, main));
+      s.set(MAIN, 80);
+      for (int i = 0; i < n; i++) {
+        s.pumpRate[i] = 25;
+        s.set(i, 5 + i);
+      }
+      s.e.cmdAuto(true, s.t);
+      s.runMin(5.0f * n + 2);
+      for (int i = 0; i < n; i++) TEST_ASSERT_TRUE(s.lvl[i] >= 95);
+      if (n == 1) TEST_ASSERT_FALSE(s.logHas("open V1"));  // one tank: never a valve
+      for (int i = n; i < MAX_TANKS; i++) TEST_ASSERT_FALSE(s.logHas(("open V" + std::to_string(i + 1)).c_str()));
+      TEST_ASSERT_EQUAL(1, s.pumpStarts());  // tanks switch without stopping the pump
+      TEST_ASSERT_FALSE(s.out.pumpOn);
+      TEST_ASSERT_EQUAL(0, violations);
     }
-    s.e.cmdAuto(true, s.t);
-    s.runMin(5.0f * n + 2);
-    for (int i = 0; i < n; i++) TEST_ASSERT_TRUE(s.lvl[i] >= 95);
-    for (int i = n; i < MAX_SEMI; i++) TEST_ASSERT_FALSE(s.logHas(("open V" + std::to_string(i + 1)).c_str()));
-    TEST_ASSERT_FALSE(s.out.pumpOn);
-    TEST_ASSERT_EQUAL(0, violations);
-  }
 }
 
-// ------------------------------------------------------------------ optional sensor / valve
-void test_valve_only_tank_runs_timer() {
-  Sim s(V2, layout(2, 1));
-  s.e.cmdFill(1, Src::Pump, s.t);
-  s.run(3000);
-  TEST_ASSERT_TRUE(s.out.pumpOn);
-  TEST_ASSERT_TRUE(s.out.v[1]);
-  s.runMin(9.8f);
-  TEST_ASSERT_TRUE(s.out.pumpOn);
-  s.runMin(0.3f);
-  TEST_ASSERT_FALSE(s.out.pumpOn);  // 10 min timer
-  s.run(4000);
-  TEST_ASSERT_FALSE(s.out.v[1]);
-  TEST_ASSERT_TRUE(s.sink.has("timeout:1"));
-  TEST_ASSERT_TRUE(s.e.phase() == Phase::Idle);  // not a lockout
-  TEST_ASSERT_EQUAL(0, violations);
-}
-
-void test_single_tank_sensor_only_pumps_direct() {
-  Layout l = layout(1);
-  l.semi[0].valve = false;
-  Sim s(V1, l);
+// ------------------------------------------------------------------ one tank
+void test_single_tank_pumps_direct() {
+  Sim s(layout(1));
   s.pumpRate[0] = 20;
   s.set(0, 10);
   s.e.cmdAuto(true, s.t);
@@ -306,54 +276,92 @@ void test_single_tank_sensor_only_pumps_direct() {
   s.runMin(5);
   TEST_ASSERT_FALSE(s.out.pumpOn);
   TEST_ASSERT_TRUE(s.lvl[0] >= 95);
+  TEST_ASSERT_FALSE(s.logHas("open V1"));
   TEST_ASSERT_EQUAL(0, violations);
 }
 
-void test_single_tank_neither_is_timed() {
-  Layout l = layout(1, 0);
-  l.semi[0].valve = false;
-  l.semi[0].fillMin = 5;
-  Sim s(V1, l);
+void test_single_tank_manual_pump_and_valve_ignored() {
+  Sim s(layout(1));
+  s.e.cmdValve(0, true, s.t);  // there is no valve
+  TEST_ASSERT_FALSE(s.out.v[0]);
   s.e.cmdPump(true, s.t);
   s.run(1000);
   TEST_ASSERT_TRUE(s.out.pumpOn);
-  s.runMin(5.1f);
+  s.e.cmdPump(false, s.t);
   TEST_ASSERT_FALSE(s.out.pumpOn);
+  s.run(4000);
   TEST_ASSERT_TRUE(s.e.phase() == Phase::Idle);
+  TEST_ASSERT_EQUAL(0, violations);
 }
 
-void test_two_tanks_without_valve_refused() {
-  Layout l = layout(2);
-  l.semi[1].valve = false;
-  Sim s(V2, l);
-  s.e.cmdFill(1, Src::Pump, s.t);
-  s.run(3000);
+void test_single_tank_safety_rules_still_apply() {
+  Sim s(layout(1));
+  s.pumpRate[0] = 0.2f;  // dry
+  s.set(0, 30);
+  s.e.cmdPump(true, s.t);
+  s.runMin(5.5f);
   TEST_ASSERT_FALSE(s.out.pumpOn);
-  TEST_ASSERT_TRUE(strstr(s.e.msg, "needs a valve") != nullptr);
+  s.run(4000);
+  TEST_ASSERT_TRUE(s.e.phase() == Phase::Locked);
+  TEST_ASSERT_TRUE(s.sink.has("dry_run:0"));
+}
+
+void test_layout_change_one_to_two_tanks_stops() {
+  Sim s(layout(1));
+  s.e.cmdPump(true, s.t);
+  s.run(2000);
+  TEST_ASSERT_TRUE(s.out.pumpOn);
+  s.e.setLayout(layout(2), s.t);  // valves now needed and none is open
+  TEST_ASSERT_FALSE(s.out.pumpOn);
+  s.run(4000);
+  TEST_ASSERT_TRUE(s.e.phase() == Phase::Idle);
+  TEST_ASSERT_EQUAL(0, violations);
+}
+
+// ------------------------------------------------------------------ valve limit
+void test_never_more_than_two_valves() {
+  Sim s(layout(5));
+  s.e.cmdValve(0, true, s.t);
+  s.e.cmdValve(3, true, s.t);  // idle: opening another closes the first
+  TEST_ASSERT_FALSE(s.out.v[0]);
+  TEST_ASSERT_TRUE(s.out.v[3]);
+  // while switching, a third request is refused by the guard
+  s.e.cmdPump(true, s.t);
+  s.run(3000);
+  TEST_ASSERT_TRUE(s.out.pumpOn);
+  s.e.cmdValve(1, true, s.t);  // switch 4 → 2: V2 opens, V4 still on
+  TEST_ASSERT_TRUE(s.out.v[1] && s.out.v[3]);
+  s.e.cmdValve(2, true, s.t);  // third valve: refused
+  TEST_ASSERT_FALSE(s.out.v[2]);
+  TEST_ASSERT_EQUAL(2, s.e.valvesOn());
+  s.run(2000);
+  TEST_ASSERT_FALSE(s.out.v[3]);  // old valve closed after the switch
+  TEST_ASSERT_TRUE(s.out.pumpOn);
+  TEST_ASSERT_EQUAL(0, violations);
 }
 
 // ------------------------------------------------------------------ safety
 void test_cooldown_before_restart() {
-  Sim s(V1, layout(3));
-  s.e.cmdFill(0, Src::Pump, s.t);
+  Sim s(layout(3));
+  s.fill(0);
   s.run(10000);
   s.e.cmdPump(false, s.t);
   s.run(4000);
-  s.e.cmdFill(1, Src::Pump, s.t);
+  s.fill(1);
   s.run(3000);
   TEST_ASSERT_FALSE(s.out.pumpOn);
   TEST_ASSERT_TRUE(strstr(s.e.msg, "resting") != nullptr);
   s.run(60000);
-  s.e.cmdFill(1, Src::Pump, s.t);
+  s.fill(1);
   s.run(3000);
   TEST_ASSERT_TRUE(s.out.pumpOn);
 }
 
 void test_dry_run_lockout_and_clear() {
-  Sim s(V1, layout(3));
+  Sim s(layout(3));
   s.pumpRate[0] = 0.2f;  // 1 % in 5 min: dry
   s.set(0, 30);
-  s.e.cmdFill(0, Src::Pump, s.t);
+  s.fill(0);
   s.runMin(5.5f);
   TEST_ASSERT_FALSE(s.out.pumpOn);
   s.run(4000);
@@ -368,10 +376,10 @@ void test_dry_run_lockout_and_clear() {
 void test_max_run_lockout() {
   Layout l = layout(3);
   l.maxRunMin = 10;
-  Sim s(V1, l);
+  Sim s(l);
   s.pumpRate[0] = 0.6f;  // rises 3 % per 5 min: passes the dry-run check, never full
   s.set(0, 20);
-  s.e.cmdFill(0, Src::Pump, s.t);
+  s.fill(0);
   s.runMin(10.5f);
   TEST_ASSERT_FALSE(s.out.pumpOn);
   s.run(4000);
@@ -380,8 +388,8 @@ void test_max_run_lockout() {
 }
 
 void test_sensor_failure_stops() {
-  Sim s(V1, layout(3));
-  s.e.cmdFill(0, Src::Pump, s.t);
+  Sim s(layout(3));
+  s.fill(0);
   s.run(5000);
   TEST_ASSERT_TRUE(s.out.pumpOn);
   s.echo[0] = false;
@@ -393,8 +401,8 @@ void test_sensor_failure_stops() {
 }
 
 void test_closing_active_valve_stops_pump_first() {
-  Sim s(V1, layout(3));
-  s.e.cmdFill(2, Src::Pump, s.t);
+  Sim s(layout(3));
+  s.fill(2);
   s.run(5000);
   s.e.cmdValve(2, false, s.t);
   TEST_ASSERT_FALSE(s.out.pumpOn);
@@ -406,8 +414,8 @@ void test_closing_active_valve_stops_pump_first() {
 }
 
 void test_offline_guard() {
-  Sim s(V1, layout(3));
-  s.e.cmdFill(0, Src::Pump, s.t);
+  Sim s(layout(3));
+  s.fill(0);
   s.run(5000);
   s.e.offlineGuard(31 * 60000UL, s.t);
   TEST_ASSERT_FALSE(s.out.pumpOn);
@@ -415,43 +423,24 @@ void test_offline_guard() {
   TEST_ASSERT_TRUE(s.e.phase() == Phase::Locked);
 }
 
-void test_board_fault_stops_at_once() {
-  Sim s(V2, layout(3));
-  s.e.cmdFill(0, Src::Pump, s.t);
-  s.run(5000);
-  s.e.boardFault(s.t);
-  TEST_ASSERT_FALSE(s.out.pumpOn);
-  TEST_ASSERT_FALSE(s.out.pheOn);
-  TEST_ASSERT_TRUE(s.e.phase() == Phase::Locked);
-  TEST_ASSERT_TRUE(s.sink.has("board_error:-1"));
-  TEST_ASSERT_TRUE(strstr(s.e.msg, "valve board") != nullptr);
-  s.e.boardFault(s.t);  // reported once
-  TEST_ASSERT_EQUAL(1, s.sink.count("board_error:-1"));
-}
-
 void test_removing_active_tank_stops() {
-  Sim s(V2, layout(4));
-  s.e.cmdFill(3, Src::Pump, s.t);
+  Sim s(layout(5));
+  s.fill(4);
   s.run(5000);
+  TEST_ASSERT_TRUE(s.out.pumpOn);
   s.e.setLayout(layout(3), s.t);
   TEST_ASSERT_FALSE(s.out.pumpOn);
   s.run(4000);
-  TEST_ASSERT_FALSE(s.out.v[3]);
+  TEST_ASSERT_FALSE(s.out.v[4]);
+  TEST_ASSERT_EQUAL(0, violations);
 }
 
 // ------------------------------------------------------------------ main tank
-static Layout withMain(int n) {
-  Layout l = layout(n);
-  l.main.enabled = l.main.sensor = true;
-  l.main.minPct = 10;
-  return l;
-}
-
 void test_main_low_blocks_pump() {
-  Sim s(V2, withMain(2));
+  Sim s(layout(2, true));
   s.set(MAIN, 5);
   TEST_ASSERT_TRUE(s.sink.has("main_low:-1"));
-  s.e.cmdFill(0, Src::Pump, s.t);
+  s.fill(0);
   s.run(3000);
   TEST_ASSERT_FALSE(s.out.pumpOn);
   TEST_ASSERT_TRUE(strstr(s.e.msg, "Main tank is low") != nullptr);
@@ -459,10 +448,19 @@ void test_main_low_blocks_pump() {
   s.e.cmdAuto(true, s.t);
   s.runMin(2);
   TEST_ASSERT_FALSE(s.out.pumpOn);
+  TEST_ASSERT_EQUAL(0, violations);
+}
+
+void test_main_low_blocks_single_tank_too() {
+  Sim s(layout(1, true));
+  s.set(MAIN, 5);
+  s.e.cmdPump(true, s.t);
+  s.run(2000);
+  TEST_ASSERT_FALSE(s.out.pumpOn);
 }
 
 void test_main_low_stops_pump_then_auto_resumes() {
-  Sim s(V2, withMain(2));
+  Sim s(layout(2, true));
   s.mainDrop = 30;  // main tank empties fast
   s.set(MAIN, 30);
   s.pumpRate[0] = 5;
@@ -483,116 +481,26 @@ void test_main_low_stops_pump_then_auto_resumes() {
   TEST_ASSERT_EQUAL(0, violations);
 }
 
-// ------------------------------------------------------------------ PHE
-static Layout withPhe(int n, Mode m) {
-  Layout l = layout(n);
-  l.phe.enabled = true;
-  l.phe.probeMin = 4;
-  l.phe.retryMin = 30;
-  l.mode = m;
-  return l;
-}
-
-void test_phe_fill_sequence_when_water_comes() {
-  Sim s(V2, withPhe(2, Mode::Auto));
-  s.pheRate[0] = 4;
-  s.set(0, 10);
-  s.set(1, 90);
-  s.e.cmdAuto(true, s.t);
-  s.run(1000);
-  TEST_ASSERT_TRUE(s.out.v[0]);
-  TEST_ASSERT_FALSE(s.out.pheOn);
-  s.run(2000);
-  TEST_ASSERT_TRUE(s.out.pheOn);  // PHE first in Auto
-  s.runMin(2);
-  TEST_ASSERT_TRUE(s.sink.has("phe_on:0"));
-  s.runMin(25);
-  TEST_ASSERT_FALSE(s.out.pheOn);
-  s.run(3000);
-  TEST_ASSERT_FALSE(s.out.v[0]);
-  TEST_ASSERT_FALSE(s.logHas("pump on"));
-  TEST_ASSERT_TRUE(s.sink.pheLitres > 500);
-  TEST_ASSERT_TRUE(s.logIndex("phe off") < s.logIndex("close V1"));
-  TEST_ASSERT_EQUAL(0, violations);
-}
-
-void test_phe_probe_fails_then_pump() {
-  Sim s(V2, withPhe(2, Mode::Auto));
-  s.pheWater = false;
-  s.pumpRate[0] = 10;
-  s.set(0, 10);
-  s.set(1, 90);
-  s.e.cmdAuto(true, s.t);
-  s.runMin(4.2f);
-  TEST_ASSERT_FALSE(s.out.pheOn);
-  TEST_ASSERT_TRUE(s.sink.has("phe_none:0"));
-  TEST_ASSERT_FALSE(s.out.pumpOn);  // cooldown first
-  s.runMin(1.2f);
-  TEST_ASSERT_TRUE(s.out.pumpOn);
-  s.runMin(10);
-  TEST_ASSERT_TRUE(s.lvl[0] >= 95);
-  // within retryMin the next Auto fill uses the pump straight away
-  s.set(1, 5);
-  s.runMin(1.5f);
-  TEST_ASSERT_TRUE(s.out.pumpOn);
-  TEST_ASSERT_EQUAL(1, (int)std::count(s.out.log.begin(), s.out.log.end(), std::string("phe on")));
-  TEST_ASSERT_EQUAL(0, violations);
-}
-
-void test_phe_only_never_starts_pump() {
-  Sim s(V2, withPhe(1, Mode::Phe));
-  s.pheWater = false;
-  s.set(0, 10);
-  s.e.cmdAuto(true, s.t);
-  s.runMin(10);
-  TEST_ASSERT_FALSE(s.logHas("pump on"));
-  TEST_ASSERT_TRUE(s.sink.has("phe_none:0"));
-  s.e.cmdPump(true, s.t);
-  s.run(3000);
-  TEST_ASSERT_FALSE(s.out.pumpOn);
-  // retried after retryMin
-  s.e.cmdAuto(true, s.t);
-  s.pheWater = true;
-  s.runMin(31);
-  TEST_ASSERT_TRUE(s.lvl[0] > 15);
-  TEST_ASSERT_FALSE(s.logHas("pump on"));
-}
-
-void test_pump_only_never_uses_phe() {
-  Sim s(V2, withPhe(2, Mode::Pump));
-  s.set(0, 10);
-  s.e.cmdAuto(true, s.t);
+void test_main_ignored_when_disabled() {
+  Sim s(layout(2, false));
+  s.set(MAIN, 0);
+  TEST_ASSERT_FALSE(s.sink.has("main_low:-1"));
+  s.fill(0);
   s.run(3000);
   TEST_ASSERT_TRUE(s.out.pumpOn);
-  s.e.cmdFill(1, Src::Phe, s.t);  // Pump only: forced to the pump
-  s.runMin(2);
-  TEST_ASSERT_FALSE(s.logHas("phe on"));
-}
-
-void test_pump_request_while_phe_switches_source() {
-  Sim s(V2, withPhe(2, Mode::Auto));
-  s.e.cmdFill(0, Src::Phe, s.t);
-  s.run(5000);
-  TEST_ASSERT_TRUE(s.out.pheOn);
-  s.e.cmdPump(true, s.t);
-  TEST_ASSERT_FALSE(s.out.pheOn);
-  s.runMin(1.5f);
-  TEST_ASSERT_TRUE(s.out.pumpOn);
-  TEST_ASSERT_FALSE(s.out.pheOn);
-  TEST_ASSERT_EQUAL(0, violations);
 }
 
 // ------------------------------------------------------------------ test pulses and pump check
 void test_test_pulses() {
-  Sim s(V2, layout(3));
-  TEST_ASSERT_TRUE(s.e.cmdTest(2, 1000, s.t));
-  TEST_ASSERT_TRUE(s.out.v[2]);
+  Sim s(layout(3));
+  TEST_ASSERT_TRUE(s.e.cmdTest(4, 1000, s.t));  // V5: allowed before the layout is saved
+  TEST_ASSERT_TRUE(s.out.v[4]);
   TEST_ASSERT_FALSE(s.out.pumpOn);
   s.run(1000);
-  TEST_ASSERT_FALSE(s.out.v[2]);
-  TEST_ASSERT_TRUE(s.e.cmdTest(PORT_PHE, 9000, s.t));  // capped at 3 s
+  TEST_ASSERT_FALSE(s.out.v[4]);
+  TEST_ASSERT_TRUE(s.e.cmdTest(2, 9000, s.t));  // capped at 3 s
   s.run(3000);
-  TEST_ASSERT_FALSE(s.out.pheOn);
+  TEST_ASSERT_FALSE(s.out.v[2]);
   TEST_ASSERT_TRUE(s.e.cmdTest(PORT_PUMP, 2000, s.t));
   TEST_ASSERT_TRUE(s.out.v[0]);
   TEST_ASSERT_FALSE(s.out.pumpOn);
@@ -602,77 +510,102 @@ void test_test_pulses() {
   TEST_ASSERT_FALSE(s.out.pumpOn);
   s.run(3000);
   TEST_ASSERT_FALSE(s.out.v[0]);
+  TEST_ASSERT_FALSE(s.e.cmdTest(6, 1000, s.t));  // no such port
   // refused while filling
   s.run(61000);
-  s.e.cmdFill(1, Src::Pump, s.t);
+  s.fill(1);
   s.run(3000);
   TEST_ASSERT_FALSE(s.e.cmdTest(0, 1000, s.t));
   TEST_ASSERT_EQUAL(0, violations);
 }
 
+void test_pump_test_single_tank_opens_v1_first() {
+  Sim s(layout(1));
+  TEST_ASSERT_TRUE(s.e.cmdTest(PORT_PUMP, 1000, s.t));
+  TEST_ASSERT_TRUE(s.out.v[0]);  // in case a valve is already wired before the save
+  TEST_ASSERT_FALSE(s.out.pumpOn);
+  s.run(7000);
+  TEST_ASSERT_TRUE(s.logIndex("open V1") < s.logIndex("pump on"));
+  TEST_ASSERT_TRUE(s.logIndex("pump off") < s.logIndex("close V1"));
+  TEST_ASSERT_TRUE(s.e.phase() == Phase::Idle);
+}
+
 void test_pump_check() {
-  Layout l = layout(3, 2);
-  Sim s(V2, l);
+  Sim s(layout(3));
   s.pumpRate[0] = 1.0f;  // 1 %/min of 1000 L = 10 L/min
   s.pumpRate[1] = 0.2f;  // slow
   s.set(0, 20);
   s.set(1, 20);
+  s.set(2, 97);          // already full: skipped
   TEST_ASSERT_TRUE(s.e.cmdPumpCheck(s.t));
   TEST_ASSERT_TRUE(s.e.checkRun);
   s.runMin(5);
   TEST_ASSERT_FALSE(s.e.checkRun);
   TEST_ASSERT_TRUE(s.e.check[0].done && s.e.check[1].done);
-  TEST_ASSERT_FALSE(s.e.check[2].done);  // no sensor: not checked
+  TEST_ASSERT_TRUE(s.e.check[2].skipped);
   TEST_ASSERT_FLOAT_WITHIN(0.35, 1.0, s.e.check[0].pctMin);
   TEST_ASSERT_FLOAT_WITHIN(3.5, 10.0, s.e.check[0].lpm);
   TEST_ASSERT_FALSE(s.e.check[0].slow);
   TEST_ASSERT_TRUE(s.e.check[1].slow);
   TEST_ASSERT_TRUE(s.sink.has("check_done:-1"));
   TEST_ASSERT_FALSE(s.out.pumpOn);
-  TEST_ASSERT_EQUAL(1, (int)std::count(s.out.log.begin(), s.out.log.end(), std::string("pump on")));
+  TEST_ASSERT_EQUAL(1, s.pumpStarts());
+  TEST_ASSERT_EQUAL(0, violations);
+}
+
+void test_pump_check_single_tank() {
+  Sim s(layout(1));
+  s.pumpRate[0] = 1.0f;
+  s.set(0, 20);
+  TEST_ASSERT_TRUE(s.e.cmdPumpCheck(s.t));
+  s.runMin(2.5f);
+  TEST_ASSERT_FALSE(s.e.checkRun);
+  TEST_ASSERT_TRUE(s.e.check[0].done);
+  TEST_ASSERT_FALSE(s.logHas("open V1"));
   TEST_ASSERT_EQUAL(0, violations);
 }
 
 void test_detected_ports() {
-  Sim s(V2, layout(2));
-  s.echo[5] = false;
+  Sim s(layout(2));
+  s.echo[3] = false;
   s.feed(4);
   TEST_ASSERT_TRUE(s.e.detected[0]);
   TEST_ASSERT_TRUE(s.e.detected[4]);  // unconfigured port that answers
-  TEST_ASSERT_FALSE(s.e.detected[5]);
+  TEST_ASSERT_FALSE(s.e.detected[3]);
   TEST_ASSERT_FALSE(s.e.ok[4]);  // not part of the layout
+  TEST_ASSERT_TRUE(s.e.detected[MAIN]);
+  TEST_ASSERT_FALSE(s.e.ok[MAIN]);  // main sensor not enabled
 }
 
 int main() {
   UNITY_BEGIN();
-  RUN_TEST(test_sanitize_caps_to_ports);
-  RUN_TEST(test_fillable_rules);
+  RUN_TEST(test_sanitize);
+  RUN_TEST(test_valves_implied_by_count);
   RUN_TEST(test_pump_fill_sequence_and_timings);
+  RUN_TEST(test_pump_needs_an_open_valve);
   RUN_TEST(test_auto_lowest_first_then_switch);
   RUN_TEST(test_auto_tie_prefers_lower_tank);
-  RUN_TEST(test_auto_skips_tank_without_sensor);
-  RUN_TEST(test_every_layout_1_to_8_tanks_auto);
-  RUN_TEST(test_valve_only_tank_runs_timer);
-  RUN_TEST(test_single_tank_sensor_only_pumps_direct);
-  RUN_TEST(test_single_tank_neither_is_timed);
-  RUN_TEST(test_two_tanks_without_valve_refused);
+  RUN_TEST(test_layouts_1_2_3_5_tanks_with_and_without_main);
+  RUN_TEST(test_single_tank_pumps_direct);
+  RUN_TEST(test_single_tank_manual_pump_and_valve_ignored);
+  RUN_TEST(test_single_tank_safety_rules_still_apply);
+  RUN_TEST(test_layout_change_one_to_two_tanks_stops);
+  RUN_TEST(test_never_more_than_two_valves);
   RUN_TEST(test_cooldown_before_restart);
   RUN_TEST(test_dry_run_lockout_and_clear);
   RUN_TEST(test_max_run_lockout);
   RUN_TEST(test_sensor_failure_stops);
   RUN_TEST(test_closing_active_valve_stops_pump_first);
   RUN_TEST(test_offline_guard);
-  RUN_TEST(test_board_fault_stops_at_once);
   RUN_TEST(test_removing_active_tank_stops);
   RUN_TEST(test_main_low_blocks_pump);
+  RUN_TEST(test_main_low_blocks_single_tank_too);
   RUN_TEST(test_main_low_stops_pump_then_auto_resumes);
-  RUN_TEST(test_phe_fill_sequence_when_water_comes);
-  RUN_TEST(test_phe_probe_fails_then_pump);
-  RUN_TEST(test_phe_only_never_starts_pump);
-  RUN_TEST(test_pump_only_never_uses_phe);
-  RUN_TEST(test_pump_request_while_phe_switches_source);
+  RUN_TEST(test_main_ignored_when_disabled);
   RUN_TEST(test_test_pulses);
+  RUN_TEST(test_pump_test_single_tank_opens_v1_first);
   RUN_TEST(test_pump_check);
+  RUN_TEST(test_pump_check_single_tank);
   RUN_TEST(test_detected_ports);
   return UNITY_END();
 }
