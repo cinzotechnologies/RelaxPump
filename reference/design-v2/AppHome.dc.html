@@ -70,7 +70,7 @@ body{margin:0;background:#021A20}
 <div style="position: relative; padding: 16px; display: flex; flex-direction: column; gap: 4px">
 <span style="font-size: 11px" class="mut">Average level · {{sensorCount}} tanks</span>
 <span style="font-family: Outfit, sans-serif; font-size: 38px; font-weight: 500; line-height: 1">{{avg}}%</span>
-<span style="margin-top: 12px; display: flex; gap: 8px; align-items: center; font-size: 12px; font-weight: 600"><span style="width: 7px; height: 7px; border-radius: 50%; background: #7FE3EC; box-shadow: 0 0 8px #7FE3EC"></span>{{status}}<span class="src {{srcCls}}">{{srcLabel}}</span></span>
+<span style="margin-top: 12px; display: flex; gap: 8px; align-items: center; font-size: 12px; font-weight: 600"><span style="width: 7px; height: 7px; border-radius: 50%; background: #7FE3EC; box-shadow: 0 0 8px #7FE3EC"></span>{{status}}</span>
 </div>
 </div>
 <div class="pad" style="padding-top: 14px; display: flex; flex-direction: column; gap: 14px">
@@ -82,12 +82,11 @@ body{margin:0;background:#021A20}
 </div>
 <sc-if value="{{hasMain}}" hint-placeholder-val="{{ true }}">
 <div class="card fade" style="padding: 14px; display: flex; flex-direction: column; gap: 10px">
-<div style="display: flex; align-items: center; gap: 10px"><span class="lbl">Main tank</span><sc-if value="{{hasPhe}}" hint-placeholder-val="{{ true }}"><span class="src s-phe" style="margin-left: auto">PHE · {{pheState}}</span></sc-if></div>
+<div style="display: flex; align-items: center; gap: 10px"><span class="lbl">Main tank</span><span class="src s-pump" style="margin-left: auto">PUMP SOURCE</span></div>
 <div style="display: flex; align-items: baseline; justify-content: space-between"><span style="font-family: Outfit, sans-serif; font-size: 26px; font-weight: 500">72%</span><span style="font-size: 12px" class="mut">3,600 / 5,000 L</span></div>
 <div class="bar"><i style="width: 72%"></i></div>
 </div>
 </sc-if>
-<sc-if value="{{pheNoMain}}" hint-placeholder-val="{{ false }}"><div class="card" style="padding: 12px 14px; display: flex; align-items: center; justify-content: space-between"><span style="font-size: 13px; font-weight: 600">PHE line</span><span class="src s-phe">{{pheState}}</span></div></sc-if>
 <div style="display: flex; align-items: center; justify-content: space-between"><span class="lbl">Tanks · {{n}}</span><span style="font-size: 12px" class="mut">Auto · start 30% · stop 95%</span></div>
 <div style="display: flex; flex-direction: column; gap: 8px">
 <sc-for list="{{tanks}}" as="t" hint-placeholder-count="4">
@@ -111,23 +110,23 @@ body{margin:0;background:#021A20}
 </div>
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"tanks":{"editor":"range","min":1,"max":8,"step":1,"default":4},"phe":{"editor":"boolean","default":true},"main":{"editor":"boolean","default":true},"noSensorTank":{"editor":"int","min":0,"max":8,"default":3},"$preview":{"width":390,"height":844}}'>
+<script type="text/x-dc" data-dc-script data-props='{"tanks":{"editor":"range","min":1,"max":5,"step":1,"default":3},"main":{"editor":"boolean","default":true},"$preview":{"width":390,"height":844}}'>
 class Component extends DCLogic {
   constructor(p) { super(p); this.state = { filling: -1 }; }
   renderVals() {
     const NAMES = ['Roof', 'Kitchen', 'Bathroom', 'Garden', 'Guest', 'Office', 'Store', 'Terrace'];
     const PCTS = [82, 46, 18, 64, 90, 35, 55, 27];
     const LIT = [1000, 500, 500, 1000, 500, 1000, 1000, 500];
-    const n = Math.max(1, Math.min(8, this.props.tanks ?? 4));
-    const phe = this.props.phe ?? true, main = this.props.main ?? true;
-    const ns = this.props.noSensorTank ?? 3;
+    const n = Math.max(1, Math.min(5, this.props.tanks ?? 3));
+    const main = this.props.main ?? true;
+    const ns = 0;
     const tanks = Array.from({ length: n }, (_, i) => {
       const noS = (i + 1) === ns;
       const pct = PCTS[i];
       const run = this.state.filling === i;
       return {
         name: NAMES[i], pct, hasSensor: !noS, noSensor: noS, delay: (i * 40) + 'ms',
-        sub: noS ? (run ? 'Filling · 10 min timer' : 'No sensor · fills by timer') : Math.round(pct * LIT[i] / 100).toLocaleString('en-IN') + ' / ' + LIT[i].toLocaleString('en-IN') + ' L',
+        sub: Math.round(pct * LIT[i] / 100).toLocaleString('en-IN') + ' / ' + LIT[i].toLocaleString('en-IN') + ' L',
         col: pct < 25 ? '#F59E0B' : '#7FE3EC', dash: (pct * 0.942).toFixed(1) + ' 94.2',
         fillLabel: run ? 'Stop' : 'Fill 10 min',
         fill: () => this.setState({ filling: run ? -1 : i })
@@ -140,8 +139,7 @@ class Component extends DCLogic {
     return {
       n, tanks, avg, sensorCount: withS.length, waveY: y - 6, waveY2: y,
       status: low ? 'Filling ' + low.name : 'Idle',
-      srcLabel: phe ? 'PHE' : 'PUMP', srcCls: phe ? 's-phe' : 's-pump',
-      hasMain: main, hasPhe: phe, pheNoMain: phe && !main, pheState: 'Flowing'
+      hasMain: main
     };
   }
 }

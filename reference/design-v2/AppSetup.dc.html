@@ -94,26 +94,21 @@ body{margin:0;background:#021A20}
 <span style="font-size: 15px" class="mut">How many semi tanks are connected?</span>
 <div class="big"><button class="rnd press" type="button" aria-label="One less" onClick="{{dec}}">−</button><span style="font-family: Outfit, sans-serif; font-size: 72px; font-weight: 500; line-height: 1; min-width: 60px; text-align: center">{{n}}</span><button class="rnd press" type="button" aria-label="One more" onClick="{{inc}}">+</button></div>
 <div class="tk"><span class="lbl">This controller</span>
-<div class="trow"><span>Semi tank valves</span><span class="port">V1–V8</span></div>
-<div class="trow"><span>Semi tank sensors</span><span class="port">S1–S8</span></div>
-<div class="trow"><span>PHE line valve</span><span class="port">PHE</span></div>
+<div class="trow"><span>Semi tanks (sensor + valve)</span><span class="port">T1–T5</span></div>
 <div class="trow"><span>Main tank sensor</span><span class="port">MAIN</span></div>
 <div class="trow"><span>Pump</span><span class="port">PUMP</span></div>
 </div>
-<p style="font-size: 12px; line-height: 1.5" class="mut">Tank 1 uses S1 and V1, tank 2 uses S2 and V2, and so on.</p>
+<p style="font-size: 12px; line-height: 1.5" class="mut">{{countHelp}}</p>
 </div>
 </sc-if>
 
 <sc-if value="{{s1}}" hint-placeholder-val="{{ false }}">
 <sc-for list="{{tankRows}}" as="t" hint-placeholder-count="3">
 <div class="tk fade" style="animation-delay: {{t.delay}}">
-<div class="trow"><b style="font-size: 15px">Tank {{t.no}}</b><span style="display: flex; gap: 6px"><span class="port">S{{t.no}}</span><span class="port">V{{t.no}}</span></span></div>
+<div class="trow"><b style="font-size: 15px">Tank {{t.no}}</b><span style="display: flex; gap: 6px"><span class="port">{{t.ports}}</span></span></div>
 <input class="inp" type="text" aria-label="Tank name" value="{{t.name}}" onChange="{{t.setName}}">
 <div class="chips"><sc-for list="{{t.sizes}}" as="z" hint-placeholder-count="4"><button class="ch press {{z.cls}}" type="button" onClick="{{z.go}}">{{z.label}}</button></sc-for></div>
-<div class="trow"><span>Sensor</span><button class="sw press {{t.sCls}}" type="button" aria-label="Sensor" onClick="{{t.togS}}"><i></i></button></div>
-<div class="trow"><span>Valve</span><button class="sw press {{t.vCls}}" type="button" aria-label="Valve" onClick="{{t.togV}}"><i></i></button></div>
-<sc-if value="{{t.needTime}}" hint-placeholder-val="{{ false }}"><div class="trow"><span>Fill time (no sensor)</span><span class="mini"><button class="press" type="button" aria-label="Less time" onClick="{{t.minDec}}">−</button><b>{{t.fillMin}} min</b><button class="press" type="button" aria-label="More time" onClick="{{t.minInc}}">+</button></span></div></sc-if>
-<sc-if value="{{t.hasErr}}" hint-placeholder-val="{{ false }}"><div class="err">{{t.err}}</div></sc-if>
+<div class="trow"><span>Height above the main tank</span><span class="mini"><button class="press" type="button" aria-label="Lower" onClick="{{t.hDec}}">−</button><b>{{t.height}} ft</b><button class="press" type="button" aria-label="Higher" onClick="{{t.hInc}}">+</button></span></div>
 </div>
 </sc-for>
 </sc-if>
@@ -121,8 +116,7 @@ body{margin:0;background:#021A20}
 <sc-if value="{{s2}}" hint-placeholder-val="{{ false }}">
 <div class="tk fade"><div class="trow"><span style="display: flex; flex-direction: column; gap: 3px"><b>Main tank sensor</b><span style="font-size: 12px" class="mut">Port MAIN · protects the pump</span></span><button class="sw press {{mainCls}}" type="button" aria-label="Main tank sensor" onClick="{{togMain}}"><i></i></button></div>
 <sc-if value="{{mainOn}}" hint-placeholder-val="{{ true }}"><div class="trow"><span>Stop the pump below</span><span class="mini"><button class="press" type="button" aria-label="Lower" onClick="{{minDec}}">−</button><b>{{minPct}}%</b><button class="press" type="button" aria-label="Higher" onClick="{{minInc}}">+</button></span></div></sc-if></div>
-<div class="tk fade" style="animation-delay: 60ms"><div class="trow"><span style="display: flex; flex-direction: column; gap: 3px"><b>PHE line</b><span style="font-size: 12px" class="mut">Port PHE · public water supply</span></span><button class="sw press {{pheCls}}" type="button" aria-label="PHE line" onClick="{{togPhe}}"><i></i></button></div>
-<sc-if value="{{pheOn}}" hint-placeholder-val="{{ true }}"><p style="font-size: 12px; line-height: 1.5" class="mut">Fit a check valve on the PHE line and on the pump line.</p></sc-if></div>
+
 </sc-if>
 
 <sc-if value="{{s3}}" hint-placeholder-val="{{ false }}">
@@ -137,9 +131,7 @@ body{margin:0;background:#021A20}
 
 <sc-if value="{{s4}}" hint-placeholder-val="{{ false }}">
 <div class="fade" style="display: flex; flex-direction: column; gap: 12px">
-<span style="font-size: 15px" class="mut">Where should the water come from?</span>
-<div class="seg" style="grid-template-columns: repeat({{modeCols}}, minmax(0, 1fr))"><sc-for list="{{modes}}" as="m" hint-placeholder-count="3"><button class="press {{m.cls}}" type="button" onClick="{{m.go}}">{{m.label}}</button></sc-for></div>
-<p style="font-size: 13px; line-height: 1.5" class="mut">{{modeHelp}}</p>
+<span style="font-size: 15px" class="mut">Check and save. You can change this later with the installer PIN.</span>
 <div class="tk"><span class="lbl">Summary</span>
 <sc-for list="{{sumRows}}" as="r" hint-placeholder-count="4"><div class="trow"><span class="mut">{{r.k}}</span><b>{{r.v}}</b></div></sc-for>
 </div>
@@ -158,17 +150,15 @@ body{margin:0;background:#021A20}
 class Component extends DCLogic {
   constructor(p) {
     super(p);
-    const names = ['Roof', 'Kitchen', 'Bathroom', 'Garden', 'Guest', 'Office', 'Store', 'Terrace'];
-    this.state = { step: -1, pin: '', n: 3, main: true, phe: true, minPct: 10, mode: 'auto', tested: {},
-      tanks: names.map((name, i) => ({ name, litres: 1000, sensor: i !== 2, valve: true, fillMin: 10 })) };
+    const names = ['Roof', 'Kitchen', 'Bathroom', 'Garden', 'Guest'];
+    this.state = { step: -1, pin: '', n: 3, main: true, minPct: 10, tested: {},
+      tanks: names.map((name, i) => ({ name, litres: 1000, height: [30, 12, 20, 25, 15][i] || 20 })) };
   }
   setTank(i, o) { const t = this.state.tanks.slice(); t[i] = { ...t[i], ...o }; this.setState({ tanks: t }); }
   renderVals() {
     const s = this.state;
     const T = s.tanks.slice(0, s.n);
-    const errOf = (t) => (s.n > 1 && !t.valve ? 'Needs a valve — you have more than one tank.' : '');
-    const errors = T.some(t => errOf(t));
-    const TITLES = ['Semi tanks', 'Your tanks', 'Main tank & PHE', 'Check wiring', 'Water source'];
+    const TITLES = ['Semi tanks', 'Your tanks', 'Main tank', 'Check wiring', 'Save'];
     const keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', '⌫'].map(k => ({
       label: k, aria: k === '⌫' ? 'Delete' : (k || 'blank'), vis: k ? 'visible' : 'hidden',
       go: () => {
@@ -179,46 +169,36 @@ class Component extends DCLogic {
         if (pin.length === 4) setTimeout(() => this.setState({ step: 0, pin: '' }), 180);
       }
     }));
-    const modes = [{ k: 'auto', l: 'Auto' }].concat(s.phe ? [{ k: 'phe', l: 'PHE only' }] : []).concat([{ k: 'pump', l: 'Pump only' }]);
-    const mode = modes.find(m => m.k === s.mode) ? s.mode : 'auto';
-    const HELP = { auto: s.phe ? 'Uses PHE water when it comes. If no water arrives in 4 minutes, it switches to the pump.' : 'Fills any tank that drops below its start level, using the pump.', phe: 'Fills only from the PHE line. The pump is never started.', pump: 'Fills only with the pump from the main tank.' };
-    const withSensor = T.filter(t => t.sensor).length;
     const sumRows = [
-      { k: 'Semi tanks', v: String(s.n) }, { k: 'With sensor', v: withSensor + ' of ' + s.n },
-      { k: 'Main tank sensor', v: s.main ? 'Yes · stop below ' + s.minPct + '%' : 'No' },
-      { k: 'PHE line', v: s.phe ? 'Yes' : 'No' }, { k: 'Mode', v: modes.find(m => m.k === mode).l }
+      { k: 'Semi tanks', v: String(s.n) }, { k: 'Sensors', v: String(s.n) }, { k: 'Valves', v: s.n > 1 ? String(s.n) : 'None (one tank)' },
+      { k: 'Main tank sensor', v: s.main ? 'Yes · stop below ' + s.minPct + '%' : 'No' }, { k: 'Relays used', v: (s.n > 1 ? s.n : 0) + 1 + ' of 6' }
     ];
-    const outs = T.map((t, i) => ({ port: 'V' + (i + 1), name: t.name, has: t.valve })).filter(o => o.has)
-      .concat(s.phe ? [{ port: 'PHE', name: 'PHE line' }] : []).concat([{ port: 'PUMP', name: 'Pump' }]);
+    const outs = (s.n > 1 ? T.map((t, i) => ({ port: 'V' + (i + 1), name: t.name + ' valve' })) : []).concat([{ port: 'PUMP', name: 'Pump' }]);
     return {
       isPin: s.step === -1, isDone: s.step === 5, isWizard: s.step >= 0 && s.step <= 4,
       pinDots: [0, 1, 2, 3].map(i => ({ cls: i < s.pin.length ? 'on' : '' })), keys,
       stepTitle: TITLES[Math.max(0, Math.min(4, s.step))], stepNo: s.step + 1,
       dots: [0, 1, 2, 3, 4].map(i => ({ cls: i <= s.step ? 'on' : '' })),
       s0: s.step === 0, s1: s.step === 1, s2: s.step === 2, s3: s.step === 3, s4: s.step === 4,
-      n: s.n, dec: () => this.setState({ n: Math.max(1, s.n - 1) }), inc: () => this.setState({ n: Math.min(8, s.n + 1) }),
+      n: s.n, dec: () => this.setState({ n: Math.max(1, s.n - 1) }), inc: () => this.setState({ n: Math.min(5, s.n + 1) }),
+      countHelp: s.n === 1 ? 'One tank needs only a sensor — the pump fills it directly, no valve.' : 'Each tank has a sensor and a valve: tank 1 uses T1, tank 2 uses T2, and so on.',
       tankRows: T.map((t, i) => ({
-        no: i + 1, name: t.name, delay: (i * 50) + 'ms',
+        no: i + 1, name: t.name, delay: (i * 50) + 'ms', ports: s.n > 1 ? 'T' + (i + 1) + ' · sensor + valve' : 'T1 · sensor only',
         setName: (e) => this.setTank(i, { name: e.target.value }),
         sizes: [500, 1000, 1500, 2000].map(l => ({ label: l.toLocaleString('en-IN') + ' L', cls: t.litres === l ? 'on' : '', go: () => this.setTank(i, { litres: l }) })),
-        sCls: t.sensor ? 'on' : '', vCls: t.valve ? 'on' : '',
-        togS: () => this.setTank(i, { sensor: !t.sensor }), togV: () => this.setTank(i, { valve: !t.valve }),
-        needTime: !t.sensor, fillMin: t.fillMin,
-        minDec: () => this.setTank(i, { fillMin: Math.max(5, t.fillMin - 5) }), minInc: () => this.setTank(i, { fillMin: Math.min(120, t.fillMin + 5) }),
-        hasErr: !!errOf(t), err: errOf(t)
+        height: t.height, hDec: () => this.setTank(i, { height: Math.max(5, t.height - 5) }), hInc: () => this.setTank(i, { height: Math.min(100, t.height + 5) })
       })),
       mainCls: s.main ? 'on' : '', mainOn: s.main, togMain: () => this.setState({ main: !s.main }),
-      pheCls: s.phe ? 'on' : '', pheOn: s.phe, togPhe: () => this.setState({ phe: !s.phe }),
       minPct: s.minPct, minDec: () => this.setState({ minPct: Math.max(5, s.minPct - 5) }), minInc: () => this.setState({ minPct: Math.min(40, s.minPct + 5) }),
-      sensorChecks: T.map((t, i) => ({ t, i })).filter(x => x.t.sensor).map(({ t, i }) => ({ port: 'S' + (i + 1), name: t.name, ok: i !== 1, cls: i !== 1 ? 'ok' : 'bad', label: i !== 1 ? 'Found ✓' : 'No answer — check cable' }))
+      sensorChecks: T.map((t, i) => ({ t, i })).map(({ t, i }) => ({ port: 'T' + (i + 1), name: t.name, ok: i !== 1, cls: i !== 1 ? 'ok' : 'bad', label: i !== 1 ? 'Found ✓' : 'No answer — check cable' }))
         .concat(s.main ? [{ port: 'MAIN', name: 'Main tank', cls: 'ok', label: 'Found ✓' }] : []),
       outChecks: outs.map(o => ({ port: o.port, name: o.name, label: s.tested[o.port] ? 'Clicked ✓' : 'Test', go: () => this.setState({ tested: { ...s.tested, [o.port]: true } }) })),
-      modes: modes.map(m => ({ label: m.l, cls: mode === m.k ? 'on' : '', go: () => this.setState({ mode: m.k }) })), modeCols: modes.length, modeHelp: HELP[mode], sumRows,
+      sumRows,
       canBack: s.step > 0, back: () => this.setState({ step: s.step - 1 }),
-      blocked: s.step === 1 && errors,
+      blocked: false,
       nextLabel: s.step === 4 ? 'Save' : 'Next',
       next: () => this.setState({ step: s.step + 1 }),
-      summary: s.n + ' semi tanks' + (s.phe ? ' · PHE' : '') + (s.main ? ' · main tank sensor' : '') + '.',
+      summary: s.n + (s.n === 1 ? ' semi tank' : ' semi tanks') + (s.main ? ' · main tank sensor' : '') + '.',
       restart: () => this.setState({ step: -1, tested: {} })
     };
   }

@@ -55,10 +55,7 @@ body{margin:0;background:#021A20}
 </helmet>
 <div class="ph">
 <div class="sc"><div class="pad" style="display: flex; flex-direction: column; gap: 14px">
-<div style="display: flex; align-items: center; justify-content: space-between"><span class="ttl">Tanks</span><span class="ghost press" style="height: 34px">Setup</span></div>
-<div class="seg" style="grid-template-columns: repeat({{segCols}}, minmax(0, 1fr))">
-<sc-for list="{{sources}}" as="o" hint-placeholder-count="3"><button class="press {{o.cls}}" type="button" onClick="{{o.go}}">{{o.label}}</button></sc-for>
-</div>
+<div style="display: flex; align-items: center; justify-content: space-between"><span class="ttl">Tanks</span><span class="ghost press" style="height: 34px">{{n}} of 5 · Setup</span></div>
 <sc-if value="{{hasMain}}" hint-placeholder-val="{{ true }}">
 <div class="mainc fade">
 <span style="display: flex; flex-direction: column; gap: 3px; min-width: 86px"><span class="lbl">Main tank</span><span style="font-family: Outfit, sans-serif; font-size: 24px; font-weight: 500">72%</span><span style="font-size: 11px" class="mut">5,000 L</span></span>
@@ -81,7 +78,7 @@ body{margin:0;background:#021A20}
 <div class="track"><div style="width: 30%; height: 4px; border-radius: 4px; background: #7FE3EC"></div></div>
 <div style="display: flex; justify-content: space-between; font-size: 12px"><span class="mut">Stop at</span><b>95%</b></div>
 <div class="track"><div style="width: 95%; height: 4px; border-radius: 4px; background: #7FE3EC"></div></div>
-<sc-if value="{{hasNoSensor}}" hint-placeholder-val="{{ false }}"><p style="font-size: 12px; line-height: 1.5" class="mut">Tanks without a sensor are not in Auto. Tap Fill to run them on a timer.</p></sc-if>
+<sc-if value="{{single}}" hint-placeholder-val="{{ false }}"><p style="font-size: 12px; line-height: 1.5" class="mut">One tank: the pump fills it directly — no valve needed.</p></sc-if>
 </div>
 <button class="cta press" type="button" onClick="{{togglePump}}">{{pumpLabel}}</button>
 </div></div>
@@ -94,7 +91,7 @@ body{margin:0;background:#021A20}
 </div>
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"tanks":{"editor":"range","min":1,"max":8,"step":1,"default":5},"phe":{"editor":"boolean","default":true},"main":{"editor":"boolean","default":true},"noSensorTank":{"editor":"int","min":0,"max":8,"default":3},"$preview":{"width":390,"height":844}}'>
+<script type="text/x-dc" data-dc-script data-props='{"tanks":{"editor":"range","min":1,"max":5,"step":1,"default":3},"main":{"editor":"boolean","default":true},"$preview":{"width":390,"height":844}}'>
 class Component extends DCLogic {
   constructor(p) { super(p); this.state = { src: 'auto', open: 1, auto: true, pump: true, timer: -1 }; }
   renderVals() {
@@ -102,8 +99,8 @@ class Component extends DCLogic {
     const PCTS = [82, 46, 18, 64, 90, 35, 55, 27];
     const LIT = [1000, 500, 500, 1000, 500, 1000, 1000, 500];
     const s = this.state;
-    const n = Math.max(1, Math.min(8, this.props.tanks ?? 5));
-    const phe = this.props.phe ?? true, main = this.props.main ?? true, ns = this.props.noSensorTank ?? 3;
+    const n = Math.max(1, Math.min(5, this.props.tanks ?? 3));
+    const main = this.props.main ?? true, ns = 0;
     const tanks = Array.from({ length: n }, (_, i) => {
       const noS = (i + 1) === ns, pct = PCTS[i];
       const hasValve = n > 1;
@@ -116,10 +113,8 @@ class Component extends DCLogic {
         tap: () => noS ? this.setState({ timer: open ? -1 : i }) : this.setState({ open: open ? -1 : i })
       };
     });
-    const opts = [{ k: 'auto', label: 'Auto' }].concat(phe ? [{ k: 'phe', label: 'PHE only' }] : []).concat([{ k: 'pump', label: 'Pump only' }]);
     return {
-      tanks, gh: n <= 3 ? '120px' : '84px', hasMain: main, hasNoSensor: tanks.some(t => t.noSensor),
-      sources: opts.map(o => ({ label: o.label, cls: s.src === o.k ? 'on' : '', go: () => this.setState({ src: o.k }) })), segCols: opts.length,
+      tanks, n, gh: n <= 3 ? '120px' : '84px', hasMain: main, single: n === 1,
       autoCls: s.auto ? 'on' : '', toggleAuto: () => this.setState({ auto: !s.auto }),
       pumpLabel: s.pump ? 'Stop filling' : 'Start filling', togglePump: () => this.setState({ pump: !s.pump })
     };

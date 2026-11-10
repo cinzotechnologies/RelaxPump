@@ -1,206 +1,159 @@
-# RelaxPump v2 — flexible system (1–8 semi tanks, PHE, main tank)
+# RelaxPump v2 — customizable system (1–5 semi tanks)
 
-This replaces the fixed "3 tanks, 3 valves, 1 pump" plan. Read it together with the root
-`CLAUDE.md`. Where they disagree, **this file wins**. The safety rules in `CLAUDE.md` §7 still apply
-to every fill.
+This replaces the fixed "3 tanks" plan **and the earlier 8-tank / PHE draft**. Read it together
+with the root `CLAUDE.md`. Where they disagree, **this file wins**. All safety rules in
+`CLAUDE.md` §7 still apply.
 
-Goal: **one controller and one firmware build for every home.** Customers buy only the kits they
-need; the installer (or the customer) tells the app what is connected. The firmware is flashed
-once with the maximum layout and never rebuilt per customer.
-
----
-
-## 1. What one controller supports (the package limits)
-
-| Port | Count | Used for |
-|---|---|---|
-| **V1–V8** | 8 relay / MOSFET outputs | semi tank valves only (12 V DC, normally closed solenoids) |
-| **PHE** | 1 output | the PHE (public water) line valve |
-| **PUMP** | 1 output | the pump, through a contactor or the customer's starter |
-| **S1–S8** | 8 sensor inputs | semi tank ultrasonic sensors only (JSN-SR04T) |
-| **MAIN** | 1 sensor input | main tank (sump) sensor |
-
-So: up to **8 semi tanks**, plus an optional PHE line and an optional main-tank sensor, plus the pump.
-Semi tank *n* always uses **S*n*** and **V*n*** (fixed, so wiring and setup stay simple).
-
-### Kits (also the store products)
-Controller (one per home) · Semi Tank Kit (sensor + valve) · Level Sensor only · Solenoid Valve only ·
-PHE Kit (valve + check valve) · Main Tank Kit (sensor) · Pump Kit (contactor sized to the pump) ·
-Home Installation.
+Goal: **one controller and one firmware build for every home.** The customer orders a kit for the
+number of tanks they have; the installer tells the app how many tanks are connected. The firmware
+is flashed once and never rebuilt per customer.
 
 ---
 
-## 2. Per-tank options
+## 1. Rules of the product
 
-Each semi tank may have a sensor, a valve, both, or (single tank only) neither:
-
-| Has | Behaviour |
+| Rule | Detail |
 |---|---|
-| sensor + valve | full Auto: fills when below `low`, stops at `high` |
-| valve only | no level. Manual "Fill" runs for the tank's **fill minutes** (required, 1–120). Not in Auto |
-| sensor only | level shown. Can be filled only when it is the **only** semi tank (pump fills it directly) |
-| neither | only allowed with one semi tank: pump on/off with a timer |
+| Semi tanks | **1 to 5** per controller |
+| Sensor + valve | **Always a pair** for each semi tank (one Tank Kit = 1 sensor + 1 valve) |
+| One tank only | **Sensor only, no valve.** The pump fills that tank directly |
+| Relays | **6 channels:** V1–V5 for the valves + 1 for the pump |
+| Main tank sensor | Optional (port MAIN). Protects the pump from running dry |
+| PHE line | **Not supported** (removed) |
+| Filling | One tank at a time (unchanged) |
 
-Rules the app and the firmware both enforce:
-- With **2 or more** semi tanks, **every semi tank needs a valve.**
-- A tank without a sensor needs `fillMin`; the app warns to fit an overflow pipe.
-- One tank fills at a time (unchanged). Never run the pump with no open path.
+### What the customer orders
+| Tanks | Kits |
+|---|---|
+| 1 | Controller + **Sensor Kit ×1** + Pump Kit (+ Main Tank Kit) |
+| 2–5 | Controller + **Tank Kit ×n** (sensor + valve) + Pump Kit (+ Main Tank Kit) |
 
----
-
-## 3. Water sources
-
-- **Pump** (always present) pulls from the main tank.
-  - If the main tank has a sensor: never start, and stop, when main < `main.minPct` (default 10 %).
-    This is the primary dry-run guard; the "level must rise 2 % in 5 min" rule stays as the backup.
-  - Without a main sensor: dry-run guard as today.
-- **PHE line** (optional), valve on the PHE port, check valves on both the PHE and the pump line.
-  - **PHE detection without an extra sensor:** open the tank valve, then the PHE valve, and watch
-    the tank level. If it rises ≥ 2 % within `pheProbeMin` (default 4 min) → PHE water is there,
-    keep filling. If not → close PHE, and in Auto fall back to the pump after the cooldown.
-  - While PHE is flowing, don't retry PHE for `pheRetryMin` (default 30) after a failed probe.
-  - If PHE becomes available while the pump runs (optional later: pressure sensor), switch to PHE.
-- **Mode** (`config.mode`): `auto` (PHE first if present, else pump) · `phe` (PHE only) · `pump` (pump only).
-
-**Sequences** (solenoids, 2 s lead, unchanged timings in `config.h`):
-- Pump fill: open tank valve → 2 s → pump on … pump off → 3 s → close tank valve.
-- PHE fill: open tank valve → 2 s → open PHE valve … close PHE valve → 2 s → close tank valve.
-- Switching tanks: open next tank valve, then close the previous one (as today).
-- Pump and PHE are never on at the same time.
+Store products: Controller (6-relay) · Tank Kit (sensor + valve) · Sensor Kit · Main Tank Kit ·
+Pump Kit (contactor sized to the pump) · Home Installation · spare Level Sensor · spare Solenoid Valve.
 
 ---
 
-## 4. Hardware
+## 2. Hardware
 
-### Board v1 (today's board) — keep working
-Reports `ports: { sensors: 3, valves: 3, phe: false, main: false }`. Old pins unchanged.
+### Pins (extends today's board; tanks 1–3 and the pump keep their current pins)
+| Port | Trig | Echo | Valve relay |
+|---|---|---|---|
+| T1 | G16 | G17 | V1 = G25 |
+| T2 | G18 | G19 | V2 = G26 |
+| T3 | G23 | G4 | V3 = G27 |
+| T4 | G13 | G34 | V4 = G32 |
+| T5 | G14 | G35 | V5 = G22 |
+| MAIN | G21 | G39 | — |
+| PUMP | — | — | G33 |
 
-### Board v2 (new PCB)
-| Function | ESP32 pin | Notes |
-|---|---|---|
-| V1–V8 | **MCP23017** on I2C (G21 SDA, G22 SCL), GPA0–GPA7 | expander drives MOSFETs (12 V valves) |
-| PUMP | **G33**, direct | always stoppable even if I2C fails |
-| PHE | **G32**, direct | always closable even if I2C fails |
-| Trig (all sensors) | G18 | shared; echoes are read one at a time |
-| Echo S1–S8 | G34, G35, G36, G39, G16, G17, G19, G23 | 1k/2k divider, TVS on each line |
-| Echo MAIN | G4 | divider + TVS |
-| LED / BOOT | G2 / G0 | |
-| Spare | G13, G14, G25, G26, G27, G5 | G39↔G13 swap if a CT current sensor is added later |
+- Echo through 1k/2k dividers (G34/G35/G39 are input-only — fine for Echo).
+- Relay module: **6-channel** (or 8-channel with 2 unused), **active LOW**; write HIGH before
+  `pinMode(OUTPUT)` at boot. LED G2, BOOT G0 (unchanged). Spare: G5.
+- One tank: V1 is not used; the pump fills the tank directly.
+- Valves: 12 V DC normally-closed solenoids. **At most 2 valves on at once** (only while switching
+  tanks) — the firmware refuses a 3rd. Power: 12 V 3 A for ≤ 12 W valves, **12 V 5 A** for brass
+  20 W valves. 5 V 3 A buck for the ESP32 and sensors.
+- Pump relay switches the **contactor coil** only; the contactor carries the pump current
+  (0.5 HP 9 A · 1 HP 12 A · 1.5 HP 18 A · 2 HP 25 A; MCB; overload relay ≥ 1.5 HP). Or use the
+  relay as a dry contact in an existing starter. RC snubber on the coil.
+- PCB (later): ESP32 DevKit socket, 6 outputs, 6 RJ45 jacks (T1–T5, MAIN), 12 V in, 5 V buck.
+  Update `hardware/pcb-v2.md` and `reference/pcb-v2/` to this (they still show the old 8 + PHE draft).
 
-- **MCP23017 fault** (I2C error, not found): stop the pump and close PHE at once, lockout, `msg`
-  "Controller error — valve board". Write all outputs OFF before setting them as outputs at boot.
-- v2 outputs are **active HIGH** (MOSFET); v1 relays are **active LOW**. One firmware: board version
-  in `secrets.h`/NVS (`BOARD_V1` / `BOARD_V2`) selects pins and levels.
-- **No 230 V on the PCB.** PUMP drives a 12 V DIN-rail interface relay in the mains box, which
-  switches the contactor coil (or the customer's starter as a dry contact). RC snubber on the coil.
-- Power: 12 V 3 A in (fuse, reverse-polarity diode) → 5 V 3 A buck → 3.3 V.
-- Sensor jacks: RJ45 per port (CAT6: brown 5 V, brown-white GND, blue Trig, green Echo).
-- Write `hardware/pcb-v2.md`: block diagram, the pin table above, per-port connector pinout, BOM,
-  layout notes (antenna at the edge, no copper under it, 2-layer, IP65 box size).
-
-### Pump sizing (for the docs, the store calculator and the installer)
-The controller doesn't limit the pump; the contactor does. Pick by the **highest tank**:
-lift = height_ft / 3.28 × 1.2 + 0.5 m (+ depth if the main tank is underground; a surface pump
-cannot lift from deeper than ~6 m → submersible). Typical: up to ~50 ft → 1 HP; 60–80 ft →
-1.5–2 HP; above ~100 ft → high-head/booster. Contactor ≥ 1.5–2 × motor current
-(0.5 HP 9 A · 1 HP 12 A · 1.5 HP 18 A · 2 HP 25 A), MCB and overload relay for ≥ 1.5 HP.
-Number of tanks does not change the HP, because tanks fill one at a time.
+### Pump sizing (docs, store calculator, installer)
+Pick by the **highest tank**: lift = height_ft / 3.28 × 1.2 + 0.5 m (+ depth if the main tank is
+underground; a surface pump cannot lift from deeper than ~6 m → submersible). Typical: up to ~50 ft
+→ 1 HP; 60–80 ft → 1.5–2 HP; above ~100 ft → high-head or booster pump. The number of tanks does
+not change the HP, because tanks fill one at a time.
 
 ---
 
-## 5. Data model (Realtime Database) — replaces `config.tanks` / `state.tanks`
+## 3. Data model (Realtime Database) — small change from today
 
 ```
-info:   { name, fw, board: 'v1'|'v2',
-          ports: { sensors: 8, valves: 8, phe: true, main: true }, ownerUid }
-config: { semi: [ { name, litres|null, emptyCm, fullCm, heightFt|null,
-                    sensor: bool, valve: bool, fillMin|null } ],   // length 1..ports.sensors/valves
-          main: { enabled: bool, sensor: bool, litres|null, emptyCm, fullCm, minPct },
-          phe:  { enabled: bool, probeMin, retryMin },
-          mode: 'auto'|'phe'|'pump', low, high, maxRunMin,
-          installerPinHash }                                      // sha256, set by the installer
-state:  { online, lastSeen, rssi, ssid, auto, msg,
-          pump: bool, phe: bool, src: 'pump'|'phe'|null, active: int|null,
-          semi: [ { pct|null, valve: bool, ok: bool } ],
-          main: { pct|null, ok: bool } | null,
-          detected: { s: [bool × 8], main: bool } }               // which sensor ports answer
-cmd:    { pump?, phe?, valve?: { i, open }, fill?: { i, src: 'pump'|'phe' }, auto?,
-          test?: { port: 'V3'|'PHE'|'PUMP', ms }, pumpCheck?, ts }
-events: type += phe_on | phe_off | phe_none | main_low | board_error
-usage/{day}: { litres, pumpMin, pheLitres, perTank: [{ litres, pumpMin, pheLitres }] }
+info:   { name, fw, maxTanks: 5, board: 'v1'|'v2', ownerUid }
+config: { tankCount: 1..5, low, high, maxRunMin,
+          tanks: [ { name, litres|null, emptyCm, fullCm, heightFt|null } ],   // length = tankCount
+          main:  { enabled: bool, litres|null, emptyCm, fullCm, minPct },     // optional
+          installerPinHash }                                                  // sha256 of the PIN
+state:  { online, lastSeen, rssi, ssid, pump, auto, msg, active: int|null,
+          tanks: [ { pct, valve, ok } ],
+          main:  { pct, ok } | null,
+          detected: { tanks: [bool × 5], main: bool },          // which sensor ports answer
+          check: [ { lpm, minToFull, slow } ] | null }          // last pump check
+cmd:    { pump?, valve?: { i, open }, auto?, test?: { port: 'V1'..'V5'|'PUMP', ms }, pumpCheck?, ts }
+events: type += main_low | board_error
+usage:  unchanged (perTank up to 5)
 ```
 
-- **Migration:** on first boot with the new firmware, convert old `config.tanks[]` + `tankCount`
-  into `config.semi[]` (sensor = valve = true) and keep the user's names/levels. The app reads both
-  shapes until every device is migrated.
-- Update `firebase/database.rules.json` (validate lengths ≤ ports, `fillMin` required when
-  `sensor == false`, `installerPinHash` write-only for the owner) and its emulator tests.
+- Valve per tank is **implied**: `tankCount ≥ 2` → every tank has a valve; `tankCount == 1` → none.
+- Existing devices: `tankCount` ≤ 3 already fits; add missing fields with defaults.
+- Rules (`firebase/database.rules.json`): `tankCount` 1–5, `tanks` length = `tankCount`,
+  `main.minPct` 5–40, `installerPinHash` only writable by the owner. Update the emulator tests.
 
 ---
 
-## 6. Firmware
+## 4. Firmware
 
-- Arrays sized to the maximum (`MAX_SEMI = 8`); the active count and per-tank flags come from
-  `config`. Unused ports are never driven.
-- Sensor reading round-robin over present sensors (+ MAIN); report `detected` (echo received
-  within the timeout) so setup can show which ports answer.
-- Auto picks the lowest tank (with sensor + valve) below `low`; with tank heights known, prefer the
-  lowest-placed tank first when levels tie.
-- Valve-only tanks: manual fill for `fillMin`, then stop (event `timeout` is not an error here).
-- `cmd.test`: pulse one output for `ms` (≤ 3000) — for the setup wizard's "Test" buttons; refused
-  while a fill runs.
-- `cmd.pumpCheck`: fill each tank (sensor + valve) for 2 min, measure %/min → L/min (needs litres),
-  write `state.check: [{ lpm, minToFull }]`, flag tanks where the pump is too weak (< 2 %/5 min).
-- Keep: max run time, 60 s cooldown, offline guard, lockout cleared by any command, BOOT 5 s,
-  BLE provisioning, serial bench commands (extend them to 8 ports + PHE + MAIN).
-- Tests: extract the decision logic into a pure C++ module and unit-test it on the host
-  (PlatformIO `native` env) for every layout in §2 and every mode.
+- `MAX_TANKS = 5`; active count from `config.tankCount`. Report `info.maxTanks = 5`.
+- Read sensors round-robin over the active tanks + MAIN (if enabled). Report `state.detected`.
+- **One tank:** no valve logic — "open valve → 2 s → pump" becomes "pump on"; the
+  "never run with all valves closed" rule does not apply when `tankCount == 1`.
+- **Main tank sensor:** never start, and stop, when main < `minPct` (event `main_low`); the
+  "level rises 2 % in 5 min" dry-run rule stays as the backup.
+- Auto: fill the lowest tank below `low` up to `high`, then the next (unchanged).
+- `cmd.test`: pulse one output for `ms` (≤ 3000) for the setup wizard; refused while filling.
+- `cmd.pumpCheck`: fill each tank for 2 min, measure %/min → L/min (needs litres) and time to
+  full, write `state.check`, mark `slow` when it rises < 2 % in 5 min.
+- Hard limit: never more than 2 valve relays on at once.
+- Keep: max run time, 60 s cooldown, offline guard, lockout, BOOT 5 s, BLE provisioning, serial
+  bench commands (extend to 5 tanks + MAIN). Unit-test the decision logic on the host
+  (PlatformIO `native`) for 1, 2 and 5 tanks, with and without the main sensor.
 
 ---
 
-## 7. App — redesign for the flexible system
+## 5. App
 
-**Design source:** `reference/design-v2/` (same `.dc.html` format as `reference/design/`; read the
-markup and the script). Keep the approved v1 look — dark teal tokens, Outfit/Inter, wave fills,
-rings, springy toggles, press 0.96, bottom nav — and match these screens exactly:
+**Design source:** `reference/design-v2/` (same `.dc.html` format; read the markup and the script).
+Keep the approved v1 look and motion. Match these screens:
 
-| File | Screen | What to copy |
-|---|---|---|
-| `AppSetup.dc.html` | **Installer setup** | PIN keypad (4 digits) → 5 steps with progress bar: 1 tank count 1–8 (port legend), 2 per-tank card (name, size chips, Sensor/Valve toggles, fill time when no sensor, inline error "Needs a valve…"), 3 Main tank sensor (+ stop-below %) and PHE line, 4 Check wiring (sensor detection Found ✓ / No answer, Test buttons per V*n*, PHE, PUMP), 5 Water source (Auto / PHE only / Pump only + help text + summary) → Saved screen. Next is disabled while there are errors. |
-| `AppHome.dc.html` | **Home** | Tweaks show every layout: 1–8 tanks, PHE on/off, main on/off, a tank without sensor. Level card = average of tanks with sensors + source chip (PHE / PUMP). Main tank card with bar and "PHE · Flowing". Tank list 1–8; a no-sensor tank shows a dashed circle, "No sensor · fills by timer" and a **Fill 10 min / Stop** button. |
-| `AppTanks.dc.html` | **Tanks** | Source segmented control (PHE option only when installed), main tank horizontal gauge with min-% line, grid 3 per row for 1–8 tanks (tall gauges ≤ 3 tanks, short when more), no-sensor card (dashed gauge, Fill 10 min), valve button hidden with one tank, Auto card note about no-sensor tanks, Start/Stop filling. |
-| `AppPumpCheck.dc.html` | **Pump check** | Ready card → animated bars while checking → per tank L/min, height, "Full in …", Good/Slow tag and the slow-pump warning. |
-| `AppAccount.dc.html` | **Account** | "My setup" card (device id + board, counts of tanks / sensors / PHE / main, free ports), rows: Installer setup (PIN), Pump check, Add a tank (Buy a kit → website store), Tank names and sizes, Change password, Notifications, Sign out. |
+| File | Screen |
+|---|---|
+| `AppSetup.dc.html` | **Installer setup:** PIN keypad → 1 number of semi tanks 1–5 (port legend; one tank = sensor only) → 2 each tank: name, size, height above the main tank → 3 main tank sensor on/off + stop-below % → 4 Check wiring: sensors Found ✓ / No answer, **Test** for each valve and the pump → 5 Summary (tanks, sensors, valves, main, relays used x of 6) → Saved |
+| `AppHome.dc.html` | **Home** for 1–5 tanks (Tweaks), main tank card when enabled |
+| `AppTanks.dc.html` | **Tanks** for 1–5 tanks: tall gauges ≤ 3 tanks, short for 4–5; no valve button with one tank; main tank gauge with the min-% line |
+| `AppPumpCheck.dc.html` | **Pump check** results per tank |
+| `AppAccount.dc.html` | **Account** with **My setup** (tanks, valves, sensors, free ports x of 5), Installer setup (PIN), Pump check, Add a tank (→ buy a Tank Kit) |
 
 Behaviour:
-1. **Installer setup** opens automatically after a controller is claimed, and later from Account.
-   PIN: set on first setup, stored only as `config.installerPinHash`; "Forgot PIN" → contact CINZO.
-   Steps and validation exactly as the design; Save writes `config` in one update, then the app
-   waits for `state` to confirm (spinner, timeout message). Number of tanks is capped by `info.ports`.
-2. **Customer** (no PIN) can change tank names, litres, low/high and mode only.
-3. **Home / Tanks / Usage** read the layout from `config` — no screen may assume 3 tanks.
-   Usage adds PHE vs Pump litres.
-4. **Add a tank:** buy a kit, wire it to the next free port, then Installer setup → tank count +1.
-5. Mock backend: layouts 1, 3, 5, 8 tanks; with/without PHE and main sensor; one no-sensor tank.
-6. Tests: layout validation (all §2 rules), setup reducer, source/mode helpers, Home/Tanks render for
-   1 and 8 tanks.
-
-## 8. Website / admin
-
-Already designed in `reference/website/` and `docs/website-brief.md` §9: kit products and the
-"Plan your kit" calculator (pump options, fill times, kit list). Use the same numbers as §4 here.
+1. Installer setup opens after a controller is claimed, and later from Account (PIN). Save writes
+   `config` in one update and waits for `state` to confirm.
+2. The customer (no PIN) can change tank names, litres, low/high only.
+3. No screen may assume 3 tanks. Home, Tanks, Usage and the Tanks sheet follow `config.tankCount` (1–5).
+4. Add a tank: buy a Tank Kit, wire it to the next free port, Installer setup → tank count + 1.
+   Going from 1 to 2 tanks needs a valve on **both** tanks (the app says so).
+5. Mock backend layouts: 1, 2, 3, 5 tanks, with and without the main sensor.
+6. Tests: setup reducer and validation, one-tank vs multi-tank helpers, Home/Tanks render for 1 and 5.
 
 ---
 
-## 9. Milestones (show the plan first; commit + push after each)
+## 6. Website (when `web/` is built)
 
-F1. Data model + rules + emulator tests (+ migration plan)
-F2. Firmware core: N tanks, optional sensor/valve, ports, board v1/v2 pin maps, host unit tests
-F3. Firmware: main tank guard, PHE source + probe, modes, `test`, `pumpCheck`, MCP23017 fault handling
-F4. App: match reference/design-v2 — installer setup + PIN, dynamic Home/Tanks/Usage, source selector, Pump check, Account "My setup"
-F5. Mock backend layouts + app tests
-F6. `hardware/pcb-v2.md`, `docs/wiring.md` (v1 + v2), manual/website text updates
-F7. Bench test on the v1 board (3 tanks), then the v2 prototype; fix and document
+The store calculator in `reference/website/Shop.dc.html` still shows the old 8-tank + PHE draft.
+When building or updating `web/`: max **5** tanks, **no PHE** toggle or PHE kit, kit list =
+Controller + (Sensor Kit ×1 for one tank, or Tank Kit ×n) + Main Tank Kit (optional) + Pump Kit;
+capability strip "Up to 5 tanks · sensor + valve per tank · main tank sensor · 6 relays". The pump
+maths in `docs/website-brief.md` §9 stays the same.
 
-Ask before anything that costs money, changes Firebase/Cloudflare, or deletes files. When
-something needs me (flashing, wiring, Firebase console), stop and give short numbered steps.
+---
+
+## 7. Milestones (show the plan first; commit + push after each)
+
+1. Data model + rules + emulator tests
+2. Firmware: 1–5 tanks, one-tank mode, main sensor, test, pumpCheck, valve limit, host unit tests
+3. App: installer setup + PIN, dynamic Home/Tanks/Usage/sheets, Pump check, Account "My setup"
+4. Mock backend layouts + app tests
+5. Docs: `docs/wiring.md` (6 relays, 5 tanks + MAIN), `docs/SETUP.md`, `hardware/pcb-v2.md`
+6. Bench test on the board with 1, 3 and 5 tanks; fix and document
+
+Ask before anything that costs money, changes Firebase, or deletes files. When something needs me
+(flashing, wiring, Firebase console), stop and give short numbered steps.
