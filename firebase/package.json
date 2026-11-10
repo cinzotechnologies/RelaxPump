@@ -3,14 +3,16 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "firebase emulators:exec --only database --project demo-relaxpump \"node --test test/rules.test.js\"",
+    "test": "node scripts/build-rules.mjs && firebase emulators:exec --only database --project demo-relaxpump \"node --test test/rules.test.js\"",
     "emulators": "firebase emulators:start --project demo-relaxpump",
-    "deploy:rules": "node scripts/deploy-rules.mjs",
+    "deploy:rules": "node scripts/build-rules.mjs && node scripts/deploy-rules.mjs",
     "new-device": "node scripts/new-device.mjs",
     "reset-password": "node scripts/reset-password.mjs",
     "fake-device": "node scripts/fake-device.mjs",
     "link-device": "node scripts/link-device.mjs",
-    "deploy:functions": "firebase deploy --only functions --project iotcinzo"
+    "deploy:functions": "firebase deploy --only functions --project iotcinzo",
+    "build:rules": "node scripts/build-rules.mjs",
+    "reset-pin": "node scripts/reset-pin.mjs"
   },
   "devDependencies": {
     "@firebase/rules-unit-testing": "^5.0.2",
