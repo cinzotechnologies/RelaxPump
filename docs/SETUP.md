@@ -114,14 +114,15 @@ compiler: g++, clang++ or `zig c++` via `CXX="zig c++"`), or `pio test -e native
 
 Old configs (`tankCount` + `tanks`, no `main`) already fit v2: nothing to convert. A controller
 still on the first firmware reports `maxTanks: 3`, and the rules then refuse more than 3 tanks —
-flash v2 (fw 2.1.0) to use T4, T5 and MAIN.
+flash v2 (fw 2.1.0 or newer) to use T4, T5 and MAIN.
 
 ## 7. First-time setup (customer)
 
 1. Power the controller (LED blinks: waiting for Wi-Fi).
 2. Install the app, **Sign up** with phone + password.
-3. The Bluetooth sheet opens → **Set up device** → scan the box QR.
-4. Pick the home Wi-Fi, type its password → **Connect**.
+3. The Bluetooth sheet opens → **Set up device**. The app finds `RelaxPump-XXXX` over Bluetooth; tap it.
+4. Pick the home Wi-Fi, type its password → **Connect**. The controller is linked to this account
+   (only if it has no owner yet; during setup, anyone within Bluetooth range could do this first).
 5. The controller goes online and is linked to the account, and **Installer setup** opens:
    1. Choose a 4-digit installer PIN (enter it twice). Keep it; family members need no PIN.
    2. Number of semi tanks, 1–5 (tank *n* uses port T*n*: sensor + valve V*n*). One tank = sensor
@@ -142,7 +143,7 @@ without the PIN.
 The whole family can use one account: same phone number and password on every phone. Changing the
 password signs the other phones out.
 
-Changing router or password later: centre Bluetooth button → **Change Wi-Fi** (needs the box QR).
+Changing router or password later: centre Bluetooth button → **Change Wi-Fi** (first hold BOOT 5 s on the controller so it starts Bluetooth setup).
 
 ## 8. Support
 

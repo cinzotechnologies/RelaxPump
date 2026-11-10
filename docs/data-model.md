@@ -84,13 +84,16 @@ and is rejected by the rules.
 
 ## Claiming a controller
 
-The box QR is `RP1;<deviceId>;<PoP>;<claimCode>`.
+No QR. During Bluetooth setup (security 1, PoP `relaxpump-ble-v1` shared by all controllers) the app
+reads the custom endpoint `rp-identity`, which answers `RP1;<deviceId>;<claimCode>` (`RP_CLAIM_CODE`
+in `secrets.h`). So anyone within Bluetooth range while the controller is in setup can claim it, if
+it has no owner yet.
 
 1. The app computes `sha256("<deviceId>:<claimCode>")` (hex).
 2. One multi-path update writes `claimAttempts/{id}/{uid}`, `devices/{id}/info/ownerUid` and
    `users/{uid}/devices/{id}`.
 3. The rules accept `ownerUid` only when it is empty, equals the caller, and the attempt hash equals
-   `claims/{id}/codeHash`. `claims` can never be read, so only someone holding the box code can claim.
+   `claims/{id}/codeHash`. `claims` can never be read, so only someone who got the code from the controller can claim.
 
 The owner releases a controller by deleting `info/ownerUid`.
 

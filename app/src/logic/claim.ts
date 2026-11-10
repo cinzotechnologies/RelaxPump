@@ -14,18 +14,15 @@ export function claimHash(deviceId: string, code: string): Promise<string> {
   });
 }
 
+export type ControllerIdentity = { deviceId: string; code: string };
+
 /**
- * QR on the box: "RP1;<DEVICE_ID>;<POP>;<CLAIM_CODE>".
+ * The controller's Bluetooth identity reply: "RP1;<DEVICE_ID>;<CLAIM_CODE>".
  * Returns null for anything else.
  */
-export function parseBoxQr(text: string): { deviceId: string; pop: string; code: string } | null {
-  const m = /^RP1;(RP-[0-9A-F]{6});([A-Za-z0-9]{6,32});([A-Za-z0-9-]{6,32})$/.exec(text.trim());
-  return m ? { deviceId: m[1], pop: m[2], code: m[3] } : null;
-}
-
-/** BLE service name the controller advertises: "RelaxPump-" + last 4 of its id. */
-export function bleNameFor(deviceId: string): string {
-  return `RelaxPump-${deviceId.slice(-4)}`;
+export function parseIdentity(text: string): ControllerIdentity | null {
+  const m = /^RP1;(RP-[0-9A-F]{6});([A-Za-z0-9-]{6,32})$/.exec(text.trim());
+  return m ? { deviceId: m[1], code: m[2] } : null;
 }
 
 /** Installer PIN hash: SHA-256 hex of "<DEVICE_ID>:pin:<4 digits>" (checked by the rules). */

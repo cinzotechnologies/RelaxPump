@@ -8,24 +8,26 @@ import { PrimaryButton } from '@/components/PrimaryButton';
 import { Sheet } from '@/components/Sheet';
 import { Spinner } from '@/components/Spinner';
 import { TextField } from '@/components/TextField';
-import { bleNameFor } from '@/logic/claim';
+import type { ControllerIdentity } from '@/logic/claim';
 import { signalLabel } from '@/logic/format';
 import { backend } from '@/services';
 import { MOCK_DEVICE_ID } from '@/services/mockBackend';
-import { provisioner, type FoundController, type WifiNetwork } from '@/services/provisioning';
+import {
+  BluetoothDenied,
+  provisioner,
+  type FoundController,
+  type WifiNetwork,
+} from '@/services/provisioning';
 import { useDevice } from '@/state/device';
 import { go } from '@/state/nav';
 import { useSession } from '@/state/session';
 import { useUi } from '@/state/ui';
 import { alpha, colors, s, Txt } from '@/theme';
 
-import { QrScan, type BoxCode } from './QrScan';
-
-type Step = 'status' | 'scan' | 'search' | 'found' | 'nets' | 'join';
+type Step = 'status' | 'search' | 'found' | 'nets' | 'join';
 
 const TITLE: Record<Step, string> = {
   status: 'Device',
-  scan: 'Scan the box',
   search: 'Searching via Bluetooth',
   found: 'Controller found',
   nets: 'Wi-Fi',
@@ -59,7 +61,7 @@ export function BleSheet() {
   const [pick, setPick] = useState('');
   const [pass, setPass] = useState('');
   const [err, setErr] = useState('');
-  const [box, setBox] = useState<BoxCode | null>(null);
+  const [controller, setController] = useState<ControllerIdentity | null>(null);
   const alive = useRef(true);
 
   const [wasOpen, setWasOpen] = useState(open);
@@ -81,32 +83,27 @@ export function BleSheet() {
     showToast(text);
   };
 
-  // Real devices: scan the box QR first (it carries the Bluetooth PoP and the claim code).
-  const startSetup = () => {
-    if (provisioner().real) setStep('scan');
-    else search(null);
-  };
-
-  const search = async (b: BoxCode | null) => {
-    setBox(b);
+  const search = async () => {
+    setController(null);
     setStep('search');
     try {
-      let list = await provisioner().search();
+      const list = await provisioner().search();
       if (!alive.current) return;
-      if (b) list = list.filter((c) => c.name === bleNameFor(b.deviceId));
       if (!list.length) return fail('No controller found');
       setFound(list);
       setStep('found');
-    } catch {
-      fail('Bluetooth search failed');
+    } catch (e) {
+      fail(e instanceof BluetoothDenied ? e.message : 'No controller found. Is Bluetooth on?');
     }
   };
 
   const pickDevice = async (c: FoundController) => {
     try {
-      await provisioner().connect(c.name, box?.pop ?? '');
+      await provisioner().connect(c.name);
+      const identity = await provisioner().readIdentity();
       const list = await provisioner().scanWifi();
       if (!alive.current) return;
+      setController(identity);
       setNets(list);
       setPick('');
       setPass('');
@@ -131,8 +128,9 @@ export function BleSheet() {
     }
     // Link the controller to this account (first setup). Mock mode links the demo controller.
     try {
-      if (box && box.deviceId !== myDevice) await backend().claimDevice(box.deviceId, box.code);
-      else if (!box && !hasDevice && backend().kind === 'mock')
+      if (controller && controller.deviceId !== myDevice)
+        await backend().claimDevice(controller.deviceId, controller.code);
+      else if (!controller && !hasDevice && backend().kind === 'mock')
         await backend().claimDevice(MOCK_DEVICE_ID, 'DEMO-CODE');
     } catch (e) {
       return fail(e instanceof Error ? e.message : 'Could not add the controller');
@@ -141,7 +139,7 @@ export function BleSheet() {
     setStep('status');
     showToast('Wi-Fi saved · Controller online');
     // A controller that was just linked: the installer sets up its tanks next.
-    if (box && box.deviceId !== myDevice) {
+    if (controller && controller.deviceId !== myDevice) {
       close();
       go('setup');
     }
@@ -222,12 +220,8 @@ export function BleSheet() {
               ))}
             </View>
           ) : null}
-          <PrimaryButton label={online ? 'Change Wi-Fi' : 'Set up device'} onPress={startSetup} />
+          <PrimaryButton label={online ? 'Change Wi-Fi' : 'Set up device'} onPress={search} />
         </Fade>
-      ) : null}
-
-      {step === 'scan' ? (
-        <QrScan onCode={(c) => search(c)} onBad={() => showToast('This is not a RelaxPump code')} />
       ) : null}
 
       {step === 'search' ? (

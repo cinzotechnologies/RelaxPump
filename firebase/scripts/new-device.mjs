@@ -60,6 +60,7 @@ writeFileSync(
 #define RP_DEVICE_EMAIL     "${id.toLowerCase()}@${DEVICE_DOMAIN}"
 #define RP_DEVICE_PASSWORD  "${password}"
 #define RP_POP              "${pop}"
+#define RP_CLAIM_CODE       "${code}"
 #define RP_FIREBASE_API_KEY "${apiKey}"
 #define RP_FIREBASE_DB_URL  "${DB_URL}"
 #define RP_BOARD            ${board === 'v2' ? 2 : 1}

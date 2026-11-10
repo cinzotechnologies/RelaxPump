@@ -5,8 +5,9 @@
   setup in the app writes the layout to `config`; nothing is re-flashed per customer.
   Pins: see board.h (board 1 = relay module active LOW, board 2 = PCB active HIGH).
 
-  - First start (no Wi-Fi saved): BLE provisioning "RelaxPump-XXXX" (security 1 + PoP from secrets.h).
-    The app sends the home Wi-Fi. Hold BOOT 5 s to forget Wi-Fi and set up again.
+  - First start (no Wi-Fi saved): BLE provisioning "RelaxPump-XXXX" (security 1, shared PoP). The app
+    finds the controller, reads its id + claim code, then sends the home Wi-Fi.
+    Hold BOOT 5 s to forget Wi-Fi and set up again.
   - Online: Firebase RTDB as the device account — config/cmd streams, state, events, usage.
   - The fill logic (lib/engine) runs on the board, so Auto keeps working without internet.
   - Serial 115200, type `h` + Enter for the bench commands.
@@ -17,8 +18,10 @@
 #include <Arduino.h>
 #include <ArduinoOTA.h>
 #include <WiFi.h>
-#include <WiFiProv.h>
 #include <esp_task_wdt.h>
+#include <esp_wifi.h>
+#include <wifi_provisioning/manager.h>
+#include <wifi_provisioning/scheme_ble.h>
 
 #include "board.h"
 #include "cloud.h"
@@ -76,13 +79,54 @@ static void onSysEvent(arduino_event_t *e) {
   }
 }
 
-static void startProvisioning(bool forget) {
+#ifndef RP_CLAIM_CODE
+#error "secrets.h needs RP_CLAIM_CODE: make it with `npm run new-device` in firebase/"
+#endif
+
+bool wifiLowLevelInit(bool persistent);  // arduino-esp32 WiFiGeneric
+
+/** Encrypted BLE reply: the app reads this controller's id and claim code before sending Wi-Fi. */
+static esp_err_t onIdentityRequest(uint32_t, const uint8_t *, ssize_t, uint8_t **out, ssize_t *outLen, void *) {
+  static const char reply[] = "RP1;" RP_DEVICE_ID ";" RP_CLAIM_CODE;
+  *out = (uint8_t *)strdup(reply);
+  if (!*out) return ESP_ERR_NO_MEM;
+  *outLen = strlen(reply);
+  return ESP_OK;
+}
+
+/**
+ * Uses saved Wi-Fi if there is one; otherwise advertises over BLE until the app sends it.
+ * Same steps as WiFiProv.beginProvision, which has no way to add the identity endpoint.
+ */
+static void startProvisioning() {
+  static uint8_t serviceUuid[16] = {0xb4, 0xdf, 0x5a, 0x1c, 0x3f, 0x6b, 0xf4, 0xbf,
+                                    0xea, 0x4a, 0x82, 0x03, 0x04, 0x90, 0x1a, 0x02};
   static char service[20];
   snprintf(service, sizeof service, "RelaxPump-%s", String(RP_DEVICE_ID).substring(5).c_str());
-  // Uses saved Wi-Fi if there is one; otherwise advertises over BLE until the app sends it.
+
+  wifi_prov_mgr_config_t config = {};
+  config.scheme = wifi_prov_scheme_ble;
   // FREE_BTDM releases the Bluetooth memory once setup is done (needed for TLS).
-  WiFiProv.beginProvision(WIFI_PROV_SCHEME_BLE, WIFI_PROV_SCHEME_HANDLER_FREE_BTDM, WIFI_PROV_SECURITY_1, RP_POP,
-                          service, NULL, NULL, forget);
+  config.scheme_event_handler.event_cb = wifi_prov_scheme_ble_event_cb_free_btdm;
+
+  wifiLowLevelInit(true);
+  bool provisioned = false;
+  if (wifi_prov_mgr_init(config) != ESP_OK || wifi_prov_mgr_is_provisioned(&provisioned) != ESP_OK) {
+    Serial.println("[PROV] could not start the setup manager");
+    return;
+  }
+  if (provisioned) {
+    esp_wifi_start();
+    wifi_prov_mgr_deinit();
+    WiFi.begin();
+    return;
+  }
+  wifi_prov_scheme_ble_set_service_uuid(serviceUuid);
+  if (wifi_prov_mgr_endpoint_create(BLE_IDENTITY_ENDPOINT) != ESP_OK ||
+      wifi_prov_mgr_start_provisioning(WIFI_PROV_SECURITY_1, RP_BLE_POP, service, NULL) != ESP_OK ||
+      wifi_prov_mgr_endpoint_register(BLE_IDENTITY_ENDPOINT, onIdentityRequest, NULL) != ESP_OK) {
+    Serial.println("[PROV] could not start Bluetooth setup");
+  }
 }
 
 static void checkBootButton() {
@@ -241,7 +285,7 @@ void setup() {
   eng.autoMode = settings::loadAuto();
 
   WiFi.onEvent(onSysEvent);
-  startProvisioning(false);
+  startProvisioning();
 
   esp_task_wdt_init(15, true);  // reboot if the loop hangs for 15 s (outputs default OFF)
   esp_task_wdt_add(NULL);

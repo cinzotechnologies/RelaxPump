@@ -3,7 +3,12 @@
 #pragma once
 #include <Arduino.h>
 
-#define FW_VERSION "2.1.0"
+#define FW_VERSION "2.2.0"
+
+// Bluetooth setup. Same values in the app (services/provisioning.ts). The PoP is shared by all
+// controllers: it encrypts the session, it does not prove ownership.
+#define RP_BLE_POP "relaxpump-ble-v1"
+#define BLE_IDENTITY_ENDPOINT "rp-identity"
 
 constexpr int PIN_LED = 2;   // DevKit blue LED (both boards)
 constexpr int PIN_BOOT = 0;  // hold 5 s → forget Wi-Fi, BLE setup again
