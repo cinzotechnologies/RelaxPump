@@ -35,6 +35,45 @@
       ".read": false,
       ".write": false
     },
+    "firmware": {
+      "stable": {
+        ".read": "auth != null",
+        ".write": false,
+        ".validate": "newData.hasChildren(['version', 'url', 'sha256', 'sig', 'size', 'minFw', 'rollout'])",
+        "version": {
+          ".validate": "newData.isString() && newData.val().matches(/^[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}$/)"
+        },
+        "url": {
+          ".validate": "newData.isString() && newData.val().beginsWith('https://')"
+        },
+        "sha256": {
+          ".validate": "newData.isString() && newData.val().matches(/^[0-9a-f]{64}$/)"
+        },
+        "sig": {
+          ".validate": "newData.isString() && newData.val().length <= 200"
+        },
+        "size": {
+          ".validate": "newData.isNumber() && newData.val() > 0"
+        },
+        "minFw": {
+          ".validate": "newData.isString() && newData.val().matches(/^[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}$/)"
+        },
+        "rollout": {
+          ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100"
+        },
+        "date": {
+          ".validate": "newData.isString()"
+        },
+        "notes": {
+          "$n": {
+            ".validate": "newData.isString() && newData.val().length <= 120"
+          }
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    },
     "claimAttempts": {
       "$deviceId": {
         "$uid": {
@@ -102,11 +141,19 @@
           },
           "board": {
             ".write": "auth != null && auth.token.email === $id.toLowerCase() + '@devices.relaxpump.app' && auth.token.email_verified === true",
-            ".validate": "newData.isString() && newData.val().matches(/^v[12]$/)"
+            ".validate": "newData.isString() && newData.val().matches(/^v[123]$/)"
           },
           "maxTanks": {
             ".write": "auth != null && auth.token.email === $id.toLowerCase() + '@devices.relaxpump.app' && auth.token.email_verified === true",
             ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 5"
+          },
+          "type": {
+            ".write": "auth != null && auth.token.email === $id.toLowerCase() + '@devices.relaxpump.app' && auth.token.email_verified === true",
+            ".validate": "newData.isString() && newData.val().matches(/^(household|phe)$/) && (!data.exists() || data.val() === newData.val())"
+          },
+          "flash": {
+            ".write": "auth != null && auth.token.email === $id.toLowerCase() + '@devices.relaxpump.app' && auth.token.email_verified === true",
+            ".validate": "newData.isNumber() && (newData.val() === 4 || newData.val() === 8 || newData.val() === 16)"
           },
           "$other": {
             ".validate": false
@@ -115,22 +162,46 @@
         "state": {
           ".read": "auth != null && auth.token.email === $id.toLowerCase() + '@devices.relaxpump.app' && auth.token.email_verified === true",
           ".write": "auth != null && auth.token.email === $id.toLowerCase() + '@devices.relaxpump.app' && auth.token.email_verified === true",
-          ".validate": "newData.hasChildren(['online', 'pump', 'auto'])"
+          ".validate": "newData.hasChildren(['online', 'auto']) && (root.child('devices').child($id).child('info/type').val() === 'phe' || newData.hasChild('pump'))",
+          "fwAvailable": {
+            ".validate": "newData.isString() && newData.val().matches(/^[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}$/)"
+          },
+          "supply": {
+            ".validate": "newData.isString() && newData.val().matches(/^(flowing|none|unknown)$/)"
+          },
+          "ota": {
+            ".validate": "newData.hasChildren(['phase'])",
+            "phase": {
+              ".validate": "newData.isString() && newData.val().matches(/^(download|verify|install|restart|done|failed)$/)"
+            },
+            "pct": {
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100"
+            },
+            "to": {
+              ".validate": "newData.isString() && newData.val().matches(/^[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}$/)"
+            },
+            "err": {
+              ".validate": "newData.isString() && newData.val().length <= 80"
+            },
+            "$other": {
+              ".validate": false
+            }
+          }
         },
         "config": {
           ".read": "auth != null && auth.token.email === $id.toLowerCase() + '@devices.relaxpump.app' && auth.token.email_verified === true",
           ".write": "auth != null && root.child('devices').child($id).child('info/ownerUid').val() === auth.uid && (!root.child('installerPins').child($id).exists() || (root.child('pinAttempts').child($id).child(auth.uid).child('hash').val() === root.child('installerPins').child($id).child('hash').val() && root.child('pinAttempts').child($id).child(auth.uid).child('ts').val() > now - 900000))",
-          ".validate": "newData.hasChildren(['tankCount', 'tanks', 'low', 'high', 'maxRunMin']) && newData.child('tanks/0').exists() && (newData.child('tankCount').val() <= 1 || newData.child('tanks/1').exists()) && (newData.child('tankCount').val() <= 2 || newData.child('tanks/2').exists()) && (newData.child('tankCount').val() <= 3 || newData.child('tanks/3').exists()) && (newData.child('tankCount').val() <= 4 || newData.child('tanks/4').exists())",
+          ".validate": "newData.hasChildren(['tankCount', 'tanks', 'low', 'high']) && (root.child('devices').child($id).child('info/type').val() === 'phe' || newData.hasChild('maxRunMin')) && newData.child('tanks/0').exists() && (newData.child('tankCount').val() <= 1 || newData.child('tanks/1').exists()) && (newData.child('tankCount').val() <= 2 || newData.child('tanks/2').exists()) && (newData.child('tankCount').val() <= 3 || newData.child('tanks/3').exists()) && (newData.child('tankCount').val() <= 4 || newData.child('tanks/4').exists())",
           "low": {
             ".write": "auth != null && root.child('devices').child($id).child('info/ownerUid').val() === auth.uid",
-            ".validate": "newData.isNumber() && newData.val() >= 5 && newData.val() <= 80 && newData.val() + 10 <= newData.parent().child('high').val()"
+            ".validate": "(root.child('devices').child($id).child('info/type').val() === 'phe') ? (newData.isNumber() && newData.val() >= 50 && newData.val() <= 95 && newData.val() + 5 <= newData.parent().child('high').val()) : (newData.isNumber() && newData.val() >= 5 && newData.val() <= 80 && newData.val() + 10 <= newData.parent().child('high').val())"
           },
           "high": {
             ".write": "auth != null && root.child('devices').child($id).child('info/ownerUid').val() === auth.uid",
-            ".validate": "newData.isNumber() && newData.val() >= 20 && newData.val() <= 100"
+            ".validate": "(root.child('devices').child($id).child('info/type').val() === 'phe') ? (newData.isNumber() && newData.val() >= 60 && newData.val() <= 100) : (newData.isNumber() && newData.val() >= 20 && newData.val() <= 100)"
           },
           "maxRunMin": {
-            ".validate": "newData.isNumber() && newData.val() >= 5 && newData.val() <= 180"
+            ".validate": "!(root.child('devices').child($id).child('info/type').val() === 'phe') && newData.isNumber() && newData.val() >= 5 && newData.val() <= 180"
           },
           "tankCount": {
             ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 5 && newData.val() <= root.child('devices').child($id).child('info/maxTanks').val()"
@@ -153,7 +224,7 @@
                 ".validate": "newData.isNumber() && newData.val() >= 20 && newData.val() <= 500"
               },
               "heightFt": {
-                ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 300"
+                ".validate": "!(root.child('devices').child($id).child('info/type').val() === 'phe') && newData.isNumber() && newData.val() >= 0 && newData.val() <= 300"
               },
               "$other": {
                 ".validate": false
@@ -161,7 +232,7 @@
             }
           },
           "main": {
-            ".validate": "newData.hasChildren(['enabled', 'minPct'])",
+            ".validate": "!(root.child('devices').child($id).child('info/type').val() === 'phe') && newData.hasChildren(['enabled', 'minPct'])",
             "enabled": {
               ".validate": "newData.isBoolean()"
             },
@@ -191,13 +262,22 @@
           ".write": "auth != null && ((root.child('devices').child($id).child('info/ownerUid').val() === auth.uid && newData.exists()) || (auth != null && auth.token.email === $id.toLowerCase() + '@devices.relaxpump.app' && auth.token.email_verified === true && !newData.exists()))",
           ".validate": "newData.hasChild('ts')",
           "pump": {
-            ".validate": "newData.isBoolean()"
+            ".validate": "newData.isBoolean() && !(root.child('devices').child($id).child('info/type').val() === 'phe')"
           },
           "auto": {
             ".validate": "newData.isBoolean()"
           },
           "pumpCheck": {
-            ".validate": "newData.isBoolean()"
+            ".validate": "newData.isBoolean() && !(root.child('devices').child($id).child('info/type').val() === 'phe')"
+          },
+          "ota": {
+            ".validate": "newData.hasChildren(['version'])",
+            "version": {
+              ".validate": "newData.isString() && newData.val() === root.child('firmware/stable/version').val()"
+            },
+            "$other": {
+              ".validate": false
+            }
           },
           "wifiReset": {
             ".validate": "newData.isBoolean()"
@@ -217,7 +297,7 @@
           "test": {
             ".validate": "newData.hasChildren(['port', 'ms'])",
             "port": {
-              ".validate": "newData.isString() && newData.val().matches(/^(V[1-5]|PUMP)$/)"
+              ".validate": "newData.isString() && (newData.val().matches(/^V[1-5]$/) || (newData.val() === 'PUMP' && !(root.child('devices').child($id).child('info/type').val() === 'phe')))"
             },
             "ms": {
               ".validate": "newData.isNumber() && newData.val() >= 100 && newData.val() <= 3000"
@@ -239,13 +319,13 @@
           ],
           "$eventId": {
             ".write": "auth != null && auth.token.email === $id.toLowerCase() + '@devices.relaxpump.app' && auth.token.email_verified === true && !data.exists()",
-            ".validate": "newData.hasChildren(['type', 'tank', 'ts']) && newData.child('type').isString() && newData.child('type').val().matches(/^(full|low|pump_on|pump_off|dry_run|timeout|sensor|main_low|board_error|check_done)$/)"
+            ".validate": "newData.hasChildren(['type', 'tank', 'ts']) && newData.child('type').isString() && newData.child('type').val().matches(/^(full|low|pump_on|pump_off|dry_run|timeout|sensor|main_low|board_error|check_done|flow_start|flow_stop|phe_full|overflow|ota_done|ota_failed)$/)"
           }
         },
         "usage": {
           "$day": {
             ".write": "auth != null && auth.token.email === $id.toLowerCase() + '@devices.relaxpump.app' && auth.token.email_verified === true",
-            ".validate": "$day.matches(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/) && newData.hasChildren(['litres', 'pumpMin'])"
+            ".validate": "$day.matches(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/) && newData.hasChild('litres') && (root.child('devices').child($id).child('info/type').val() === 'phe' || newData.hasChild('pumpMin'))"
           }
         },
         "$other": {

@@ -363,3 +363,230 @@ describe('device account', () => {
     await assertFails(get(ref(device(false), `devices/${ID}/cmd`)));
   });
 });
+
+// ---------------------------------------------------------------- v3: Household + PHE modules, OTA
+const pheLine = (o = {}) => ({ name: 'Main tank', litres: 1000, emptyCm: 120, fullCm: 30, ...o });
+const phe = (n, o = {}) => ({
+  tankCount: n,
+  tanks: Array.from({ length: n }, () => pheLine()),
+  low: 85,
+  high: 95,
+  ...o,
+});
+const stable = {
+  version: '3.1.0',
+  url: 'https://github.com/x/y/releases/download/fw-3.1.0/rp.bin',
+  sha256: 'a'.repeat(64),
+  sig: 'MEUCIQ',
+  size: 1600000,
+  minFw: '2.3.0',
+  rollout: 10,
+  date: '2026-11-16',
+  notes: ['Bug fixes'],
+};
+
+async function setType(type) {
+  await env.withSecurityRulesDisabled(async (ctx) => {
+    await update(ref(ctx.database(), `devices/${ID}/info`), { type, maxTanks: 5 });
+  });
+}
+
+describe('v3 info.type', () => {
+  it('the device writes its type once; it can never change', async () => {
+    const db = device();
+    await assertSucceeds(set(ref(db, `devices/${ID}/info/type`), 'phe'));
+    await assertSucceeds(set(ref(db, `devices/${ID}/info/type`), 'phe'));
+    await assertFails(set(ref(db, `devices/${ID}/info/type`), 'household'));
+  });
+  it('only household or phe; the owner cannot write it', async () => {
+    await giveTo('alice');
+    await assertFails(set(ref(device(), `devices/${ID}/info/type`), 'tank'));
+    await assertFails(set(ref(user('alice'), `devices/${ID}/info/type`), 'phe'));
+  });
+  it('device reports flash size and board v3', async () => {
+    const db = device();
+    await assertSucceeds(set(ref(db, `devices/${ID}/info/flash`), 4));
+    await assertSucceeds(set(ref(db, `devices/${ID}/info/flash`), 8));
+    await assertFails(set(ref(db, `devices/${ID}/info/flash`), 3));
+    await assertSucceeds(set(ref(db, `devices/${ID}/info/board`), 'v3'));
+    await assertFails(set(ref(db, `devices/${ID}/info/board`), 'v4'));
+  });
+});
+
+describe('v3 PHE config', () => {
+  beforeEach(async () => {
+    await giveTo('alice');
+    await setType('phe');
+  });
+  const save = (cfg) => set(ref(user('alice'), `devices/${ID}/config`), cfg);
+
+  it('accepts 1 to 5 PHE lines', async () => {
+    for (const n of [1, 2, 3, 4, 5]) await assertSucceeds(save(phe(n)));
+  });
+  it('lines length must equal tankCount; 0 lines rejected', async () => {
+    await assertFails(save({ ...phe(3), tankCount: 2 }));
+    await assertFails(save({ ...phe(2), tankCount: 3 }));
+    await assertFails(save(phe(0)));
+  });
+  it('reopen 50–95, close 60–100, at least 5 apart', async () => {
+    await assertSucceeds(save(phe(2, { low: 50, high: 60 })));
+    await assertSucceeds(save(phe(2, { low: 95, high: 100 })));
+    await assertFails(save(phe(2, { low: 40, high: 95 })));
+    await assertFails(save(phe(2, { low: 90, high: 92 })));
+    await assertFails(save(phe(2, { low: 85, high: 101 })));
+  });
+  it('no main, maxRunMin or heightFt on PHE', async () => {
+    await assertFails(save(phe(2, { maxRunMin: 30 })));
+    await assertFails(save(phe(2, { main: { enabled: false, minPct: 10 } })));
+    await assertFails(save({ ...phe(1), tanks: [pheLine({ heightFt: 20 })] }));
+  });
+  it('the household shape is still required on household boards', async () => {
+    await setType('household');
+    await assertFails(save(phe(2)));
+    await assertSucceeds(save(v2(2)));
+  });
+  it('a board with no type is household', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await set(ref(ctx.database(), `devices/${ID}/info/type`), null);
+    });
+    await assertFails(save(phe(2)));
+    await assertSucceeds(save(v2(2)));
+  });
+  it('customer fields on PHE: names, litres, low/high without the PIN', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await set(ref(ctx.database(), `devices/${ID}/config`), phe(2));
+    });
+    await setPin('1234');
+    const db = user('alice');
+    await assertSucceeds(set(ref(db, `devices/${ID}/config/tanks/1/name`), 'Garden tank'));
+    await assertSucceeds(set(ref(db, `devices/${ID}/config/tanks/1/litres`), 700));
+    await assertSucceeds(set(ref(db, `devices/${ID}/config/low`), 80));
+    await assertFails(set(ref(db, `devices/${ID}/config/low`), 30));
+    await assertFails(set(ref(db, `devices/${ID}/config/tanks/1/emptyCm`), 150));
+    await assertFails(save(phe(3)));
+  });
+});
+
+describe('v3 PHE commands, state, events and usage', () => {
+  beforeEach(async () => {
+    await giveTo('alice');
+    await setType('phe');
+  });
+  const cmd = (c) => set(ref(user('alice'), `devices/${ID}/cmd`), { ...c, ts: Date.now() });
+
+  it('accepts auto, valve and test V1–V5', async () => {
+    await assertSucceeds(cmd({ auto: true }));
+    await assertSucceeds(cmd({ valve: { i: 4, open: true } }));
+    await assertSucceeds(cmd({ test: { port: 'V3', ms: 2000 } }));
+  });
+  it('refuses pump, pumpCheck and test PUMP', async () => {
+    await assertFails(cmd({ pump: true }));
+    await assertFails(cmd({ pumpCheck: true }));
+    await assertFails(cmd({ test: { port: 'PUMP', ms: 1000 } }));
+  });
+  it('the household board still takes pump commands', async () => {
+    await setType('household');
+    await assertSucceeds(cmd({ pump: true }));
+    await assertSucceeds(cmd({ pumpCheck: true }));
+    await assertSucceeds(cmd({ test: { port: 'PUMP', ms: 1000 } }));
+  });
+  it('PHE state has no pump; reports rising and supply', async () => {
+    const s = {
+      online: true,
+      lastSeen: 1,
+      auto: true,
+      msg: '',
+      supply: 'flowing',
+      tanks: [{ pct: 60, valve: true, ok: true, rising: true }],
+    };
+    await assertSucceeds(set(ref(device(), `devices/${ID}/state`), s));
+    await assertFails(set(ref(device(), `devices/${ID}/state`), { ...s, supply: 'maybe' }));
+    await setType('household');
+    await assertFails(set(ref(device(), `devices/${ID}/state`), s));
+  });
+  it('device writes the PHE events', async () => {
+    for (const type of ['flow_start', 'flow_stop', 'phe_full', 'overflow', 'sensor']) {
+      await assertSucceeds(set(ref(device(), `devices/${ID}/events/${type}`), { type, tank: 0, ts: 1 }));
+    }
+  });
+  it('PHE usage is litres per line, no pump minutes', async () => {
+    await assertSucceeds(
+      set(ref(device(), `devices/${ID}/usage/2026-11-16`), { litres: 400, perTank: [{ litres: 400 }] }),
+    );
+    await setType('household');
+    await assertFails(set(ref(device(), `devices/${ID}/usage/2026-11-17`), { litres: 400, perTank: [] }));
+  });
+});
+
+describe('v3 OTA', () => {
+  beforeEach(async () => {
+    await giveTo('alice');
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await set(ref(ctx.database(), 'firmware/stable'), stable);
+    });
+  });
+  const cmd = (c) => set(ref(user('alice'), `devices/${ID}/cmd`), { ...c, ts: Date.now() });
+
+  it('signed-in users and devices read firmware/stable; nobody writes it', async () => {
+    await assertSucceeds(get(ref(user('bob'), 'firmware/stable')));
+    await assertSucceeds(get(ref(device(), 'firmware/stable')));
+    await assertFails(get(ref(env.unauthenticatedContext().database(), 'firmware/stable')));
+    await assertFails(set(ref(user('alice'), 'firmware/stable/rollout'), 100));
+    await assertFails(set(ref(device(), 'firmware/stable/version'), '9.9.9'));
+  });
+  it('cmd.ota must name the released version', async () => {
+    await assertSucceeds(cmd({ ota: { version: '3.1.0' } }));
+    await assertFails(cmd({ ota: { version: '3.2.0' } }));
+    await assertFails(cmd({ ota: { version: '3.1.0', url: 'https://evil.example' } }));
+    await assertFails(cmd({ ota: true }));
+  });
+  it('no release → no update command', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await set(ref(ctx.database(), 'firmware/stable'), null);
+    });
+    await assertFails(cmd({ ota: { version: '3.1.0' } }));
+  });
+  it('PHE boards take cmd.ota too', async () => {
+    await setType('phe');
+    await assertSucceeds(cmd({ ota: { version: '3.1.0' } }));
+  });
+  it('strangers cannot start an update', async () => {
+    await assertFails(set(ref(user('bob'), `devices/${ID}/cmd`), { ota: { version: '3.1.0' }, ts: Date.now() }));
+  });
+  it('device reports fwAvailable and ota phases', async () => {
+    const s = { ...state, fwAvailable: '3.1.0', ota: { phase: 'download', pct: 40, to: '3.1.0' } };
+    await assertSucceeds(set(ref(device(), `devices/${ID}/state`), s));
+    await assertSucceeds(
+      set(ref(device(), `devices/${ID}/state`), {
+        ...s,
+        ota: { phase: 'failed', pct: 0, to: '3.1.0', err: 'signature' },
+      }),
+    );
+    await assertFails(set(ref(device(), `devices/${ID}/state`), { ...s, ota: { phase: 'flying' } }));
+    await assertFails(set(ref(device(), `devices/${ID}/state`), { ...s, fwAvailable: 'latest' }));
+  });
+  it('device writes ota_done / ota_failed events', async () => {
+    await assertSucceeds(set(ref(device(), `devices/${ID}/events/a`), { type: 'ota_done', tank: -1, ts: 1 }));
+    await assertSucceeds(set(ref(device(), `devices/${ID}/events/b`), { type: 'ota_failed', tank: -1, ts: 1 }));
+  });
+});
+
+describe('v3 one account, many boards', () => {
+  it('a user lists and reads several owned boards', async () => {
+    const ID2 = 'RP-D4E5F6';
+    await giveTo('alice');
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await set(ref(ctx.database(), `devices/${ID2}/info`), {
+        name: 'PHE',
+        fw: '3.0.0',
+        maxTanks: 5,
+        type: 'phe',
+        ownerUid: 'alice',
+      });
+    });
+    await assertSucceeds(set(ref(user('alice'), `users/alice/devices/${ID2}`), true));
+    await assertSucceeds(get(ref(user('alice'), `devices/${ID2}`)));
+    await assertSucceeds(get(ref(user('alice'), `devices/${ID}`)));
+    await assertFails(get(ref(user('bob'), `devices/${ID2}`)));
+  });
+});
