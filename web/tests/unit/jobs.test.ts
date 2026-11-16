@@ -136,6 +136,22 @@ describe('push job', () => {
     });
     expect(pushText({ type: 'nope', tank: 0, ts: 1 }, 'x')).toBeNull();
   });
+
+  it('PHE and software update events', () => {
+    expect(pushText({ type: 'flow_start', tank: -1, ts: 1 }, 'x', true)?.title).toBe('PHE water is coming');
+    expect(pushText({ type: 'flow_stop', tank: -1, ts: 1 }, 'x', true)).toBeNull();
+    expect(pushText({ type: 'phe_full', tank: 1, ts: 1 }, 'Shop', true)).toEqual({
+      title: 'Shop is full',
+      body: 'Valve closed',
+    });
+    expect(pushText({ type: 'overflow', tank: 0, ts: 1 }, 'Main tank', true)?.title).toBe(
+      'Main tank keeps rising',
+    );
+    expect(pushText({ type: 'sensor', tank: 0, ts: 1 }, 'Line 1', true)?.body).toBe('Valve closed');
+    expect(pushText({ type: 'sensor', tank: 0, ts: 1 }, 'Roof')?.body).toBe('Pump stopped');
+    expect(pushText({ type: 'ota_done', tank: -1, ts: 1 }, 'x')?.title).toBe('Software updated');
+    expect(pushText({ type: 'ota_failed', tank: -1, ts: 1 }, 'x')?.title).toBe('Software update failed');
+  });
 });
 
 describe('cleanup job', () => {

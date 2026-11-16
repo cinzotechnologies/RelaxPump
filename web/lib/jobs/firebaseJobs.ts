@@ -13,8 +13,11 @@ export const JOB_SCOPE = [
 
 export type Ev = { type: string; tank: number; ts: number; auto?: boolean; min?: number };
 
-/** Same wording as the app's Notifications sheet. */
-export function pushText(ev: Ev, tank: string): { title: string; body: string } | null {
+/**
+ * Same wording as the app's Notifications sheet. `tank` is the tank name, or the PHE line name
+ * on a PHE board (`phe`, docs/two-module-system.md §5.4). flow_stop is quiet (daily routine).
+ */
+export function pushText(ev: Ev, tank: string, phe = false): { title: string; body: string } | null {
   switch (ev.type) {
     case 'full':
       return { title: `${tank} is full`, body: 'Pump stopped' };
@@ -34,7 +37,22 @@ export function pushText(ev: Ev, tank: string): { title: string; body: string } 
     case 'timeout':
       return { title: 'Pump stopped', body: 'Ran too long' };
     case 'sensor':
-      return { title: `${tank} sensor error`, body: 'Pump stopped' };
+      return { title: `${tank} sensor error`, body: phe ? 'Valve closed' : 'Pump stopped' };
+    // PHE module
+    case 'flow_start':
+      return { title: 'PHE water is coming', body: 'Open lines are filling' };
+    case 'phe_full':
+      return { title: `${tank} is full`, body: 'Valve closed' };
+    case 'overflow':
+      return {
+        title: `${tank} keeps rising`,
+        body: 'Valve is closed but water still comes in. Check the valve.',
+      };
+    // Software update (both modules)
+    case 'ota_done':
+      return { title: 'Software updated', body: 'Controller restarted' };
+    case 'ota_failed':
+      return { title: 'Software update failed', body: 'The controller is back on the old version' };
     default:
       return null;
   }
@@ -119,6 +137,7 @@ export async function runPush(d: JobDeps): Promise<{ sent: number; events: numbe
           `devices/${enc(id)}/config/tanks`,
         )) ?? {})
       : {};
+    const phe = owner ? (await db.get<string>(`devices/${enc(id)}/info/type`)) === 'phe' : false;
     const tokens = owner
       ? Object.keys((await db.get<Record<string, true>>(`users/${enc(owner)}/fcm`, '&shallow=true')) ?? {})
       : [];
@@ -126,8 +145,9 @@ export async function runPush(d: JobDeps): Promise<{ sent: number; events: numbe
 
     for (const ev of evs) {
       const name =
-        (names as Record<string, { name?: string }>)[String(ev.tank)]?.name?.trim() || `Tank ${ev.tank + 1}`;
-      const msg = pushText(ev, name);
+        (names as Record<string, { name?: string }>)[String(ev.tank)]?.name?.trim() ||
+        `${phe ? 'Line' : 'Tank'} ${ev.tank + 1}`;
+      const msg = pushText(ev, name, phe);
       if (msg && tokens.length) {
         if (b.left < tokens.length + 2) break; // keep this event for the next run
         for (const t of tokens) {
