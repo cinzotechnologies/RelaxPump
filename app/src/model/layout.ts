@@ -9,7 +9,8 @@ export const RELAYS = 6;
 export const MAIN_MIN_PCT_MIN = 5;
 export const MAIN_MIN_PCT_MAX = 40;
 
-export type Board = 'v1' | 'v2';
+/** v1 = hand-wired relay module, v2 = PCB v2, v3 = Rev C (8 relays, K7/K8 spare). */
+export type Board = 'v1' | 'v2' | 'v3';
 
 export type TankConfig = {
   name?: string | null;

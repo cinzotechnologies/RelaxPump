@@ -8,6 +8,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { normalizeState } from '@/model/state';
 import { mockLayout } from '@/services/mockBackend';
 import { useDevice } from '@/state/device';
+import { useFleet } from '@/state/fleet';
 import { useSession } from '@/state/session';
 
 import Home from '../(main)/home';
@@ -43,8 +44,9 @@ function load(spec: string) {
     tanks: config.tanks.map((_, i) => ({ pct: 20 + i * 5, valve: n > 1 && i === 0, ok: true })),
     main: config.main.enabled ? { pct: 72, ok: true } : null,
   });
+  useFleet.setState({ householdId: 'RP-3F2A9C', ids: ['RP-3F2A9C'], loaded: true });
   useSession.setState({
-    deviceId: 'RP-3F2A9C',
+    deviceIds: ['RP-3F2A9C'],
     profile: { name: 'Rina', phone: '9876543210', devices: {}, createdAt: 0 },
   });
   useDevice.setState({
@@ -52,7 +54,15 @@ function load(spec: string) {
     state,
     online: true,
     configLoaded: true,
-    info: { name: 'RelaxPump Controller', fw: '2.1.0', board: 'v1', maxTanks: 5, ownerUid: 'u' },
+    info: {
+      name: 'RelaxPump Controller',
+      fw: '2.1.0',
+      board: 'v1',
+      maxTanks: 5,
+      ownerUid: 'u',
+      type: 'household',
+      flash: 4,
+    },
   });
   return config;
 }

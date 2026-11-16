@@ -13,6 +13,7 @@ import { LevelBar, SourceChip } from '@/components/SourceChip';
 import { WaveFill } from '@/components/WaveFill';
 import { fmtNum, initials, litresOf } from '@/logic/format';
 import { useDevice } from '@/state/device';
+import { useFleet } from '@/state/fleet';
 import { go } from '@/state/nav';
 import { averageLevel, mainView, useTanks } from '@/state/selectors';
 import { useSession } from '@/state/session';
@@ -78,7 +79,7 @@ function Chip({ children }: { children: string }) {
 export default function Home() {
   const insets = useSafeAreaInsets();
   const profile = useSession((st) => st.profile);
-  const deviceId = useSession((st) => st.deviceId);
+  const deviceId = useFleet((f) => f.householdId);
   const state = useDevice((d) => d.state);
   const config = useDevice((d) => d.config);
   const events = useDevice((d) => d.events);

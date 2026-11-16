@@ -31,7 +31,8 @@ import Constants from 'expo-constants';
 
 import { claimHash, pinHash } from '@/logic/claim';
 import { normalizeConfig, serializeConfig } from '@/model/layout';
-import { normalizeInfo, normalizeState, normalizeUsage } from '@/model/state';
+import { normalizePheConfig, serializePheConfig } from '@/model/phe';
+import { normalizeInfo, normalizeStable, normalizeState, normalizeUsage } from '@/model/state';
 import type { DeviceEvent, Profile, UsageDay } from '@/model/types';
 
 import { AuthError, ClaimError, type Backend } from './backend';
@@ -206,6 +207,9 @@ export function createFirebaseBackend(): Backend {
       watch(`devices/${id}/state`, (v) => normalizeState(v as Record<string, unknown> | null), cb),
     onConfig: (id, cb) =>
       watch(`devices/${id}/config`, (v) => (v ? normalizeConfig(v as Record<string, unknown>) : null), cb),
+    onPheConfig: (id, cb) =>
+      watch(`devices/${id}/config`, (v) => (v ? normalizePheConfig(v as Record<string, unknown>) : null), cb),
+    onStable: (cb) => watch('firmware/stable', (v) => normalizeStable(v as Record<string, unknown> | null), cb),
 
     onEvents: (id, limit, cb) =>
       onValue(
@@ -276,6 +280,12 @@ export function createFirebaseBackend(): Backend {
       await update(ref(db), all);
     },
 
+    async savePheSetup(id, cfg, newPin) {
+      const all: Record<string, unknown> = { [`devices/${id}/config`]: serializePheConfig(cfg) };
+      if (newPin) all[`installerPins/${id}`] = { hash: await pinHash(id, newPin) };
+      await update(ref(db), all);
+    },
+
     async endSetup(id) {
       const uid = auth.currentUser?.uid;
       if (uid) await remove(ref(db, `pinAttempts/${id}/${uid}`)).catch(() => {});
@@ -302,6 +312,16 @@ export function createFirebaseBackend(): Backend {
           );
         throw new ClaimError('network', 'Could not reach the server');
       }
+    },
+
+    async releaseDevice(deviceId) {
+      const uid = auth.currentUser?.uid;
+      if (!uid) throw new Error('Sign in again');
+      // Owner may clear ownerUid (rules); the box code then works for the next owner.
+      await update(ref(db), {
+        [`devices/${deviceId}/info/ownerUid`]: null,
+        [`users/${uid}/devices/${deviceId}`]: null,
+      });
     },
   };
 }

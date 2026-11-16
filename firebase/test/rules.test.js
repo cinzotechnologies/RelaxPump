@@ -589,4 +589,16 @@ describe('v3 one account, many boards', () => {
     await assertSucceeds(get(ref(user('alice'), `devices/${ID}`)));
     await assertFails(get(ref(user('bob'), `devices/${ID2}`)));
   });
+  it('My devices → Remove: the owner releases a board; then it can be claimed again', async () => {
+    await assertSucceeds(claim(user('alice'), 'alice'));
+    await assertFails(update(ref(user('bob')), { [`devices/${ID}/info/ownerUid`]: null }));
+    await assertSucceeds(
+      update(ref(user('alice')), {
+        [`devices/${ID}/info/ownerUid`]: null,
+        [`users/alice/devices/${ID}`]: null,
+      }),
+    );
+    await assertFails(get(ref(user('alice'), `devices/${ID}`)));
+    await assertSucceeds(claim(user('bob'), 'bob'));
+  });
 });

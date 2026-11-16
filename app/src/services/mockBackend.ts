@@ -1,10 +1,16 @@
-// In-memory backend that behaves like a v2 controller (fill engine in miniature): 1–5 tanks
-// (one tank = no valve, the pump fills it directly), optional main tank sensor, Auto, pump check,
-// test pulses, installer PIN. Used for UI work without Firebase or a controller (Expo Go, or
-// EXPO_PUBLIC_BACKEND=mock).
+// In-memory backend that behaves like a fleet of v3 controllers, for UI work without Firebase or a
+// board (Expo Go, or EXPO_PUBLIC_BACKEND=mock). One account, many boards
+// (docs/two-module-system.md §5):
+//  - Household board: the v2 fill engine in miniature. 1–5 tanks (one tank = no valve, the pump
+//    fills it directly), optional main tank sensor, Auto, pump check, test pulses.
+//  - PHE board: services/mockPhe.ts (1–5 lines, no pump, supply comes and goes).
+//  - Every board: installer PIN, OTA from firmware/stable (services/mockOta.ts).
 //
-// Pick the demo layout with EXPO_PUBLIC_MOCK_LAYOUT: "<tanks>[,main]", e.g. "1", "2", "3,main",
-// "5,main". Default "3,main".
+//   EXPO_PUBLIC_MOCK_FLEET   both (default) | household | phe | none
+//   EXPO_PUBLIC_MOCK_LAYOUT  household tanks "<n>[,main]", e.g. "1", "3,main" (default), "5,main"
+//   EXPO_PUBLIC_MOCK_PHE     PHE lines 1–5 (default 2)
+//   EXPO_PUBLIC_MOCK_SUPPLY  on (default) | off (PHE water never comes)
+//   EXPO_PUBLIC_MOCK_OTA     available (default) | running | failed | none
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -17,18 +23,27 @@ import {
   MAX_TANKS,
   type LayoutConfig,
 } from '@/model/layout';
+import type { PheConfig } from '@/model/phe';
 import type {
   CheckRow,
   DeviceCommand,
   DeviceEvent,
   DeviceInfo,
   DeviceState,
+  FirmwareStable,
+  ModuleType,
   Profile,
   SessionUser,
   UsageDay,
 } from '@/model/types';
 
 import { AuthError, ClaimError, type Backend, type Unsub } from './backend';
+import { MOCK_DEVICE_ID, MOCK_NEW_BOARDS, MOCK_PHE_ID } from './mockBoards';
+import { MOCK_STABLE, mockOtaMode, OtaSim, type MockOtaMode } from './mockOta';
+import { createPheSim } from './mockPhe';
+
+export { MOCK_DEVICE_ID, MOCK_PHE_ID } from './mockBoards';
+export { mockPheConfig } from './mockPhe';
 
 type Listener<T> = (v: T) => void;
 
@@ -46,12 +61,12 @@ class Channel<T> {
   }
 }
 
-const DEMO_ID = 'RP-3F2A9C';
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const NAMES = ['Roof', 'Kitchen', 'Bathroom', 'Garden', 'Guest'];
 const PCTS = [82, 46, 18, 64, 90];
 const LITRES = [1000, 500, 500, 1000, 500];
 const HEIGHTS = [30, 12, 20, 25, 15];
+const TICK_MS = 700;
 
 /** Demo layouts for the simulator and the tests: "3,main" = 3 tanks + main tank sensor. */
 export function mockLayout(spec = '3,main'): LayoutConfig {
@@ -72,58 +87,45 @@ export function mockLayout(spec = '3,main'): LayoutConfig {
   };
 }
 
-/** Demo accounts survive app restarts (Expo Go has no Firebase; this is the simulator's own store). */
-const STORE_KEY = 'rp.mock.accounts.v1';
-type Saved = {
-  accounts: [string, { password: string; uid: string }][];
-  profiles: [string, Profile][];
-  /** Signed-in uid, so the demo stays signed in like Firebase does. */
-  session?: string | null;
+export type MockFleet = 'both' | 'household' | 'phe' | 'none';
+export function mockFleet(v = process.env.EXPO_PUBLIC_MOCK_FLEET): MockFleet {
+  return v === 'household' || v === 'phe' || v === 'none' ? v : 'both';
+}
+
+/** One simulated board, whatever its type: what the backend routes to by device id. */
+type Board = {
+  type: ModuleType;
+  infoCh: Channel<DeviceInfo | null>;
+  stateCh: Channel<DeviceState | null>;
+  configCh: Channel<LayoutConfig | null>;
+  pheConfigCh: Channel<PheConfig | null>;
+  eventsCh: Channel<DeviceEvent[]>;
+  usage: (days: string[]) => UsageDay[];
+  apply: (cmd: Omit<DeviceCommand, 'ts'>) => void;
+  patch: (p: Record<string, string | number | null>) => void;
+  saveLayout: (cfg: LayoutConfig) => void;
+  savePhe: (cfg: PheConfig) => void;
+  pin: string | null;
+  pinOk: boolean;
+  owner: string | null;
+  setOwner: (uid: string | null) => void;
 };
 
-const TICK_MS = 700;
+// ------------------------------------------------------------------ household board
 
-export function createMockBackend(spec = process.env.EXPO_PUBLIC_MOCK_LAYOUT): Backend {
-  let user: SessionUser | null = null;
-  const accounts = new Map<string, { password: string; uid: string }>([
-    ['9876543210', { password: 'relax123', uid: 'demo' }],
-  ]);
-  const profiles = new Map<string, Profile>([
-    ['demo', { name: 'My Home', phone: '9876543210', devices: { [DEMO_ID]: true }, createdAt: Date.now() }],
-  ]);
-  const ready = AsyncStorage.getItem(STORE_KEY)
-    .then((raw) => {
-      if (!raw) return;
-      const s = JSON.parse(raw) as Saved;
-      s.accounts.forEach(([k, v]) => accounts.set(k, v));
-      s.profiles.forEach(([k, v]) => profiles.set(k, v));
-      if (s.session && profiles.has(s.session) && !user) {
-        user = { uid: s.session };
-        auth.emit();
-      }
-    })
-    .catch(() => {});
-  const save = () => {
-    const s: Saved = {
-      accounts: [...accounts.entries()],
-      profiles: [...profiles.entries()],
-      session: user?.uid ?? null,
-    };
-    AsyncStorage.setItem(STORE_KEY, JSON.stringify(s)).catch(() => {});
-  };
-
+function householdBoard(id: string, spec: string | undefined, otaMode: MockOtaMode, owner: string | null): Board {
   const info: DeviceInfo = {
     name: 'RelaxPump Controller',
-    fw: '2.1.0',
+    fw: '3.0.0',
     board: 'v1',
     maxTanks: MAX_TANKS,
-    ownerUid: 'demo',
+    ownerUid: owner,
+    type: 'household',
+    flash: 4,
   };
   let config: LayoutConfig = mockLayout(spec || undefined);
   const levels = PCTS.slice();
   let mainPct = 72;
-  let pin: string | null = null;
-  let pinOk = false;
 
   // Live controller state
   let pump = false;
@@ -137,9 +139,9 @@ export function createMockBackend(spec = process.env.EXPO_PUBLIC_MOCK_LAYOUT): B
 
   const now = Date.now();
   const events: DeviceEvent[] = [
-    { id: 'e3', type: 'full', tank: 0, ts: now - 10 * 60000 },
-    { id: 'e2', type: 'low', tank: 2 % config.tanks.length, ts: now - 60 * 60000 },
-    { id: 'e1', type: 'pump_off', tank: 0, ts: new Date().setHours(6, 40, 0, 0), min: 25, auto: true },
+    { id: `${id}-e3`, type: 'full', tank: 0, ts: now - 10 * 60000 },
+    { id: `${id}-e2`, type: 'low', tank: 2 % config.tanks.length, ts: now - 60 * 60000 },
+    { id: `${id}-e1`, type: 'pump_off', tank: 0, ts: new Date().setHours(6, 40, 0, 0), min: 25, auto: true },
   ];
   let evSeq = 4;
   let runStart = Date.now();
@@ -147,6 +149,10 @@ export function createMockBackend(spec = process.env.EXPO_PUBLIC_MOCK_LAYOUT): B
   const n = () => config.tanks.length;
   const valved = () => hasValves(n());
   const mainLow = () => config.main.enabled && mainPct < config.main.minPct;
+  const addEvent = (e: Omit<DeviceEvent, 'id' | 'ts'>) => {
+    events.unshift({ ...e, id: `${id}-e${evSeq++}`, ts: Date.now() });
+    eventsCh.emit();
+  };
   const snapshot = (): DeviceState => ({
     online: true,
     lastSeen: Date.now(),
@@ -154,12 +160,13 @@ export function createMockBackend(spec = process.env.EXPO_PUBLIC_MOCK_LAYOUT): B
     ssid: 'Home_WiFi',
     pump,
     auto: autoMode,
-    msg,
+    msg: ota.busy ? 'Updating software' : msg,
     active: pump && active >= 0 ? active : null,
     tanks: config.tanks.map((_, i) => ({
       pct: Math.round(levels[i]),
       valve: valved() && valves[i],
       ok: true,
+      rising: false,
     })),
     main: config.main.enabled ? { pct: Math.round(mainPct), ok: true } : null,
     // Ports T1–T4 and MAIN answer in the demo; T5 has no cable.
@@ -172,30 +179,28 @@ export function createMockBackend(spec = process.env.EXPO_PUBLIC_MOCK_LAYOUT): B
       return Math.round(t.emptyCm - (levels[i] / 100) * (t.emptyCm - t.fullCm));
     }),
     check,
+    supply: null,
+    fwAvailable: ota.available,
+    ota: ota.ota,
   });
 
-  const auth = new Channel<SessionUser | null>(() => user);
   const stateCh = new Channel<DeviceState | null>(snapshot);
   const configCh = new Channel<LayoutConfig | null>(() => JSON.parse(JSON.stringify(config)) as LayoutConfig);
   const infoCh = new Channel<DeviceInfo | null>(() => ({ ...info }));
   const eventsCh = new Channel<DeviceEvent[]>(() => events.slice(0, 30));
-  const profileChs = new Map<string, Channel<Profile | null>>();
-  const profileCh = (uid: string) => {
-    let ch = profileChs.get(uid);
-    if (!ch) {
-      ch = new Channel(() => profiles.get(uid) ?? null);
-      profileChs.set(uid, ch);
-    }
-    return ch;
-  };
-
-  const addEvent = (e: Omit<DeviceEvent, 'id' | 'ts'>) => {
-    events.unshift({ ...e, id: `e${evSeq++}`, ts: Date.now() });
-    eventsCh.emit();
-  };
+  const ota: OtaSim = new OtaSim(
+    info.fw,
+    otaMode,
+    () => stateCh.emit(),
+    (fw) => {
+      info.fw = fw;
+      infoCh.emit();
+      addEvent({ type: 'ota_done', tank: -1 });
+    },
+  );
 
   const start = (i: number, auto: boolean) => {
-    if (i < 0 || i >= n()) return;
+    if (i < 0 || i >= n() || ota.busy) return;
     if (mainLow()) {
       msg = 'Main tank is low. The pump will not start.';
       return;
@@ -238,7 +243,10 @@ export function createMockBackend(spec = process.env.EXPO_PUBLIC_MOCK_LAYOUT): B
   setInterval(() => {
     for (let i = 0; i < n(); i++) if (i !== active) levels[i] = Math.max(0, levels[i] - 0.08);
     mainPct = Math.min(100, mainPct + (pump ? -0.25 : 0.05));
-    if (check?.run) {
+    if (ota.busy) {
+      // Updating: pump off, valves closed (the firmware's allStop).
+      if (pump) stop();
+    } else if (check?.run) {
       // handled by the pumpCheck timer
     } else if (pump && manyOpen) {
       // Manual fill (firmware 2.2): every open valve fills; a full tank closes its valve,
@@ -287,7 +295,12 @@ export function createMockBackend(spec = process.env.EXPO_PUBLIC_MOCK_LAYOUT): B
     stateCh.emit();
   }, TICK_MS);
 
-  const applyCommand = (cmd: Omit<DeviceCommand, 'ts'>) => {
+  const apply = (cmd: Omit<DeviceCommand, 'ts'>) => {
+    if (cmd.ota) {
+      ota.request(cmd.ota.version, pump);
+      return;
+    }
+    if (ota.busy) return; // the firmware ignores other commands while updating
     msg = '';
     if (cmd.auto !== undefined) autoMode = cmd.auto;
     if (cmd.pump !== undefined || cmd.valve) autoMode = false;
@@ -356,6 +369,210 @@ export function createMockBackend(spec = process.env.EXPO_PUBLIC_MOCK_LAYOUT): B
   };
 
   return {
+    type: 'household',
+    infoCh,
+    stateCh,
+    configCh,
+    pheConfigCh: new Channel<PheConfig | null>(() => null),
+    eventsCh,
+    usage,
+    apply,
+    patch: (p) => {
+      const c = JSON.parse(JSON.stringify(config)) as Record<string, unknown>;
+      for (const [path, v] of Object.entries(p)) {
+        const keys = path.split('/');
+        let o = c as Record<string, unknown>;
+        for (const k of keys.slice(0, -1)) o = o[k] as Record<string, unknown>;
+        o[keys[keys.length - 1]] = v;
+      }
+      config = c as unknown as LayoutConfig;
+      configCh.emit();
+    },
+    saveLayout: (cfg) => {
+      // Tank removed, or one tank ↔ several (the water path changed): stop, like the firmware.
+      if (pump && (active >= cfg.tanks.length || hasValves(cfg.tanks.length) !== valved())) stop();
+      config = JSON.parse(JSON.stringify(cfg)) as LayoutConfig;
+      configCh.emit();
+      stateCh.emit();
+    },
+    savePhe: () => {},
+    pin: null,
+    pinOk: false,
+    owner,
+    setOwner(uid) {
+      this.owner = uid;
+      info.ownerUid = uid;
+      infoCh.emit();
+    },
+  };
+}
+
+// ------------------------------------------------------------------ PHE board
+
+function pheBoard(id: string, lines: number, supply: boolean, otaMode: MockOtaMode, firstOwner: string | null): Board {
+  let owner = firstOwner;
+  const sim = createPheSim(id, lines, { supply, fw: '3.0.0', owner: owner ?? '', emitEvents: () => eventsCh.emit() });
+  let fw = '3.0.0';
+  const stateCh = new Channel<DeviceState | null>(() => {
+    const st = sim.state();
+    return {
+      ...st,
+      msg: ota.busy ? 'Updating software' : st.msg,
+      tanks: ota.busy ? st.tanks.map((t) => ({ ...t, valve: false, rising: false })) : st.tanks,
+      fwAvailable: ota.available,
+      ota: ota.ota,
+    };
+  });
+  const infoCh = new Channel<DeviceInfo | null>(() => ({ ...sim.info(), fw, ownerUid: owner }));
+  const pheConfigCh = new Channel<PheConfig | null>(() => sim.config());
+  const eventsCh = new Channel<DeviceEvent[]>(() => sim.events());
+  const ota: OtaSim = new OtaSim(
+    fw,
+    otaMode,
+    () => stateCh.emit(),
+    (v) => {
+      fw = v;
+      infoCh.emit();
+    },
+  );
+  setInterval(() => {
+    if (!ota.busy) sim.tick();
+    stateCh.emit();
+  }, TICK_MS);
+  return {
+    type: 'phe',
+    infoCh,
+    stateCh,
+    configCh: new Channel<LayoutConfig | null>(() => null),
+    pheConfigCh,
+    eventsCh,
+    usage: sim.usage,
+    apply: (cmd) => {
+      if (cmd.ota) ota.request(cmd.ota.version, false);
+      else if (!ota.busy) sim.apply(cmd);
+      stateCh.emit();
+    },
+    patch: (p) => {
+      sim.patch(p);
+      pheConfigCh.emit();
+    },
+    saveLayout: () => {},
+    savePhe: (cfg) => {
+      sim.setConfig(cfg);
+      pheConfigCh.emit();
+      stateCh.emit();
+    },
+    pin: null,
+    pinOk: false,
+    owner,
+    setOwner(uid) {
+      this.owner = uid;
+      owner = uid;
+      infoCh.emit();
+    },
+  };
+}
+
+// ------------------------------------------------------------------ backend
+
+/** Demo accounts survive app restarts (Expo Go has no Firebase; this is the simulator's own store). */
+const STORE_KEY = 'rp.mock.accounts.v1';
+type Saved = {
+  accounts: [string, { password: string; uid: string }][];
+  profiles: [string, Profile][];
+  /** Signed-in uid, so the demo stays signed in like Firebase does. */
+  session?: string | null;
+};
+
+const isNewBoard = (id: string) => MOCK_NEW_BOARDS.some((b) => b.deviceId === id);
+
+export function createMockBackend(
+  spec = process.env.EXPO_PUBLIC_MOCK_LAYOUT,
+  fleet: MockFleet = mockFleet(),
+): Backend {
+  const otaMode = mockOtaMode();
+  const pheLines = parseInt(process.env.EXPO_PUBLIC_MOCK_PHE ?? '', 10) || 2;
+  const supply = process.env.EXPO_PUBLIC_MOCK_SUPPLY !== 'off';
+
+  let user: SessionUser | null = null;
+  const demoDevices: Record<string, true> = {};
+  if (fleet === 'both' || fleet === 'household') demoDevices[MOCK_DEVICE_ID] = true;
+  if (fleet === 'both' || fleet === 'phe') demoDevices[MOCK_PHE_ID] = true;
+  const accounts = new Map<string, { password: string; uid: string }>([
+    ['9876543210', { password: 'relax123', uid: 'demo' }],
+  ]);
+  const profiles = new Map<string, Profile>([
+    ['demo', { name: 'My Home', phone: '9876543210', devices: demoDevices, createdAt: Date.now() }],
+  ]);
+
+  // Boards are created on first use, so a fleet without PHE runs no PHE simulation.
+  const boards = new Map<string, Board>();
+  const typeOf = (id: string): ModuleType =>
+    id === MOCK_PHE_ID ? 'phe' : (MOCK_NEW_BOARDS.find((b) => b.deviceId === id)?.type ?? 'household');
+  const board = (id: string): Board => {
+    let b = boards.get(id);
+    if (!b) {
+      const owner = id === MOCK_DEVICE_ID || id === MOCK_PHE_ID ? 'demo' : null;
+      b =
+        typeOf(id) === 'phe'
+          ? pheBoard(id, id === MOCK_PHE_ID ? pheLines : 1, supply, otaMode, owner)
+          : householdBoard(id, id === MOCK_DEVICE_ID ? spec : '2', otaMode, owner);
+      boards.set(id, b);
+    }
+    return b;
+  };
+
+  const ready = AsyncStorage.getItem(STORE_KEY)
+    .then((raw) => {
+      if (!raw) return;
+      const s = JSON.parse(raw) as Saved;
+      s.accounts.forEach(([k, v]) => accounts.set(k, v));
+      s.profiles.forEach(([k, v]) => profiles.set(k, v));
+      // The demo account always shows the fleet picked by EXPO_PUBLIC_MOCK_FLEET (+ boards it added).
+      const demo = profiles.get('demo');
+      if (demo) {
+        const added = Object.keys(demo.devices).filter(isNewBoard);
+        demo.devices = { ...demoDevices, ...Object.fromEntries(added.map((id) => [id, true as const])) };
+      }
+      if (s.session && profiles.has(s.session) && !user) {
+        user = { uid: s.session };
+        auth.emit();
+      }
+    })
+    .catch(() => {});
+  const save = () => {
+    const s: Saved = {
+      accounts: [...accounts.entries()],
+      profiles: [...profiles.entries()],
+      session: user?.uid ?? null,
+    };
+    AsyncStorage.setItem(STORE_KEY, JSON.stringify(s)).catch(() => {});
+  };
+
+  const auth = new Channel<SessionUser | null>(() => user);
+  const stableCh = new Channel<FirmwareStable | null>(() => (otaMode === 'none' ? null : MOCK_STABLE));
+  const profileChs = new Map<string, Channel<Profile | null>>();
+  const profileCh = (uid: string) => {
+    let ch = profileChs.get(uid);
+    if (!ch) {
+      ch = new Channel(() => profiles.get(uid) ?? null);
+      profileChs.set(uid, ch);
+    }
+    return ch;
+  };
+  const setDevice = (id: string, on: boolean) => {
+    const uid = user?.uid;
+    const p = uid ? profiles.get(uid) : undefined;
+    if (!uid || !p) return;
+    const devices = { ...p.devices };
+    if (on) devices[id] = true;
+    else delete devices[id];
+    p.devices = devices;
+    save();
+    profileCh(uid).emit();
+  };
+
+  return {
     kind: 'mock',
     onAuth: (cb) => auth.sub(cb),
     async signIn(phone, password) {
@@ -408,61 +625,62 @@ export function createMockBackend(spec = process.env.EXPO_PUBLIC_MOCK_LAYOUT): B
       save();
     },
     onProfile: (uid, cb) => profileCh(uid).sub(cb),
-    onInfo: (_id, cb) => infoCh.sub(cb),
-    onState: (_id, cb) => stateCh.sub(cb),
-    onConfig: (_id, cb) => configCh.sub(cb),
-    onEvents: (_id, _limit, cb) => eventsCh.sub(cb),
-    onUsage: (_id, days, cb) => {
-      cb(usage(days));
+    onInfo: (id, cb) => board(id).infoCh.sub(cb),
+    onState: (id, cb) => board(id).stateCh.sub(cb),
+    onConfig: (id, cb) => board(id).configCh.sub(cb),
+    onPheConfig: (id, cb) => board(id).pheConfigCh.sub(cb),
+    onEvents: (id, _limit, cb) => board(id).eventsCh.sub(cb),
+    onUsage: (id, days, cb) => {
+      cb(board(id).usage(days));
       return () => {};
     },
-    async sendCommand(_id, cmd) {
-      applyCommand(cmd);
+    onStable: (cb) => stableCh.sub(cb),
+    async sendCommand(id, cmd) {
+      board(id).apply(cmd);
     },
-    async patchConfig(_id, patch) {
-      const c = JSON.parse(JSON.stringify(config)) as Record<string, unknown>;
-      for (const [path, v] of Object.entries(patch)) {
-        const keys = path.split('/');
-        let o = c as Record<string, unknown>;
-        for (const k of keys.slice(0, -1)) o = o[k] as Record<string, unknown>;
-        o[keys[keys.length - 1]] = v;
-      }
-      config = c as unknown as LayoutConfig;
-      configCh.emit();
+    async patchConfig(id, patch) {
+      board(id).patch(patch);
     },
-    async pinStatus() {
+    async pinStatus(id) {
       await wait(300);
-      return pin ? 'set' : 'none';
+      return board(id).pin ? 'set' : 'none';
     },
-    async verifyPin(_id, p) {
+    async verifyPin(id, p) {
       await wait(400);
-      pinOk = pin === null || p === pin;
-      return pinOk;
+      const b = board(id);
+      b.pinOk = b.pin === null || p === b.pin;
+      return b.pinOk;
     },
-    async saveSetup(_id, cfg, newPin) {
+    async saveSetup(id, cfg, newPin) {
       await wait(600);
-      if (pin && !pinOk) throw new Error('PIN needed');
-      if (newPin) pin = newPin;
-      // Tank removed, or one tank ↔ several (the water path changed): stop, like the firmware.
-      if (pump && (active >= cfg.tanks.length || hasValves(cfg.tanks.length) !== valved())) stop();
-      config = JSON.parse(JSON.stringify(cfg)) as LayoutConfig;
-      configCh.emit();
-      stateCh.emit();
+      const b = board(id);
+      if (b.pin && !b.pinOk) throw new Error('PIN needed');
+      if (newPin) b.pin = newPin;
+      b.saveLayout(cfg);
     },
-    async endSetup() {
-      pinOk = false;
+    async savePheSetup(id, cfg, newPin) {
+      await wait(600);
+      const b = board(id);
+      if (b.pin && !b.pinOk) throw new Error('PIN needed');
+      if (newPin) b.pin = newPin;
+      b.savePhe(cfg);
+    },
+    async endSetup(id) {
+      board(id).pinOk = false;
     },
     async claimDevice(deviceId, code) {
       await wait(800);
       if (code.length < 6) throw new ClaimError('bad-code', 'That code does not match this controller');
-      const p = user && profiles.get(user.uid);
-      if (p) {
-        p.devices = { ...p.devices, [deviceId]: true };
-        save();
-        profileCh(user!.uid).emit();
-      }
+      const b = board(deviceId);
+      if (b.owner && b.owner !== user?.uid)
+        throw new ClaimError('already-claimed', 'This controller already has an owner');
+      b.setOwner(user?.uid ?? null);
+      setDevice(deviceId, true);
+    },
+    async releaseDevice(deviceId) {
+      await wait(500);
+      board(deviceId).setOwner(null);
+      setDevice(deviceId, false);
     },
   };
 }
-
-export const MOCK_DEVICE_ID = DEMO_ID;

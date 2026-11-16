@@ -1,9 +1,11 @@
+import type { PheConfig } from '@/model/phe';
 import type {
   DeviceCommand,
   DeviceConfig,
   DeviceEvent,
   DeviceInfo,
   DeviceState,
+  FirmwareStable,
   Profile,
   SessionUser,
   UsageDay,
@@ -52,7 +54,10 @@ export interface Backend {
 
   onInfo(deviceId: string, cb: (v: DeviceInfo | null) => void): Unsub;
   onState(deviceId: string, cb: (v: DeviceState | null) => void): Unsub;
+  /** Household layout. */
   onConfig(deviceId: string, cb: (v: DeviceConfig | null) => void): Unsub;
+  /** PHE lines + reopen/close (same `config` node, PHE shape). */
+  onPheConfig(deviceId: string, cb: (v: PheConfig | null) => void): Unsub;
   onEvents(deviceId: string, limit: number, cb: (v: DeviceEvent[]) => void): Unsub;
   onUsage(deviceId: string, days: string[], cb: (v: UsageDay[]) => void): Unsub;
 
@@ -69,9 +74,16 @@ export interface Backend {
   verifyPin(deviceId: string, pin: string): Promise<boolean>;
   /** Installer setup Save: the whole layout in one write (+ the PIN on the first setup). */
   saveSetup(deviceId: string, cfg: DeviceConfig, newPin?: string): Promise<void>;
+  /** PHE Installer setup / Add device Save: lines + reopen/close in one write (+ first PIN). */
+  savePheSetup(deviceId: string, cfg: PheConfig, newPin?: string): Promise<void>;
   /** Forget the PIN entry on this account (wizard closed). */
   endSetup(deviceId: string): Promise<void>;
 
   /** Link a controller to the signed-in user with the code from the box. */
   claimDevice(deviceId: string, claimCode: string): Promise<void>;
+  /** My devices → Remove from my account: the board can be set up again by someone else. */
+  releaseDevice(deviceId: string): Promise<void>;
+
+  /** firmware/stable (the Software update card's notes). */
+  onStable(cb: (v: FirmwareStable | null) => void): Unsub;
 }

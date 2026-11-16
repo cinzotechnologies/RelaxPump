@@ -15,8 +15,8 @@ import { MAX_TANKS } from '@/model/layout';
 import type { TestPort } from '@/model/types';
 import { backend } from '@/services';
 import { useDevice } from '@/state/device';
+import { useFleet } from '@/state/fleet';
 import { go } from '@/state/nav';
-import { useSession } from '@/state/session';
 import {
   countHelp,
   depthOf,
@@ -671,7 +671,7 @@ type StepProps = {
 // ------------------------------------------------------------------ screen
 export default function Setup() {
   const insets = useSafeAreaInsets();
-  const deviceId = useSession((st) => st.deviceId);
+  const deviceId = useFleet((f) => f.householdId);
   const info = useDevice((st) => st.info);
   const config = useDevice((st) => st.config);
   const online = useDevice((st) => st.online);

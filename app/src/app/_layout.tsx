@@ -19,6 +19,8 @@ import { Toast } from '@/components/Toast';
 import { Sheets } from '@/features/sheets/Sheets';
 import { prepareNotifications } from '@/services/notify';
 import { useDevice } from '@/state/device';
+import { useFleet } from '@/state/fleet';
+import { usePhe } from '@/state/phe';
 import { useSession } from '@/state/session';
 import { useUi } from '@/state/ui';
 import { useVoice, VOICE_MAX_AGE_MS } from '@/state/voice';
@@ -38,13 +40,15 @@ export default function RootLayout() {
     Outfit_600SemiBold,
   });
   const status = useSession((st) => st.status);
-  const deviceId = useSession((st) => st.deviceId);
+  const deviceId = useFleet((f) => f.householdId);
 
   useEffect(() => useSession.getState().start(), []);
+  const pheId = useFleet((f) => f.pheId);
   useEffect(() => useDevice.getState().attach(deviceId), [deviceId]);
+  useEffect(() => usePhe.getState().attach(pheId), [pheId]);
   useEffect(() => {
-    if (deviceId) prepareNotifications();
-  }, [deviceId]);
+    if (deviceId || pheId) prepareNotifications();
+  }, [deviceId, pheId]);
 
   // Auth gate: signed in → Home; signed out from inside the app → Auth.
   useEffect(() => {

@@ -4,20 +4,24 @@ import type { Profile } from '@/model/types';
 import { backend } from '@/services';
 import type { Unsub } from '@/services/backend';
 
+import { resetFleet, useFleet } from './fleet';
+
 type SessionState = {
   status: 'loading' | 'out' | 'in';
   uid: string | null;
   profile: Profile | null;
-  /** First controller linked to this account (one per home). */
-  deviceId: string | null;
+  /** Every board linked to this account (one account, many boards). Details: useFleet. */
+  deviceIds: string[];
   start: () => Unsub;
 };
 
-export const useSession = create<SessionState>((set) => ({
+const same = (a: string[], b: string[]) => a.length === b.length && a.every((x, i) => x === b[i]);
+
+export const useSession = create<SessionState>((set, get) => ({
   status: 'loading',
   uid: null,
   profile: null,
-  deviceId: null,
+  deviceIds: [],
   start: () => {
     let unProfile: Unsub | undefined;
     let unPush: Unsub | undefined;
@@ -27,14 +31,17 @@ export const useSession = create<SessionState>((set) => ({
       unPush?.();
       unPush = undefined;
       if (!user) {
-        set({ status: 'out', uid: null, profile: null, deviceId: null });
+        set({ status: 'out', uid: null, profile: null, deviceIds: [] });
+        resetFleet();
         return;
       }
       set({ status: 'in', uid: user.uid });
       unPush = backend().registerPush(user.uid);
       unProfile = backend().onProfile(user.uid, (profile) => {
-        const ids = Object.keys(profile?.devices ?? {});
-        set({ profile, deviceId: ids[0] ?? null });
+        const ids = Object.keys(profile?.devices ?? {}).sort();
+        const deviceIds = same(ids, get().deviceIds) ? get().deviceIds : ids;
+        set({ profile, deviceIds });
+        useFleet.getState().sync(deviceIds);
       });
     });
     return () => {

@@ -5,6 +5,7 @@ import { PermissionsAndroid, Platform, type Permission } from 'react-native';
 import { parseIdentity, type ControllerIdentity } from '@/logic/claim';
 
 import { mockMode } from './index';
+import { MOCK_NEW_BOARDS } from './mockBoards';
 
 export type FoundController = { name: string };
 export type WifiNetwork = { ssid: string; rssi: number; secure: boolean };
@@ -13,7 +14,7 @@ export interface Provisioner {
   readonly real: boolean;
   search(): Promise<FoundController[]>;
   connect(name: string): Promise<void>;
-  /** The connected controller's id and claim code. Null in mock mode. */
+  /** The connected controller's id, claim code, type and firmware. */
   readIdentity(): Promise<ControllerIdentity | null>;
   scanWifi(): Promise<WifiNetwork[]>;
   provision(ssid: string, password: string): Promise<void>;
@@ -39,18 +40,23 @@ async function askBluetooth() {
     throw new BluetoothDenied('Allow Nearby devices for RelaxPump in phone settings');
 }
 
+const mockName = (b: ControllerIdentity) =>
+  `${BLE_PREFIX}${b.type === 'phe' ? 'P' : 'H'}-${b.deviceId.slice(-4)}`;
+
 export function createMockProvisioner(): Provisioner {
+  let connected: ControllerIdentity | null = null;
   return {
     real: false,
     async search() {
       await wait(1600);
-      return [{ name: 'RelaxPump-3F2A' }];
+      return MOCK_NEW_BOARDS.map((b) => ({ name: mockName(b) }));
     },
-    async connect() {
+    async connect(name) {
       await wait(500);
+      connected = MOCK_NEW_BOARDS.find((b) => mockName(b) === name) ?? null;
     },
     async readIdentity() {
-      return null;
+      return connected;
     },
     async scanWifi() {
       await wait(400);

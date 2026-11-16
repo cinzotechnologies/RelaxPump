@@ -13,6 +13,7 @@ import { initials, phoneShow } from '@/logic/format';
 import { freePorts, MAX_TANKS, RELAYS, valveCount } from '@/model/layout';
 import { backend } from '@/services';
 import { useDevice } from '@/state/device';
+import { useFleet } from '@/state/fleet';
 import { go } from '@/state/nav';
 import { useSession } from '@/state/session';
 import { useUi } from '@/state/ui';
@@ -106,7 +107,7 @@ export default function Account() {
   const profile = useSession((st) => st.profile);
   const config = useDevice((d) => d.config);
   const info = useDevice((d) => d.info);
-  const deviceId = useSession((st) => st.deviceId);
+  const deviceId = useFleet((f) => f.householdId);
   const n = config.tanks.length;
   const valves = valveCount(n);
   const maxPorts = Math.min(MAX_TANKS, info?.maxTanks ?? MAX_TANKS);

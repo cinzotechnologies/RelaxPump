@@ -1,4 +1,5 @@
-// Mirrors the Realtime Database data model (docs/data-model.md, docs/flexible-system.md §3).
+// Mirrors the Realtime Database data model (docs/data-model.md, docs/flexible-system.md §3,
+// docs/two-module-system.md §3: Household + PHE modules, OTA).
 import type { Board, LayoutConfig } from './layout';
 
 export type { Board, LayoutConfig, MainConfig, TankConfig } from './layout';
@@ -7,8 +8,31 @@ export { DEFAULT_LAYOUT as DEFAULT_CONFIG } from './layout';
 /** The layout config (`config` node). */
 export type DeviceConfig = LayoutConfig;
 
-/** One semi tank as the controller reports it. pct is null when the sensor gives no reading. */
-export type TankState = { pct: number | null; valve: boolean; ok: boolean };
+/** Factory-set module type (info.type). Missing = household (boards from before v3). */
+export type ModuleType = 'household' | 'phe';
+
+/**
+ * One semi tank (household) or PHE line as the controller reports it. pct is null when the sensor
+ * gives no reading. rising (PHE): open valve and the level went up >= 2 % in 10 min.
+ */
+export type TankState = { pct: number | null; valve: boolean; ok: boolean; rising?: boolean };
+
+/** PHE supply: any open line rising = flowing; valves open 30 min with no rise = none. */
+export type Supply = 'flowing' | 'none' | 'unknown';
+
+export type OtaPhase = 'download' | 'verify' | 'install' | 'restart' | 'done' | 'failed';
+/** state.ota while an update runs (and for a while after it finished or failed). */
+export type OtaState = { phase: OtaPhase; pct: number; to: string; err: string };
+
+/** firmware/stable: the release the boards may update to (written by firmware/scripts/release.mjs). */
+export type FirmwareStable = {
+  version: string;
+  notes: string[];
+  size: number;
+  date: string;
+  minFw: string;
+  rollout: number;
+};
 
 export type CheckRow = {
   i: number;
@@ -37,6 +61,11 @@ export type DeviceState = {
   /** Live sensor distance in cm per port (T1–T5, MAIN), null = no echo. Firmware 2.3+. */
   cm: (number | null)[];
   check: PumpCheck | null;
+  /** PHE only (household: null). */
+  supply: Supply | null;
+  /** Newer firmware this board may install (its rollout bucket passed), else null. */
+  fwAvailable: string | null;
+  ota: OtaState | null;
 };
 
 export type DeviceInfo = {
@@ -46,6 +75,9 @@ export type DeviceInfo = {
   /** 5 with v2 firmware, 3 with the first firmware. */
   maxTanks: number;
   ownerUid: string | null;
+  type: ModuleType;
+  /** Flash size in MB (4 = DevKit, 8 = Rev C), null on older firmware. */
+  flash: number | null;
 };
 
 export type TestPort = `V${1 | 2 | 3 | 4 | 5}` | 'PUMP';
@@ -59,6 +91,8 @@ export type DeviceCommand = {
   pumpCheck?: boolean;
   /** Forget the home Wi-Fi and restart into Bluetooth setup (firmware 2.3+). */
   wifiReset?: boolean;
+  /** Install this firmware (must equal firmware/stable/version). Both modules. */
+  ota?: { version: string };
   ts: number;
 };
 
@@ -72,7 +106,15 @@ export type EventType =
   | 'sensor'
   | 'main_low'
   | 'board_error'
-  | 'check_done';
+  | 'check_done'
+  // PHE
+  | 'flow_start'
+  | 'flow_stop'
+  | 'phe_full'
+  | 'overflow'
+  // OTA (both)
+  | 'ota_done'
+  | 'ota_failed';
 export type DeviceEvent = {
   id: string;
   type: EventType;
@@ -83,6 +125,7 @@ export type DeviceEvent = {
   auto?: boolean;
 };
 
+/** PHE usage has litres per line and no pump minutes (pumpMin 0). */
 export type UsageTank = { litres: number; pumpMin: number };
 export type UsageDay = {
   date: string; // yyyy-mm-dd

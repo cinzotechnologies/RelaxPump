@@ -20,8 +20,9 @@ import {
   type WifiNetwork,
 } from '@/services/provisioning';
 import { useDevice } from '@/state/device';
-import { go } from '@/state/nav';
+import { useFleet } from '@/state/fleet';
 import { useSession } from '@/state/session';
+import { go } from '@/state/nav';
 import { useUi } from '@/state/ui';
 import { alpha, colors, s, Txt } from '@/theme';
 
@@ -54,7 +55,8 @@ export function BleSheet() {
   const open = useUi((st) => st.sheet === 'ble');
   const close = useUi((st) => st.closeSheet);
   const showToast = useUi((st) => st.showToast);
-  const myDevice = useSession((st) => st.deviceId);
+  const myDevice = useFleet((f) => f.householdId);
+  const myIds = useSession((st) => st.deviceIds);
   const hasDevice = !!myDevice;
   const state = useDevice((d) => d.state);
   const tankCount = useDevice((d) => d.config.tanks.length);
@@ -157,7 +159,7 @@ export function BleSheet() {
     }
     // Link the controller to this account (first setup). Mock mode links the demo controller.
     try {
-      if (controller && controller.deviceId !== myDevice)
+      if (controller && !myIds.includes(controller.deviceId))
         await backend().claimDevice(controller.deviceId, controller.code);
       else if (!controller && !hasDevice && backend().kind === 'mock')
         await backend().claimDevice(MOCK_DEVICE_ID, 'DEMO-CODE');
@@ -168,7 +170,7 @@ export function BleSheet() {
     setStep('status');
     showToast('Wi-Fi saved · Controller online');
     // A controller that was just linked: the installer sets up its tanks next.
-    if (controller && controller.deviceId !== myDevice) {
+    if (controller && !myIds.includes(controller.deviceId)) {
       close();
       go('setup');
     }

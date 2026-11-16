@@ -6,13 +6,14 @@ export type NotifRow = { id: string; title: string; sub: string; tone: 'ok' | 'w
 
 /**
  * Turn a device event into a Notifications sheet row. `low` is the current Start threshold,
- * `names` the user's tank names (missing → "Tank N").
+ * `names` the user's tank names (missing → "Tank N"), or the PHE line names with `phe`.
  */
 export function eventRow(
   e: DeviceEvent,
   low: number,
   now = Date.now(),
   names: readonly (string | null | undefined)[] = [],
+  phe = false,
 ): NotifRow {
   const when = ago(e.ts, now);
   const tank = tankName(names, Math.max(0, e.tank));
@@ -47,7 +48,31 @@ export function eventRow(
     case 'timeout':
       return { id: e.id, title: 'Filling stopped', sub: `Ran too long · ${when}`, tone: 'warn' };
     case 'sensor':
-      return { id: e.id, title: `${tank} sensor error`, sub: `Filling stopped · ${when}`, tone: 'warn' };
+      return {
+        id: e.id,
+        title: `${tank} sensor error`,
+        sub: `${phe ? 'Valve closed' : 'Filling stopped'} · ${when}`,
+        tone: 'warn',
+      };
+    // PHE (names = line names)
+    case 'flow_start':
+      return { id: e.id, title: 'PHE water is coming', sub: `Open lines are filling · ${when}`, tone: 'ok' };
+    case 'flow_stop':
+      return { id: e.id, title: 'PHE water stopped', sub: `Valves stay ready · ${when}`, tone: 'pump' };
+    case 'phe_full':
+      return { id: e.id, title: `${tank} is full`, sub: `Valve closed · ${when}`, tone: 'ok' };
+    case 'overflow':
+      return {
+        id: e.id,
+        title: `${tank} keeps rising`,
+        sub: `Valve is closed but water still comes in. Check the valve · ${when}`,
+        tone: 'warn',
+      };
+    // Software update (both modules)
+    case 'ota_done':
+      return { id: e.id, title: 'Software updated', sub: `Controller restarted · ${when}`, tone: 'ok' };
+    case 'ota_failed':
+      return { id: e.id, title: 'Software update failed', sub: `Nothing changed · ${when}`, tone: 'warn' };
   }
 }
 
@@ -72,6 +97,16 @@ export function eventToast(
     case 'dry_run':
     case 'sensor':
       return 'Pump stopped';
+    case 'flow_start':
+      return 'PHE water is coming';
+    case 'phe_full':
+      return `${tankName(names, e.tank)} full`;
+    case 'overflow':
+      return `Check the valve of ${tankName(names, e.tank)}`;
+    case 'ota_done':
+      return 'Software updated';
+    case 'ota_failed':
+      return 'Software update failed';
     default:
       return null;
   }
