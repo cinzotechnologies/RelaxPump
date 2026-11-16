@@ -12,7 +12,9 @@
     "link-device": "node scripts/link-device.mjs",
     "deploy:functions": "firebase deploy --only functions --project iotcinzo",
     "build:rules": "node scripts/build-rules.mjs",
-    "reset-pin": "node scripts/reset-pin.mjs"
+    "reset-pin": "node scripts/reset-pin.mjs",
+    "factory-flash": "node scripts/factory-flash.mjs",
+    "test:nvs": "node --test test/nvs.test.js"
   },
   "devDependencies": {
     "@firebase/rules-unit-testing": "^5.0.2",

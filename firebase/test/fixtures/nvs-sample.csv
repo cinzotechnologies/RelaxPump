@@ -1,0 +1,11 @@
+key,type,encoding,value
+rpid,namespace,,
+id,data,string,RP-3F2A9C
+email,data,string,rp-3f2a9c@devices.relaxpump.app
+pass,data,string,AbCdEfGhJkMnPqRsTuVwXyZ2
+claim,data,string,K7QX9M2PLW4R
+pop,data,string,H3J8N2QW
+type,data,string,phe
+rp,namespace,,
+board,data,i32,3
+neg,data,i32,-5
