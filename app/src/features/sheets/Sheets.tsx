@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 
-import { useDevice } from '@/state/device';
+import { markAllSeen } from '@/state/notifs';
 import { useUi } from '@/state/ui';
 
 import { BleSheet } from './BleSheet';
@@ -14,7 +14,7 @@ import { TanksSheet } from './TanksSheet';
 export function Sheets() {
   const sheet = useUi((st) => st.sheet);
   useEffect(() => {
-    if (sheet === 'notif') useDevice.getState().markSeen();
+    if (sheet === 'notif') markAllSeen();
   }, [sheet]);
   return (
     <>

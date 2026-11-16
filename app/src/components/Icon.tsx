@@ -27,7 +27,9 @@ export type IconName =
   | 'help'
   | 'shield'
   | 'user'
-  | 'alert';
+  | 'alert'
+  | 'house'
+  | 'pipe';
 
 type Props = { name: IconName; size?: number; color: string; strokeWidth?: number };
 
@@ -115,6 +117,11 @@ function render(name: IconName, p: Record<string, unknown>, color: string) {
       return <Path d="M12 7v6 M12 17h.01" {...p} />;
     case 'check':
       return <Path d="M5 12l5 5 9-10" {...p} />;
+    // v3 module icons: Household (house) and PHE (supply pipe with a tap)
+    case 'house':
+      return <Path d="M3 11l9-7 9 7 M5 10v10h14V10 M10 20v-5h4v5" {...p} />;
+    case 'pipe':
+      return <Path d="M2 9h8v6H2 M10 12h6 M16 7v10 M16 12h3c1.7 0 3 1.3 3 3v2" {...p} />;
     case 'trash':
       return (
         <Path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3" {...p} />

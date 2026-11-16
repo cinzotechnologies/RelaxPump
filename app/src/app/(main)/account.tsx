@@ -6,14 +6,17 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BackButton } from '@/components/BackButton';
 import { FadeUp } from '@/components/FadeUp';
+import { Badge } from '@/components/ModuleBadge';
 import { Icon, type IconName } from '@/components/Icon';
 import { Press } from '@/components/Press';
 import { Screen } from '@/components/Screen';
 import { initials, phoneShow } from '@/logic/format';
+import { hasUpdate } from '@/logic/ota';
 import { freePorts, MAX_TANKS, RELAYS, valveCount } from '@/model/layout';
 import { backend } from '@/services';
 import { useDevice } from '@/state/device';
 import { useFleet } from '@/state/fleet';
+import { usePhe } from '@/state/phe';
 import { go } from '@/state/nav';
 import { useSession } from '@/state/session';
 import { useUi } from '@/state/ui';
@@ -108,6 +111,14 @@ export default function Account() {
   const config = useDevice((d) => d.config);
   const info = useDevice((d) => d.info);
   const deviceId = useFleet((f) => f.householdId);
+  const pheId = useFleet((f) => f.pheId);
+  const tab = useFleet((f) => f.tab);
+  const anyUpdate = useFleet((f) => Object.values(f.devices).some((e) => hasUpdate(e.state, e.info)));
+  const deviceCount = useSession((st) => st.deviceIds.length);
+  const pheLines = usePhe((p) => p.config.lines.length);
+  const pheCfg = usePhe((p) => p.config);
+  const setSetupFor = useUi((st) => st.setSetupFor);
+  const relays = info?.board === 'v3' ? 8 : RELAYS;
   const n = config.tanks.length;
   const valves = valveCount(n);
   const maxPorts = Math.min(MAX_TANKS, info?.maxTanks ?? MAX_TANKS);
@@ -168,7 +179,7 @@ export default function Account() {
             <Txt size={11} weight={600} tracking={1.5} color={colors.glow}>
               MY SETUP
             </Txt>
-            <Pill>{`${deviceId} · ${RELAYS}-relay`}</Pill>
+            <Pill>{`${deviceId} · ${relays}-relay`}</Pill>
           </View>
           <View style={{ flexDirection: 'row', gap: s(8) }}>
             <Stat value={String(n)} label={n === 1 ? 'tank' : 'tanks'} />
@@ -183,21 +194,59 @@ export default function Account() {
           </Txt>
         </FadeUp>
       ) : null}
+      {pheId ? (
+        <FadeUp
+          step={1}
+          style={{ padding: s(16), gap: s(12), borderRadius: s(22), backgroundColor: colors.card }}
+        >
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+            <Txt size={11} weight={600} tracking={1.5} color={colors.glow}>
+              MY PHE LINES
+            </Txt>
+            <Pill>{pheId}</Pill>
+          </View>
+          <View style={{ flexDirection: 'row', gap: s(8) }}>
+            <Stat value={String(pheLines)} label={pheLines === 1 ? 'line' : 'lines'} />
+            <Stat value={String(pheLines)} label={pheLines === 1 ? 'valve' : 'valves'} />
+            <Stat value={`${pheCfg.low}%`} label="reopen" />
+            <Stat value={`${pheCfg.high}%`} label="close" accent />
+          </View>
+        </FadeUp>
+      ) : null}
       <FadeUp step={1} style={{ borderRadius: s(20), backgroundColor: colors.card, overflow: 'hidden' }}>
-        <Row icon="lock" label="Installer setup" onPress={() => go('setup')} right={<Pill>PIN</Pill>} />
-        <Divider />
-        <Row icon="power" label="Pump check" onPress={() => go('check')} />
-        <Divider />
         <Row
-          icon="plus"
-          label="Add a tank"
-          onPress={() => {
-            if (extra.WEB_API) Linking.openURL(`${extra.WEB_API}/shop`).catch(() => {});
-          }}
-          right={<Pill>Buy a kit</Pill>}
+          icon="chip"
+          label="My devices"
+          onPress={() => go('devices')}
+          right={anyUpdate ? <Badge label="UPDATE" tone="open" /> : <Pill>{String(deviceCount)}</Pill>}
         />
         <Divider />
-        <Row icon="tanks" label="Tank names and sizes" onPress={() => openSheet('tanks')} />
+        <Row
+          icon="lock"
+          label={pheId && (!deviceId || tab === 'phe') ? 'PHE setup' : 'Installer setup'}
+          onPress={() => {
+            setSetupFor(pheId && (!deviceId || tab === 'phe') ? 'phe' : 'household');
+            go('setup');
+          }}
+          right={<Pill>PIN</Pill>}
+        />
+        {deviceId ? (
+          <>
+            <Divider />
+            <Row icon="power" label="Pump check" onPress={() => go('check')} />
+            <Divider />
+            <Row
+              icon="plus"
+              label="Add a tank"
+              onPress={() => {
+                if (extra.WEB_API) Linking.openURL(`${extra.WEB_API}/shop`).catch(() => {});
+              }}
+              right={<Pill>Buy a kit</Pill>}
+            />
+            <Divider />
+            <Row icon="tanks" label="Tank names and sizes" onPress={() => openSheet('tanks')} />
+          </>
+        ) : null}
       </FadeUp>
       <FadeUp step={2} style={{ borderRadius: s(20), backgroundColor: colors.card, overflow: 'hidden' }}>
         <Row icon="lock" label="Change password" onPress={() => openSheet('pw')} />

@@ -1,11 +1,12 @@
 import { View } from 'react-native';
 
 import { Icon, type IconName } from '@/components/Icon';
+import { ModuleBadge } from '@/components/ModuleBadge';
 import { PrimaryButton } from '@/components/PrimaryButton';
 import { Sheet } from '@/components/Sheet';
-import { eventRow } from '@/logic/events';
 import type { DeviceEvent } from '@/model/types';
-import { useDevice } from '@/state/device';
+import { useFleet } from '@/state/fleet';
+import { useNotifs } from '@/state/notifs';
 import { useUi } from '@/state/ui';
 import { alpha, colors, s, Txt } from '@/theme';
 
@@ -13,7 +14,12 @@ function iconFor(e: DeviceEvent): { icon: IconName; color: string; bg: string } 
   switch (e.type) {
     case 'full':
     case 'check_done':
+    case 'phe_full':
+    case 'ota_done':
       return { icon: 'check', color: colors.glow, bg: alpha(colors.glow, 0.12) };
+    case 'flow_start':
+    case 'flow_stop':
+      return { icon: 'pipe', color: colors.glow, bg: alpha(colors.glow, 0.12) };
     case 'low':
       return { icon: 'down', color: colors.warning, bg: alpha(colors.warning, 0.14) };
     case 'pump_on':
@@ -27,24 +33,17 @@ function iconFor(e: DeviceEvent): { icon: IconName; color: string; bg: string } 
 export function NotificationsSheet() {
   const open = useUi((st) => st.sheet === 'notif');
   const close = useUi((st) => st.closeSheet);
-  const events = useDevice((d) => d.events);
-  const low = useDevice((d) => d.config.low);
-  const tanks = useDevice((d) => d.config.tanks);
+  const items = useNotifs();
+  const both = useFleet((f) => !!f.householdId && !!f.pheId);
 
   return (
     <Sheet open={open} onClose={close} title="Notifications" gap={10}>
-      {events.length === 0 ? (
+      {items.length === 0 ? (
         <Txt size={14} color={colors.faint}>
           Nothing yet.
         </Txt>
       ) : null}
-      {events.slice(0, 6).map((e) => {
-        const r = eventRow(
-          e,
-          low,
-          undefined,
-          tanks.map((t) => t.name),
-        );
+      {items.slice(0, 6).map(({ row: r, event: e, module }) => {
         const t = iconFor(e);
         return (
           <View
@@ -72,7 +71,12 @@ export function NotificationsSheet() {
               <Icon name={t.icon} size={16} color={t.color} />
             </View>
             <View style={{ flex: 1, gap: s(2) }}>
-              <Txt size={14}>{r.title}</Txt>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: s(6) }}>
+                <Txt size={14} style={{ flexShrink: 1 }} numberOfLines={1}>
+                  {r.title}
+                </Txt>
+                {both ? <ModuleBadge type={module} /> : null}
+              </View>
               <Txt size={12} color={colors.faint}>
                 {r.sub}
               </Txt>

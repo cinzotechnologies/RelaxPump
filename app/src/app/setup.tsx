@@ -1,6 +1,8 @@
 // Installer setup (reference/design-v2/AppSetup.dc.html): PIN keypad → 5 steps → Saved.
+// The same wizard sets up a PHE board (docs/two-module-system.md §5.2): lines instead of tanks,
+// reopen/close instead of the main tank, valves only. Which board: useUi.setupFor.
 import Constants from 'expo-constants';
-import { useCallback, useEffect, useReducer, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
 import { Linking, ScrollView, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -10,23 +12,29 @@ import { Press } from '@/components/Press';
 import { Screen } from '@/components/Screen';
 import { Spinner } from '@/components/Spinner';
 import { Toggle } from '@/components/Toggle';
+import { Card, Cta, Ghost, Label, Mini, PortTag, Row } from '@/features/setup/parts';
 import { fmtNum, TANK_NAME_MAX } from '@/logic/format';
 import { MAX_TANKS } from '@/model/layout';
 import type { TestPort } from '@/model/types';
 import { backend } from '@/services';
 import { useDevice } from '@/state/device';
 import { useFleet } from '@/state/fleet';
+import { usePhe } from '@/state/phe';
 import { go } from '@/state/nav';
 import {
   countHelp,
   depthOf,
   DIST_STEP,
   draftFrom,
+  draftFromPhe,
   draftToConfig,
+  draftToPhe,
   HEIGHT_DEFAULT,
   HEIGHT_STEP,
   levelAt,
   MIN_PCT_STEP,
+  PHE_PCT_STEP,
+  PHE_STEP_TITLES,
   outputsOf,
   reduce,
   sensorChecksOf,
@@ -46,150 +54,6 @@ const CONFIRM_MS = 20_000;
 
 type Phase = 'loading' | 'pin' | 'wizard' | 'saving' | 'done';
 type PinMode = 'enter' | 'new' | 'confirm';
-
-// ------------------------------------------------------------------ small parts
-function Card({ children, gap = 12 }: { children: ReactNode; gap?: number }) {
-  return (
-    <View style={{ padding: s(14), gap: s(gap), borderRadius: s(20), backgroundColor: colors.card }}>
-      {children}
-    </View>
-  );
-}
-
-function Label({ children }: { children: string }) {
-  return (
-    <Txt size={11} weight={600} tracking={1.5} color={colors.glow}>
-      {children.toUpperCase()}
-    </Txt>
-  );
-}
-
-function PortTag({ children }: { children: string }) {
-  return (
-    <View
-      style={{
-        height: s(22),
-        paddingHorizontal: s(8),
-        borderRadius: s(6),
-        backgroundColor: colors.deepCard,
-        justifyContent: 'center',
-      }}
-    >
-      <Txt size={11} weight={700} color={colors.glow} style={{ fontFamily: 'monospace' }}>
-        {children}
-      </Txt>
-    </View>
-  );
-}
-
-function Row({ left, right }: { left: ReactNode; right: ReactNode }) {
-  return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: s(10) }}>
-      {typeof left === 'string' ? <Txt size={14}>{left}</Txt> : left}
-      {right}
-    </View>
-  );
-}
-
-function Ghost({ label, onPress, height = 40 }: { label: string; onPress: () => void; height?: number }) {
-  return (
-    <Press
-      onPress={onPress}
-      accessibilityLabel={label}
-      style={{
-        height: s(height),
-        paddingHorizontal: s(height > 40 ? 22 : 12),
-        borderRadius: 999,
-        borderWidth: 1,
-        borderColor: alpha(colors.glow, 0.4),
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}
-    >
-      <Txt size={13} weight={600} color={colors.glow}>
-        {label}
-      </Txt>
-    </Press>
-  );
-}
-
-function Mini({
-  value,
-  onDec,
-  onInc,
-  labels,
-}: {
-  value: string;
-  onDec: () => void;
-  onInc: () => void;
-  labels: [string, string];
-}) {
-  const btn = (glyph: string, label: string, onPress: () => void) => (
-    <Press
-      onPress={onPress}
-      accessibilityLabel={label}
-      style={{
-        width: s(34),
-        height: s(34),
-        borderRadius: s(17),
-        borderWidth: 1,
-        borderColor: alpha(colors.glow, 0.4),
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}
-    >
-      <Txt size={18} weight={600} color={colors.glow}>
-        {glyph}
-      </Txt>
-    </Press>
-  );
-  return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: s(10) }}>
-      {btn('−', labels[0], onDec)}
-      <Txt size={14} weight={700} tabular>
-        {value}
-      </Txt>
-      {btn('+', labels[1], onInc)}
-    </View>
-  );
-}
-
-function Cta({
-  label,
-  onPress,
-  disabled,
-  arrow,
-}: {
-  label: string;
-  onPress: () => void;
-  disabled?: boolean;
-  arrow?: boolean;
-}) {
-  return (
-    <Press
-      onPress={onPress}
-      disabled={disabled}
-      accessibilityLabel={label}
-      accessibilityState={{ disabled: !!disabled }}
-      style={{
-        flex: 1,
-        height: s(52),
-        borderRadius: 999,
-        flexDirection: 'row',
-        gap: s(8),
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundImage: 'linear-gradient(90deg, #A8F3F8, #7FE3EC, #2FB6C6)',
-        opacity: disabled ? 0.45 : 1,
-      }}
-    >
-      <Txt size={15} weight={600} color={colors.base}>
-        {label}
-      </Txt>
-      {arrow ? <Icon name="arrowRight" size={18} strokeWidth={2.2} color={colors.base} /> : null}
-    </Press>
-  );
-}
 
 // ------------------------------------------------------------------ PIN keypad
 function Keypad({
@@ -285,11 +149,16 @@ function Keypad({
 
 // ------------------------------------------------------------------ steps
 function StepCount({ d, dispatch }: StepProps) {
-  const legend: [string, string][] = [
-    ['Semi tanks (sensor + valve)', `T1–T${d.max}`],
-    ['Main tank sensor', 'MAIN'],
-    ['Pump', 'PUMP'],
-  ];
+  const legend: [string, string][] = d.phe
+    ? [
+        ['PHE line sensors', `T1–T${d.max}`],
+        ['PHE line valves', `V1–V${d.max}`],
+      ]
+    : [
+        ['Semi tanks (sensor + valve)', `T1–T${d.max}`],
+        ['Main tank sensor', 'MAIN'],
+        ['Pump', 'PUMP'],
+      ];
   const btn = (glyph: string, label: string, n: number) => (
     <Press
       onPress={() => dispatch({ type: 'count', n })}
@@ -312,7 +181,7 @@ function StepCount({ d, dispatch }: StepProps) {
   return (
     <FadeUp style={{ gap: s(12) }}>
       <Txt size={15} color={colors.muted}>
-        How many semi tanks are connected?
+        {d.phe ? 'How many PHE lines are connected?' : 'How many semi tanks are connected?'}
       </Txt>
       <View
         style={{
@@ -346,7 +215,7 @@ function StepCount({ d, dispatch }: StepProps) {
       </Txt>
       {d.max < MAX_TANKS ? (
         <Txt size={12} color={colors.warningLight} style={{ lineHeight: s(18) }}>
-          {`This controller's firmware supports ${d.max} tanks. Update it for up to ${MAX_TANKS}.`}
+          {`This controller's firmware supports ${d.max} ${d.phe ? 'lines' : 'tanks'}. Update it for up to ${MAX_TANKS}.`}
         </Txt>
       ) : null}
     </FadeUp>
@@ -360,7 +229,9 @@ function StepCount({ d, dispatch }: StepProps) {
 function SensorRows({ d, dispatch, i }: StepProps & { i: number }) {
   const t = d.tanks[i];
   const depth = depthOf(t);
-  const live = useDevice((st) => (st.online ? (st.state?.cm[i] ?? null) : null));
+  const hhLive = useDevice((st) => (st.online ? (st.state?.cm[i] ?? null) : null));
+  const pheLive = usePhe((st) => (st.online ? (st.state?.cm[i] ?? null) : null));
+  const live = d.phe ? pheLive : hhLive;
   return (
     <>
       <Row
@@ -446,18 +317,18 @@ function StepTanks({ d, dispatch }: StepProps) {
             <Row
               left={
                 <Txt size={15} weight={700}>
-                  {`Tank ${i + 1}`}
+                  {`${d.phe ? 'PHE line' : 'Tank'} ${i + 1}`}
                 </Txt>
               }
               right={<PortTag>{tankPorts(d, i)}</PortTag>}
             />
             <TextInput
               defaultValue={t.name ?? ''}
-              placeholder={`Tank ${i + 1}`}
+              placeholder={`${d.phe ? 'Line' : 'Tank'} ${i + 1}`}
               placeholderTextColor={colors.dim}
               maxLength={TANK_NAME_MAX}
               autoCapitalize="words"
-              accessibilityLabel="Tank name"
+              accessibilityLabel={d.phe ? 'Line name' : 'Tank name'}
               onChangeText={(v) => dispatch({ type: 'tank', i, patch: { name: v.trim() || null } })}
               selectionColor={colors.glow}
               style={{
@@ -497,17 +368,19 @@ function StepTanks({ d, dispatch }: StepProps) {
                 );
               })}
             </View>
-            <Row
-              left="Height above the main tank"
-              right={
-                <Mini
-                  value={`${t.heightFt ?? HEIGHT_DEFAULT} ft`}
-                  labels={['Lower', 'Higher']}
-                  onDec={() => dispatch({ type: 'height', i, delta: -HEIGHT_STEP })}
-                  onInc={() => dispatch({ type: 'height', i, delta: HEIGHT_STEP })}
-                />
-              }
-            />
+            {d.phe ? null : (
+              <Row
+                left="Height above the main tank"
+                right={
+                  <Mini
+                    value={`${t.heightFt ?? HEIGHT_DEFAULT} ft`}
+                    labels={['Lower', 'Higher']}
+                    onDec={() => dispatch({ type: 'height', i, delta: -HEIGHT_STEP })}
+                    onInc={() => dispatch({ type: 'height', i, delta: HEIGHT_STEP })}
+                  />
+                }
+              />
+            )}
             <SensorRows d={d} dispatch={dispatch} i={i} />
           </Card>
         </FadeUp>
@@ -558,10 +431,70 @@ function StepMain({ d, dispatch }: StepProps) {
   );
 }
 
+/** PHE step 3: Auto fill opens a line's valve below "reopen" and closes it at "close". */
+function StepPheLevels({ d, dispatch }: StepProps) {
+  return (
+    <FadeUp style={{ gap: s(12) }}>
+      <Card>
+        <Row
+          left={
+            <View style={{ flex: 1, gap: s(3) }}>
+              <Txt size={14} weight={700}>
+                Reopen below
+              </Txt>
+              <Txt size={12} color={colors.muted}>
+                Auto fill opens the valve when the tank drops below this
+              </Txt>
+            </View>
+          }
+          right={
+            <Mini
+              value={`${d.low}%`}
+              labels={['Lower', 'Higher']}
+              onDec={() => dispatch({ type: 'pheLow', delta: -PHE_PCT_STEP })}
+              onInc={() => dispatch({ type: 'pheLow', delta: PHE_PCT_STEP })}
+            />
+          }
+        />
+        <Row
+          left={
+            <View style={{ flex: 1, gap: s(3) }}>
+              <Txt size={14} weight={700}>
+                Close at
+              </Txt>
+              <Txt size={12} color={colors.muted}>
+                The valve closes here, also when opened by hand
+              </Txt>
+            </View>
+          }
+          right={
+            <Mini
+              value={`${d.high}%`}
+              labels={['Lower', 'Higher']}
+              onDec={() => dispatch({ type: 'pheHigh', delta: -PHE_PCT_STEP })}
+              onInc={() => dispatch({ type: 'pheHigh', delta: PHE_PCT_STEP })}
+            />
+          }
+        />
+      </Card>
+      <Txt size={12} color={colors.muted} style={{ lineHeight: s(18) }}>
+        PHE water comes at its own times. A high reopen level keeps the tanks topped up whenever it flows.
+        Valves close by themselves on a power cut.
+      </Txt>
+    </FadeUp>
+  );
+}
+
 function StepWiring({ d }: StepProps) {
-  const detected = useDevice((st) => st.state?.detected ?? null);
-  const online = useDevice((st) => st.online);
-  const testPort = useDevice((st) => st.testPort);
+  const hhDetected = useDevice((st) => st.state?.detected ?? null);
+  const hhOnline = useDevice((st) => st.online);
+  const hhTest = useDevice((st) => st.testPort);
+  const pheDetected = usePhe((st) => st.state?.detected ?? null);
+  const pheOnline = usePhe((st) => st.online);
+  const pheTest = usePhe((st) => st.testValve);
+  const detected = d.phe ? pheDetected : hhDetected;
+  const online = d.phe ? pheOnline : hhOnline;
+  const testPort = (port: TestPort) => (d.phe ? pheTest(Number(port.slice(1)) - 1) : hhTest(port));
   const [tested, setTested] = useState<Record<string, boolean>>({});
   const sensors = sensorChecksOf(d, online ? detected : null);
   return (
@@ -602,7 +535,7 @@ function StepWiring({ d }: StepProps) {
       </FadeUp>
       <FadeUp step={1}>
         <Card>
-          <Label>Valves and pump</Label>
+          <Label>{d.phe ? 'Valves' : 'Valves and pump'}</Label>
           {outputsOf(d).map((o) => (
             <Row
               key={o.port}
@@ -627,7 +560,9 @@ function StepWiring({ d }: StepProps) {
             />
           ))}
           <Txt size={12} color={colors.muted} style={{ lineHeight: s(18) }}>
-            Tap Test and listen for the click. The pump test runs 2 seconds.
+            {d.phe
+              ? 'Tap Test and listen for the valve click.'
+              : 'Tap Test and listen for the click. The pump test runs 2 seconds.'}
           </Txt>
         </Card>
       </FadeUp>
@@ -671,10 +606,19 @@ type StepProps = {
 // ------------------------------------------------------------------ screen
 export default function Setup() {
   const insets = useSafeAreaInsets();
-  const deviceId = useFleet((f) => f.householdId);
-  const info = useDevice((st) => st.info);
+  const setupFor = useUi((st) => st.setupFor);
+  const hhId = useFleet((f) => f.householdId);
+  const pheId = useFleet((f) => f.pheId);
+  const phe = setupFor === 'phe';
+  const deviceId = phe ? pheId : hhId;
+  const hhInfo = useDevice((st) => st.info);
+  const pheInfo = usePhe((st) => st.info);
   const config = useDevice((st) => st.config);
-  const online = useDevice((st) => st.online);
+  const hhOnline = useDevice((st) => st.online);
+  const pheOnline = usePhe((st) => st.online);
+  const info = phe ? pheInfo : hhInfo;
+  const online = phe ? pheOnline : hhOnline;
+  const titles = phe ? PHE_STEP_TITLES : STEP_TITLES;
   const showToast = useUi((st) => st.showToast);
   const maxTanks = info?.maxTanks ?? MAX_TANKS;
 
@@ -690,7 +634,7 @@ export default function Setup() {
   const [draft, dispatchRaw] = useReducer(
     (d: Draft, a: Action | { type: 'reset'; d: Draft }) => (a.type === 'reset' ? a.d : reduce(d, a)),
     undefined,
-    () => draftFrom(config, maxTanks),
+    () => (phe ? draftFromPhe(usePhe.getState().config, maxTanks) : draftFrom(config, maxTanks)),
   );
   const dispatch = useCallback((a: Action) => dispatchRaw(a), []);
   const alive = useRef(true);
@@ -725,7 +669,9 @@ export default function Setup() {
   const startWizard = () => {
     dispatchRaw({
       type: 'reset',
-      d: draftFrom(useDevice.getState().config, useDevice.getState().info?.maxTanks ?? MAX_TANKS),
+      d: phe
+        ? draftFromPhe(usePhe.getState().config, usePhe.getState().info?.maxTanks ?? MAX_TANKS)
+        : draftFrom(useDevice.getState().config, useDevice.getState().info?.maxTanks ?? MAX_TANKS),
     });
     setStep(0);
     setPhase('wizard');
@@ -771,10 +717,10 @@ export default function Setup() {
 
   const save = async () => {
     if (!deviceId) return;
-    const cfg = draftToConfig(draft);
     setPhase('saving');
     try {
-      await backend().saveSetup(deviceId, cfg, newPin);
+      if (phe) await backend().savePheSetup(deviceId, draftToPhe(draft), newPin);
+      else await backend().saveSetup(deviceId, draftToConfig(draft), newPin);
     } catch {
       if (!alive.current) return;
       showToast('Could not save. Enter the PIN again.');
@@ -784,16 +730,17 @@ export default function Setup() {
     }
     void backend().endSetup(deviceId);
     // Wait for the controller to report the new layout.
-    const want = cfg.tanks.length;
+    const want = draft.n;
+    const live = () => (phe ? usePhe.getState() : useDevice.getState());
     const t0 = Date.now();
     while (alive.current && Date.now() - t0 < CONFIRM_MS) {
-      const st = useDevice.getState();
+      const st = live();
       if (!st.online) break;
       if (st.state?.tanks.length === want) break;
       await new Promise((r) => setTimeout(r, 500));
     }
     if (!alive.current) return;
-    const st = useDevice.getState();
+    const st = live();
     setDoneNote(
       !st.online
         ? 'The controller picks it up when it is online.'
@@ -817,8 +764,7 @@ export default function Setup() {
             No controller yet
           </Txt>
           <Txt size={14} color={colors.muted} style={{ textAlign: 'center' }}>
-            First add the controller: tap the Bluetooth button, then Set up device. Installer setup opens
-            after that.
+            First add the controller with Add device on Home. Installer setup opens after that.
           </Txt>
         </View>
       ) : phase === 'loading' || phase === 'saving' ? (
@@ -832,7 +778,7 @@ export default function Setup() {
 
       {phase === 'pin' ? (
         <Keypad
-          title="Installer setup"
+          title={phe ? 'PHE setup' : 'Installer setup'}
           sub={
             pinMode === 'enter'
               ? 'Enter the installer PIN'
@@ -901,12 +847,12 @@ export default function Setup() {
           >
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
               <Txt family="outfit" size={26} weight={500} accessibilityRole="header">
-                {STEP_TITLES[step]}
+                {titles[step]}
               </Txt>
               <Txt size={12} color={colors.muted}>{`Step ${step + 1} of 5`}</Txt>
             </View>
             <View style={{ flexDirection: 'row', gap: s(6) }}>
-              {STEP_TITLES.map((_, i) => (
+              {titles.map((_, i) => (
                 <View
                   key={i}
                   style={{
@@ -938,7 +884,8 @@ export default function Setup() {
           >
             {step === 0 ? <StepCount d={draft} dispatch={dispatch} /> : null}
             {step === 1 ? <StepTanks d={draft} dispatch={dispatch} /> : null}
-            {step === 2 ? <StepMain d={draft} dispatch={dispatch} /> : null}
+            {step === 2 && !phe ? <StepMain d={draft} dispatch={dispatch} /> : null}
+            {step === 2 && phe ? <StepPheLevels d={draft} dispatch={dispatch} /> : null}
             {step === 3 ? <StepWiring d={draft} dispatch={dispatch} /> : null}
             {step === 4 ? <StepSave d={draft} dispatch={dispatch} /> : null}
           </ScrollView>

@@ -1,7 +1,10 @@
 import { create } from 'zustand';
 
+import type { ModuleType } from '@/model/types';
+
 export type SheetName = 'tanks' | 'pw' | 'notif' | 'ble' | 'forgot' | 'delete';
-export type Route = 'welcome' | 'auth' | 'home' | 'tanks' | 'usage' | 'account' | 'check' | 'setup';
+export type Route =
+  'welcome' | 'auth' | 'home' | 'tanks' | 'usage' | 'account' | 'devices' | 'check' | 'setup' | 'add';
 
 const RANK: Record<Route, number> = {
   welcome: 0,
@@ -10,8 +13,10 @@ const RANK: Record<Route, number> = {
   tanks: 3,
   usage: 3,
   account: 3,
+  devices: 4,
   check: 4,
-  setup: 4,
+  setup: 5,
+  add: 5,
 };
 
 type UiState = {
@@ -21,6 +26,9 @@ type UiState = {
   toast: { id: number; text: string } | null;
   /** Warning banner on the Tanks screen ("Open a valve first"). */
   msg: string;
+  /** Which board Installer setup opens for (My devices → Installer setup). */
+  setupFor: ModuleType;
+  setSetupFor: (t: ModuleType) => void;
   setRoute: (r: Route) => 'f' | 'b';
   openSheet: (s: SheetName) => void;
   closeSheet: () => void;
@@ -37,6 +45,8 @@ export const useUi = create<UiState>((set, get) => ({
   sheet: null,
   toast: null,
   msg: '',
+  setupFor: 'household',
+  setSetupFor: (t) => set({ setupFor: t }),
   setRoute: (r) => {
     const dir = RANK[r] >= RANK[get().route] ? 'f' : 'b';
     set({ route: r, dir, msg: '' });

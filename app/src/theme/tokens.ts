@@ -21,6 +21,9 @@ export const colors = {
   warningText: '#FDE68A',
   warningIcon: '#FACC15',
   dangerText: '#FCA5A5',
+  /** v3: valve OPEN badge, online dot, UPDATE badge (reference/design-v3). */
+  ok: '#34D399',
+  okText: '#6EE7B7',
   notifDot: '#FF7A6B',
   white: '#FFFFFF',
   focusBg: '#0C2B33',

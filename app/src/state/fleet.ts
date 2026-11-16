@@ -41,7 +41,10 @@ type FleetStore = {
   /** Called by the session when the account's board list changes. */
   sync: (ids: string[]) => void;
   setTab: (t: ModuleType) => void;
-  /** My devices → tap a board: it becomes the selected board of its type, and Home shows it. */
+  /**
+   * My devices → tap a board, or Add device → done: it becomes the selected board of its type and
+   * Home shows its tab (also when its info is still on the way).
+   */
   select: (id: string) => void;
   /** Software update → Update now. False when the board would refuse it right now. */
   startUpdate: (id: string) => boolean;
@@ -54,6 +57,8 @@ let common: Unsub[] = [];
 let timer: ReturnType<typeof setInterval> | undefined;
 let saved: Saved | null = null;
 let tabRestored = false;
+/** select() before the board's info arrived (just added): applied when it does. */
+let pendingSelect: string | null = null;
 const savedReady = AsyncStorage.getItem(STORE_KEY)
   .then((raw) => {
     saved = raw ? (JSON.parse(raw) as Saved) : null;
@@ -78,6 +83,11 @@ export const useFleet = create<FleetStore>((set, get) => {
   };
   /** Re-derive the selection and tab after any info change. */
   const recompute = () => {
+    if (pendingSelect && get().devices[pendingSelect]?.info) {
+      const id = pendingSelect;
+      pendingSelect = null;
+      get().select(id);
+    }
     const { devices, ids, householdId, pheId, tab } = get();
     const hh = idsOfType(devices, ids, 'household');
     const phe = idsOfType(devices, ids, 'phe');
@@ -124,7 +134,10 @@ export const useFleet = create<FleetStore>((set, get) => {
       const b = backend();
       // Common watches start with the first board and stop when the account has none.
       if (ids.length && !common.length) {
-        common = [b.onStable((stable) => set({ stable })), b.onServerOffset((serverOffset) => set({ serverOffset }))];
+        common = [
+          b.onStable((stable) => set({ stable })),
+          b.onServerOffset((serverOffset) => set({ serverOffset })),
+        ];
         timer = setInterval(recheck, ONLINE_TICK_MS);
       } else if (!ids.length && common.length) {
         common.forEach((u) => u());
@@ -168,7 +181,10 @@ export const useFleet = create<FleetStore>((set, get) => {
 
     select: (id) => {
       const type = get().devices[id]?.info?.type;
-      if (!type) return;
+      if (!type) {
+        pendingSelect = id;
+        return;
+      }
       set(type === 'phe' ? { pheId: id, tab: 'phe' } : { householdId: id, tab: 'household' });
       persist();
     },
@@ -211,6 +227,7 @@ export const useFleet = create<FleetStore>((set, get) => {
 
 /** Stop every watch (sign out). */
 export function resetFleet() {
+  pendingSelect = null;
   for (const us of subs.values()) us.forEach((u) => u());
   subs = new Map();
   common.forEach((u) => u());

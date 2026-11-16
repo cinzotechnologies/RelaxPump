@@ -155,7 +155,7 @@ export function BottomNav() {
         <NavItem
           icon="user"
           label="Account"
-          active={is('account') || is('check')}
+          active={is('account') || is('check') || is('devices')}
           onPress={() => go('account')}
         />
       </View>

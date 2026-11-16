@@ -1,7 +1,9 @@
 // Installer setup wizard (reference/design-v2/AppSetup.dc.html): a pure draft + reducer, so the
 // steps and their validation are unit-tested without the screen.
-//   PIN → 1 Semi tanks (1–5) → 2 Your tanks (name, size, height) → 3 Main tank → 4 Check wiring
-//   → 5 Save (summary) → Saved
+//   Household: PIN → 1 Semi tanks (1–5) → 2 Your tanks (name, size, height) → 3 Main tank
+//              → 4 Check wiring → 5 Save (summary) → Saved
+//   PHE (docs/two-module-system.md §5.2, same PIN): 1 PHE lines (1–5) → 2 Your lines (name, size,
+//              sensor distances) → 3 Reopen & close → 4 Check wiring (valves only) → 5 Save
 import {
   clampCount,
   DEFAULT_MAIN,
@@ -16,8 +18,12 @@ import {
   type LayoutConfig,
   type TankConfig,
 } from '@/model/layout';
+import { setPheHigh, setPheLow, type PheConfig } from '@/model/phe';
 
 export const STEP_TITLES = ['Semi tanks', 'Your tanks', 'Main tank', 'Check wiring', 'Save'] as const;
+export const PHE_STEP_TITLES = ['PHE lines', 'Your lines', 'Reopen & close', 'Check wiring', 'Save'] as const;
+/** Reopen / close step: 5 % per tap. */
+export const PHE_PCT_STEP = 5;
 export const SIZE_CHIPS = [500, 1000, 1500, 2000] as const;
 export const HEIGHT_STEP = 5;
 export const HEIGHT_MIN = 5;
@@ -55,6 +61,11 @@ export type Draft = {
   /** Most tanks the controller's firmware supports (5; 3 on the first firmware). */
   max: number;
   base: LayoutConfig;
+  /** PHE board: tanks = PHE lines (no heights, no main tank, no pump). */
+  phe: boolean;
+  /** PHE reopen below / close at (household uses base.low/high, set on the Tanks screen). */
+  low: number;
+  high: number;
 };
 
 export function draftFrom(cfg: LayoutConfig, maxTanks = MAX_TANKS): Draft {
@@ -71,6 +82,34 @@ export function draftFrom(cfg: LayoutConfig, maxTanks = MAX_TANKS): Draft {
     wasN: cfg.tanks.length,
     max,
     base: cfg,
+    phe: false,
+    low: cfg.low,
+    high: cfg.high,
+  };
+}
+
+/** PHE setup draft: the lines take the tanks' place (same name, size and sensor distances). */
+export function draftFromPhe(cfg: PheConfig, maxTanks = MAX_TANKS): Draft {
+  const d = draftFrom(
+    {
+      tanks: cfg.lines.map((l) => ({ ...l })),
+      main: DEFAULT_MAIN,
+      low: cfg.low,
+      high: cfg.high,
+      maxRunMin: 30,
+    },
+    maxTanks,
+  );
+  return { ...d, phe: true, mainOn: false };
+}
+
+export function draftToPhe(d: Draft): PheConfig {
+  return {
+    lines: d.tanks
+      .slice(0, d.n)
+      .map((t) => ({ name: t.name, litres: t.litres, emptyCm: t.emptyCm, fullCm: t.fullCm })),
+    low: d.low,
+    high: d.high,
   };
 }
 
@@ -85,7 +124,10 @@ export type Action =
   /** Sensor → tank bottom, from a live reading of the empty tank. */
   | { type: 'emptyAt'; i: number; cm: number }
   | { type: 'main'; on: boolean }
-  | { type: 'minPct'; delta: number };
+  | { type: 'minPct'; delta: number }
+  /** PHE reopen below / close at, ±5 % (kept 5 apart). */
+  | { type: 'pheLow'; delta: number }
+  | { type: 'pheHigh'; delta: number };
 
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
 
@@ -123,7 +165,11 @@ export function reduce(d: Draft, a: Action): Draft {
       return { ...d, tanks };
     }
     case 'main':
-      return { ...d, mainOn: a.on };
+      return d.phe ? d : { ...d, mainOn: a.on };
+    case 'pheLow':
+      return { ...d, low: setPheLow(d.low + a.delta, d.high) };
+    case 'pheHigh':
+      return { ...d, high: setPheHigh(d.high + a.delta, d.low) };
     case 'minPct':
       return { ...d, minPct: clamp(d.minPct + a.delta, MAIN_MIN_PCT_MIN, MAIN_MIN_PCT_MAX) };
   }
@@ -131,6 +177,8 @@ export function reduce(d: Draft, a: Action): Draft {
 
 /** Help under the big count (step 1). */
 export function countHelp(d: Draft): string {
+  if (d.phe)
+    return 'Each PHE line has a sensor on its tank (T) and a valve on its pipe (V) with the same number. No pump.';
   if (d.n === 1) return 'One tank needs only a sensor — the pump fills it directly, no valve.';
   if (d.wasN === 1)
     return 'With 2 or more tanks every tank needs a valve — fit a valve on tank 1 too, then wire each tank to its port.';
@@ -138,7 +186,7 @@ export function countHelp(d: Draft): string {
 }
 
 export function tankPorts(d: Draft, i: number): string {
-  return portLabel(i, d.n);
+  return d.phe ? `T${i + 1} · sensor + valve` : portLabel(i, d.n);
 }
 
 export function draftToConfig(d: Draft): LayoutConfig {
@@ -150,10 +198,20 @@ export function draftToConfig(d: Draft): LayoutConfig {
 }
 
 export function summaryText(d: Draft): string {
+  if (d.phe)
+    return `${d.n} PHE ${d.n === 1 ? 'line' : 'lines'} · reopen below ${d.low}% · close at ${d.high}%.`;
   return `${d.n} semi ${d.n === 1 ? 'tank' : 'tanks'}${d.mainOn ? ' · main tank sensor' : ''}.`;
 }
 
 export function summaryRows(d: Draft): { k: string; v: string }[] {
+  if (d.phe)
+    return [
+      { k: 'PHE lines', v: String(d.n) },
+      { k: 'Sensors', v: String(d.n) },
+      { k: 'Valves', v: String(d.n) },
+      { k: 'Reopen below', v: `${d.low}%` },
+      { k: 'Close at', v: `${d.high}%` },
+    ];
   return [
     { k: 'Semi tanks', v: String(d.n) },
     { k: 'Sensors', v: String(d.n) },
@@ -163,14 +221,15 @@ export function summaryRows(d: Draft): { k: string; v: string }[] {
   ];
 }
 
-const nameOf = (d: Draft, i: number) => d.tanks[i]?.name?.trim() || `Tank ${i + 1}`;
+const nameOf = (d: Draft, i: number) => d.tanks[i]?.name?.trim() || `${d.phe ? 'Line' : 'Tank'} ${i + 1}`;
 
-/** Outputs to test on step 4: V<n> per tank (2+ tanks), then PUMP. */
+/** Outputs to test on step 4: V<n> per tank (2+ tanks), then PUMP. PHE: a valve per line, no pump. */
 export function outputsOf(d: Draft): { port: string; name: string }[] {
-  const valves = hasValves(d.n)
-    ? Array.from({ length: d.n }, (_, i) => ({ port: `V${i + 1}`, name: `${nameOf(d, i)} valve` }))
-    : [];
-  return [...valves, { port: 'PUMP', name: 'Pump' }];
+  const valves =
+    d.phe || hasValves(d.n)
+      ? Array.from({ length: d.n }, (_, i) => ({ port: `V${i + 1}`, name: `${nameOf(d, i)} valve` }))
+      : [];
+  return d.phe ? valves : [...valves, { port: 'PUMP', name: 'Pump' }];
 }
 
 /** Sensors to check on step 4, with what the controller reports. */
