@@ -7,12 +7,17 @@ import { app, theme } from '@/styles/tokens';
 
 import './app-screen.css';
 
-export type ScreenKey = 'welcome' | 'home' | 'tanks' | 'usage' | 'ble' | 'account';
+export type ScreenKey = 'welcome' | 'home' | 'phe' | 'tanks' | 'usage' | 'ble' | 'account';
 
 const TANKS = [
   { name: 'Roof', pct: 82, litres: '820 / 1,000 L' },
   { name: 'Kitchen', pct: 46, litres: '230 / 500 L' },
   { name: 'Garden', pct: 18, litres: '90 / 500 L' },
+];
+/** PHE screen (v3): two PHE lines, one filling. */
+const LINES = [
+  { name: 'Main tank', pct: 64, sub: 'Filling · +4% in 10 min', open: true },
+  { name: 'Kitchen line', pct: 97, sub: 'Full · valve closed', open: false },
 ];
 const BARS = [420, 610, 520, 700, 480, 560, 570];
 const DAYS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
@@ -113,6 +118,100 @@ function Welcome() {
   );
 }
 
+/** Household | PHE switch (an account with both modules). */
+function Tabs({ on }: { on: 'household' | 'phe' }) {
+  return (
+    <div className="as-seg">
+      <span className={on === 'household' ? 'on' : undefined}>Household</span>
+      <span className={on === 'phe' ? 'on' : undefined}>PHE</span>
+    </div>
+  );
+}
+
+function Ring({ pct }: { pct: number }) {
+  return (
+    <svg width="34" height="34" viewBox="0 0 34 34" aria-hidden>
+      <circle cx="17" cy="17" r="14" fill="none" stroke={theme.glow} strokeOpacity="0.14" strokeWidth="4" />
+      <circle
+        cx="17"
+        cy="17"
+        r="14"
+        fill="none"
+        stroke={pct < 25 ? theme.warning : theme.glow}
+        strokeWidth="4"
+        strokeLinecap="round"
+        strokeDasharray={`${(pct * 0.88).toFixed(1)} 88`}
+        transform="rotate(-90 17 17)"
+      />
+    </svg>
+  );
+}
+
+/** PHE module (v3): supply card, Auto fill, PHE lines with OPEN / CLOSED valves. */
+function Phe() {
+  return (
+    <div className="as-fill">
+      <div className="as-head">
+        <div className="as-tile">
+          <LogoMark size={26} />
+        </div>
+        <div className="as-hello">
+          <small>Welcome back</small>
+          <b>Rina</b>
+        </div>
+        <div className="as-bell">
+          <Ico d={I.bell} size={17} />
+          <i />
+        </div>
+        <div className="as-av">
+          <span>RK</span>
+        </div>
+      </div>
+      <div className="as-level">
+        <svg width="254" height="128" viewBox="0 0 254 128" aria-hidden>
+          <path d="M0 52q21-9 42 0t42 0t42 0t42 0t42 0t42 0V128H0z" fill={app.appWaveBack} />
+          <path d="M0 58q21-9 42 0t42 0t42 0t42 0t42 0t42 0V128H0z" fill={app.appWaveFront} />
+        </svg>
+        <div className="as-level-in">
+          <small>Average level · 2 PHE lines</small>
+          <span className="as-big">80%</span>
+          <span className="as-status">
+            <span className="as-led ok" />
+            PHE water coming
+          </span>
+        </div>
+      </div>
+      <Tabs on="phe" />
+      <div className="as-supply">
+        <div className="as-supply-top">
+          PHE SUPPLY<span>Water coming</span>
+        </div>
+        <div className="as-flow" />
+        <div className="as-autofill">
+          Auto fill
+          <span className="as-sw">
+            <i />
+          </span>
+        </div>
+      </div>
+      <div className="as-list tight">
+        {LINES.map((l) => (
+          <div className="as-row" key={l.name}>
+            <Ring pct={l.pct} />
+            <span className="as-row-t">
+              <b>
+                {l.name} · {l.pct}%
+              </b>
+              <small>{l.sub}</small>
+            </span>
+            <span className={`as-valve${l.open ? ' open' : ''}`}>{l.open ? 'OPEN' : 'CLOSED'}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function Home() {
   return (
     <div className="as-fill">
@@ -147,6 +246,7 @@ function Home() {
           </span>
         </div>
       </div>
+      <Tabs on="household" />
       <div className="as-acts">
         <div className="as-act on">
           <Ico d={I.power} w={2.2} />
@@ -303,7 +403,7 @@ function Ble() {
       <div className="as-sheet">
         <div className="as-grab" />
         <h4>Bluetooth setup</h4>
-        <p>Found your controller. Pick your Wi-Fi.</p>
+        <p>Found RelaxPump PHE. Pick your Wi-Fi.</p>
         <div className="as-dev">
           <span className="bi">
             <Ico d={I.ble} size={16} />
@@ -365,7 +465,7 @@ function Nav({ screen }: { screen: ScreenKey }) {
   const on = (k: ScreenKey) => (screen === k ? 'on' : undefined);
   return (
     <div className="as-nav">
-      <span className={on('home')}>
+      <span className={screen === 'home' || screen === 'phe' ? 'on' : undefined}>
         <Ico d={I.home} size={20} />
       </span>
       <span className={on('tanks')}>
@@ -387,6 +487,7 @@ function Nav({ screen }: { screen: ScreenKey }) {
 const BODY: Record<ScreenKey, () => React.ReactElement> = {
   welcome: Welcome,
   home: Home,
+  phe: Phe,
   tanks: Tanks,
   usage: Usage,
   ble: Ble,
@@ -396,7 +497,8 @@ const BODY: Record<ScreenKey, () => React.ReactElement> = {
 /** One 300 × 620 phone showing an app screen. */
 export function AppScreen({ screen }: { screen: ScreenKey }) {
   const Body = BODY[screen];
-  const nav = screen === 'home' || screen === 'tanks' || screen === 'usage' || screen === 'account';
+  const nav =
+    screen === 'home' || screen === 'phe' || screen === 'tanks' || screen === 'usage' || screen === 'account';
   return (
     <div className="as" aria-hidden>
       <div className="as-screen">

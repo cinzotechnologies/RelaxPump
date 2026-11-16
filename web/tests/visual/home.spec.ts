@@ -15,8 +15,10 @@ test('how it works: next arrow and tabs switch slides', async ({ page }) => {
 test('app screens: chips move the coverflow', async ({ page }) => {
   await page.goto('/');
   await page.locator('#app').getByRole('tab', { name: 'Usage' }).click();
-  await expect(page.locator('#app .cfc').nth(3)).toHaveClass(/\bp0\b/);
+  await expect(page.locator('#app .cfc').nth(4)).toHaveClass(/\bp0\b/);
   await expect(page.locator('#app .cap-t')).toHaveText('Usage');
+  await page.locator('#app').getByRole('tab', { name: 'PHE' }).click();
+  await expect(page.locator('#app .cap-t')).toHaveText('PHE');
 });
 
 test('install guide: play says video coming soon', async ({ page }) => {
@@ -47,4 +49,15 @@ test('store teaser: notify me toggles', async ({ page }) => {
   const b = page.locator('#store').getByRole('button', { name: 'Notify me' }).first();
   await b.click();
   await expect(page.locator('#store').getByRole('button', { name: 'We will tell you' })).toHaveCount(1);
+});
+
+test('app screens: PHE phone (v3)', async ({ page }, info) => {
+  await page.goto('/');
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.locator('#app').getByRole('tab', { name: 'PHE' }).click();
+  await expect(page.locator('#app .cap-t')).toHaveText('PHE');
+  await page.waitForTimeout(700);
+  await page
+    .locator('#app')
+    .screenshot({ path: `tests/visual/.results/shots/app-phe-${info.project.name}.png` });
 });

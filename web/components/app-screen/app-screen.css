@@ -259,8 +259,110 @@
 .as-status .as-tag:first-of-type {
   margin-left: auto;
 }
+/* v3: Household | PHE switch */
+.as-seg {
+  margin: 10px 14px 0;
+  height: 34px;
+  padding: 3px;
+  box-sizing: border-box;
+  border-radius: 999px;
+  background: var(--app-deep);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  font-size: 11px;
+  font-weight: 600;
+}
+.as-seg span {
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--app-muted);
+}
+.as-seg span.on {
+  background: var(--teal-2);
+  color: var(--white);
+}
+.as-led.ok {
+  background: var(--app-ok);
+  box-shadow: 0 0 8px var(--app-ok);
+}
+/* v3: PHE supply card */
+.as-supply {
+  margin: 10px 14px 0;
+  padding: 12px;
+  border-radius: 16px;
+  background: var(--app-card);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.as-supply-top {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  color: var(--glow);
+}
+.as-supply-top span {
+  letter-spacing: 0;
+  font-size: 11px;
+  color: var(--app-ok-text);
+}
+.as-flow {
+  height: 5px;
+  border-radius: 5px;
+  background: linear-gradient(
+    90deg,
+    rgb(var(--glow-rgb) / 0.12),
+    var(--glow) 50%,
+    rgb(var(--glow-rgb) / 0.12)
+  );
+}
+.as-autofill {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  font-weight: 600;
+}
+.as-sw {
+  width: 38px;
+  height: 22px;
+  border-radius: 999px;
+  background: var(--teal-2);
+  position: relative;
+}
+.as-sw i {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--white);
+}
+.as-valve {
+  height: 24px;
+  padding: 0 10px;
+  border-radius: 999px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  line-height: 24px;
+  background: rgb(var(--app-muted-rgb) / 0.14);
+  color: var(--app-muted);
+}
+.as-valve.open {
+  background: rgb(var(--app-ok-rgb) / 0.16);
+  color: var(--app-ok-text);
+}
+.as-list.tight {
+  margin-top: 10px;
+}
 .as-acts {
-  margin: 14px 14px 0;
+  margin: 10px 14px 0;
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 8px;

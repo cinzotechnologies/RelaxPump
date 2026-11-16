@@ -76,6 +76,9 @@ export const shade = {
   msgBg: '#E7F8EC',
   msgLine: '#BBE5C7',
   msgText: '#14532D',
+  // store kit planner: pump that cannot lift
+  badBg: '#FDE8E8',
+  badText: '#991B1B',
 } as const;
 
 /** The mobile app's dark theme, for the phone mockups (AppScreen.dc.html). */
@@ -101,6 +104,9 @@ export const app = {
   appRing: '#1FA9B9',
   appFrame1: '#1B2B30',
   appFrame2: '#070D0F',
+  /** v3 PHE: water coming, OPEN valve badge. */
+  appOk: '#34D399',
+  appOkText: '#6EE7B7',
   black: '#000000',
 } as const;
 

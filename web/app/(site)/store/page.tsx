@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import { Footer } from '@/components/site/Footer';
 import { TopBar } from '@/components/site/TopBar';
 import { CartProvider } from '@/components/store/cart';
+import { PlanKit } from '@/components/store/PlanKit';
 import { CartButton, CartDrawer, Catalogue, StoreHead } from '@/components/store/StoreView';
 import { getProducts, getSite, isPreview, orderingOpen } from '@/lib/content/load';
 
@@ -11,7 +12,8 @@ import '@/components/store/store.css';
 
 export const metadata: Metadata = {
   title: 'Store — RelaxPump',
-  description: 'RelaxPump controller kit, sensors, valves and home installation.',
+  description:
+    'RelaxPump Household and PHE controllers, tank and PHE line kits, sensors, valves and home installation. Plan your kit.',
 };
 
 export const dynamic = 'force-dynamic';
@@ -26,6 +28,7 @@ export default async function StorePage() {
         <TopBar variant="store" right={<CartButton />} />
         <main>
           <StoreHead contact={contact} orderingOpen={open} />
+          <PlanKit contact={contact} ids={products.map((p) => p.id)} />
           <Catalogue products={products} contact={contact} />
         </main>
         <Footer c={contact} variant="store" />

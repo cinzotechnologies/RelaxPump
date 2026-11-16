@@ -145,7 +145,7 @@ describe('media helpers', () => {
       ...DEFAULT_SHOP,
       products: DEFAULT_SHOP.products.map((p, i) => (i === 0 ? { ...p, imageUrl: url } : p)),
     };
-    expect(usesOf(url, [c], [shop])).toEqual(['Hero · Background', 'Store · RelaxPump Controller Kit']);
+    expect(usesOf(url, [c], [shop])).toEqual(['Hero · Background', 'Store · Household Controller']);
     expect(usesOf('/media/none.jpg', [c], [shop])).toEqual([]);
   });
   it('makes safe R2 names and reads keys back', () => {

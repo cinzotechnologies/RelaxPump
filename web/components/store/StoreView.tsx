@@ -170,7 +170,7 @@ export function Catalogue({ products, contact }: { products: Product[]; contact:
                 <path d="M5 6c0-1.7 3.1-3 7-3s7 1.3 7 3v12c0 1.7-3.1 3-7 3s-7-1.3-7-3z M5 6c0 1.7 3.1 3 7 3s7-1.3 7-3" />
               </Stroke>
             </span>
-            <h3>Up to 3 tanks</h3>
+            <h3>Household + PHE</h3>
           </div>
           <div className="w">
             <span className="wi">
@@ -471,6 +471,9 @@ export function StoreHead({ contact, orderingOpen }: { contact: Contact; orderin
         <h1 className="h1 in d2">
           RelaxPump <em>Store</em>
         </h1>
+        <a className="btn btn-s in d3 plan-link" href="#plan">
+          Plan your kit
+        </a>
         <div className="note in d4">
           <Stroke size={22}>
             <circle cx="12" cy="12" r="9" />

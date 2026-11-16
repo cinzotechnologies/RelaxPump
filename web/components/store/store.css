@@ -531,3 +531,8 @@
     width: 100%;
   }
 }
+
+/* v3: "Plan your kit" button under the title */
+.shop-head .plan-link {
+  align-self: flex-start;
+}
