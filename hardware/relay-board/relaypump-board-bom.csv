@@ -1,0 +1,90 @@
+Ref,Value,Footprint,What it does
+J1,AC IN 230 V,Screw terminal 3P 7.62 mm 15 A,"Mains in: L, N, PE"
+F1,Fuse T2A 250 V,"5×20 mm fuse holder, THT",Mains fuse (feeds the supply and relay 1)
+RV1,MOV 275 VAC (14D431K),"Disc 14 mm, 7.5 mm pitch",Surge protection L–N
+PS1,AC-DC 12 V 5 A (Mean Well IRM-60-12),PCB-mount module 87 × 52 mm,230 V AC → 12 V DC (isolated)
+J2,PUMP OUT 230 V,Screw terminal 3P 7.62 mm 15 A,"To the contactor coil: L (switched), N, PE"
+D1,SMBJ15A,SMB,TVS on +12V
+C1,470 µF 25 V,Radial 10 mm,+12V bulk
+C2,10 µF 25 V X5R,1206,+12V ceramic
+U2,5 V 3 A buck module (MP1584EN mini),4-pin module 22 × 17 mm,"12 V → 5 V (relays, sensors, LDO)"
+C3,100 µF 10 V,Radial 6.3 mm,+5V bulk
+U3,AMS1117-3.3,SOT-223,5 V → 3.3 V for the ESP32
+C4,10 µF 10 V X5R,0805,LDO input
+C5,22 µF 10 V X5R,0805,LDO output
+C6,10 µF 10 V X5R,0805,ESP32 3V3 bulk
+C7,100 nF,0603,ESP32 3V3 decoupling
+LED1,Green LED,0805,POWER indicator
+R1,1 kΩ,0603,Power LED
+U1,ESP32-WROOM-32E (4 MB),"SMD module 18 × 25.5 mm, antenna at the board edge",Processor with Wi-Fi + Bluetooth (BLE) built in
+R2,10 kΩ,0603,EN pull-up
+C8,1 µF,0603,EN delay (clean start)
+R3,10 kΩ,0603,IO0 pull-up (normal boot)
+SW1,RESET,6 × 6 mm tactile THT,Restart (EN to GND)
+SW2,BOOT / SETUP,6 × 6 mm tactile THT,Hold + RESET = upload mode · hold 5 s = Wi-Fi setup
+LED2,Blue LED,0805,Wi-Fi indicator (IO2)
+R4,1 kΩ,0603,Wi-Fi LED
+J3,UART / PROGRAM,1×6 pin header 2.54 mm,Upload with a 3.3 V USB-TTL adapter (CP2102/CH340)
+U4,ULN2003A,SOIC-16,"Relay driver (7 Darlington channels, flyback inside)"
+K1,SRD-05VDC-SL-C (10 A 250 VAC),"Songle SRD relay, THT",Relay 1 · PUMP (230 V)
+LED3,Red LED,0805,Relay 1 ON indicator
+R5,2.2 kΩ,0603,Relay 1 LED
+K2,SRD-05VDC-SL-C (10 A 250 VAC),"Songle SRD relay, THT",Relay 2 · VALVE 1
+LED4,Red LED,0805,Relay 2 ON indicator
+R6,2.2 kΩ,0603,Relay 2 LED
+K3,SRD-05VDC-SL-C (10 A 250 VAC),"Songle SRD relay, THT",Relay 3 · VALVE 2
+LED5,Red LED,0805,Relay 3 ON indicator
+R7,2.2 kΩ,0603,Relay 3 LED
+K4,SRD-05VDC-SL-C (10 A 250 VAC),"Songle SRD relay, THT",Relay 4 · VALVE 3
+LED6,Red LED,0805,Relay 4 ON indicator
+R8,2.2 kΩ,0603,Relay 4 LED
+K5,SRD-05VDC-SL-C (10 A 250 VAC),"Songle SRD relay, THT",Relay 5 · VALVE 4
+LED7,Red LED,0805,Relay 5 ON indicator
+R9,2.2 kΩ,0603,Relay 5 LED
+K6,SRD-05VDC-SL-C (10 A 250 VAC),"Songle SRD relay, THT",Relay 6 · VALVE 5
+LED8,Red LED,0805,Relay 6 ON indicator
+R10,2.2 kΩ,0603,Relay 6 LED
+J4,VALVE 1 12 V,Screw terminal 2P 5.08 mm 10 A,Solenoid valve 1
+D2,SS34,SMA,Valve 1 flyback
+J5,VALVE 2 12 V,Screw terminal 2P 5.08 mm 10 A,Solenoid valve 2
+D3,SS34,SMA,Valve 2 flyback
+J6,VALVE 3 12 V,Screw terminal 2P 5.08 mm 10 A,Solenoid valve 3
+D4,SS34,SMA,Valve 3 flyback
+J7,VALVE 4 12 V,Screw terminal 2P 5.08 mm 10 A,Solenoid valve 4
+D5,SS34,SMA,Valve 4 flyback
+J8,VALVE 5 12 V,Screw terminal 2P 5.08 mm 10 A,Solenoid valve 5
+D6,SS34,SMA,Valve 5 flyback
+J9,SENSOR T1,JST-XH 4P 2.50 mm (or screw 4P 3.5 mm),Ultrasonic sensor T1 (JSN-SR04T)
+R23,100 Ω,0603,Trig T1
+R11,1 kΩ,0603,Echo divider top T1
+R17,2 kΩ,0603,Echo divider bottom T1
+D7,PESD5V0S2BT,SOT-23,ESD T1
+J10,SENSOR T2,JST-XH 4P 2.50 mm (or screw 4P 3.5 mm),Ultrasonic sensor T2 (JSN-SR04T)
+R24,100 Ω,0603,Trig T2
+R12,1 kΩ,0603,Echo divider top T2
+R18,2 kΩ,0603,Echo divider bottom T2
+D8,PESD5V0S2BT,SOT-23,ESD T2
+J11,SENSOR T3,JST-XH 4P 2.50 mm (or screw 4P 3.5 mm),Ultrasonic sensor T3 (JSN-SR04T)
+R25,100 Ω,0603,Trig T3
+R13,1 kΩ,0603,Echo divider top T3
+R19,2 kΩ,0603,Echo divider bottom T3
+D9,PESD5V0S2BT,SOT-23,ESD T3
+J12,SENSOR T4,JST-XH 4P 2.50 mm (or screw 4P 3.5 mm),Ultrasonic sensor T4 (JSN-SR04T)
+R26,100 Ω,0603,Trig T4
+R14,1 kΩ,0603,Echo divider top T4
+R20,2 kΩ,0603,Echo divider bottom T4
+D10,PESD5V0S2BT,SOT-23,ESD T4
+J13,SENSOR T5,JST-XH 4P 2.50 mm (or screw 4P 3.5 mm),Ultrasonic sensor T5 (JSN-SR04T)
+R27,100 Ω,0603,Trig T5
+R15,1 kΩ,0603,Echo divider top T5
+R21,2 kΩ,0603,Echo divider bottom T5
+D11,PESD5V0S2BT,SOT-23,ESD T5
+J14,SENSOR MAIN,JST-XH 4P 2.50 mm (or screw 4P 3.5 mm),Ultrasonic sensor MAIN (JSN-SR04T)
+R28,100 Ω,0603,Trig MAIN
+R16,1 kΩ,0603,Echo divider top MAIN
+R22,2 kΩ,0603,Echo divider bottom MAIN
+D12,PESD5V0S2BT,SOT-23,ESD MAIN
+H1,M3,3.2 mm hole (H1 = PE if the box is metal),Mounting
+H2,M3,3.2 mm hole (H1 = PE if the box is metal),Mounting
+H3,M3,3.2 mm hole (H1 = PE if the box is metal),Mounting
+H4,M3,3.2 mm hole (H1 = PE if the box is metal),Mounting

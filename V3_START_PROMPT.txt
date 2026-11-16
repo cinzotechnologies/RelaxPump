@@ -1,0 +1,11 @@
+Read CLAUDE.md (all of it, especially §11), then docs/two-module-system.md, then docs/flexible-system.md and docs/data-model.md, then every file in reference/design-v3/ (the new app screens — read the markup and the script), then the current code in firmware/, app/src/ and firebase/.
+
+First: commit and push everything that is not on GitHub yet (git add -A, commit "Plan v3: Household + PHE modules, multi-device app, OTA"). If the push is rejected, run git pull --rebase origin main, fix any conflicts, and push again. Never commit secrets: google-services.json, secrets.h, firebase/out/, keystores, .env, the OTA signing key.
+
+Then build v3 exactly as docs/two-module-system.md says:
+- Two modules on separate boards, same PCB + one firmware build, type set at the factory (NVS) and reported as info.type: Household (today's v2 engine, unchanged) and PHE (new engine: 1–5 lines, sensor + valve per line, no pump, auto open below low / close at high, fail-safe close on sensor loss, rising/supply detection, overflow event). 8 relays with K7/K8 spare; keep every pin in board.h (the Rev C board comes later).
+- One app account with many boards: Home with Household / PHE tabs, Add device flow (Bluetooth scan with type, Wi-Fi, claim, short setup, wiring check), Account → My devices with the Software update card. Match reference/design-v3/ exactly and keep the approved theme and motion.
+- OTA from the app: two-slot partitions, per-device secrets moved from secrets.h to NVS (+ factory-flash script), HTTPS download from GitHub Releases, sha256 + ECDSA signature check, pump off and valves closed during the update, rollback if the new firmware does not reach the cloud, release script with staged rollout.
+- Rules + emulator tests for the PHE config/cmd shapes, info.type, cmd.ota and firmware/stable. Host unit tests for the PHE engine (1, 2, 5 lines). Update the docs.
+
+Show me your milestone plan first. After each milestone: typecheck, lint, tests, commit and push to main. Stop and give me short numbered steps whenever you need me to flash a board, wire something, create the signing key, or change Firebase or GitHub settings. Ask me before anything that costs money.

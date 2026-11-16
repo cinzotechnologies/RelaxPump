@@ -1,0 +1,5 @@
+Read CLAUDE.md §9 and §11, docs/website-brief.md, then docs/two-module-system.md §7, then reference/website/Main.dc.html, Shop.dc.html and AppScreen.dc.html (updated designs — read the markup and the script), then the current code in web/.
+
+Update the website in web/ to the two-module product (Household + PHE) exactly as docs/two-module-system.md §7 and the updated reference/website/ files show: hero text and checks, How it works texts, the app screens gallery (Household, PHE, Add device), product teaser, manual pages, store products (seed them in D1 so the admin panel can edit them) and the "Plan your kit" calculator (Pump + tanks | PHE lines | Both, max 5 tanks, PHE lines 1–5, no 8 tanks, no PHE toggle). Keep the approved white theme, buttons and motion exactly.
+
+Show me a short plan first. Then typecheck, lint, unit + Playwright tests, commit and push to main. Do not deploy to Cloudflare or change DNS without asking me. Never commit .dev.vars or other secrets.

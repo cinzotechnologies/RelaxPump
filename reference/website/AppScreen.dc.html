@@ -51,7 +51,8 @@
 <span style="margin-top: 10px; display: flex; gap: 6px; align-items: center; font-size: 11px; font-weight: 600"><span style="width: 7px; height: 7px; border-radius: 50%; background: #7FE3EC; box-shadow: 0 0 8px #7FE3EC"></span>Filling Tank 2<span style="margin-left: auto; font-size: 10px; padding: 3px 8px; border-radius: 999px; background: rgba(2,26,32,0.45)">Start 30%</span><span style="font-size: 10px; padding: 3px 8px; border-radius: 999px; background: rgba(2,26,32,0.45)">Stop 95%</span></span>
 </div>
 </div>
-<div style="margin: 14px 14px 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px">
+<div style="margin: 10px 14px 0; height: 34px; padding: 3px; box-sizing: border-box; border-radius: 999px; background: #06171C; display: grid; grid-template-columns: 1fr 1fr; font-size: 11px; font-weight: 600"><span style="border-radius: 999px; display: flex; align-items: center; justify-content: center; background: #037788; color: #FFFFFF">Household</span><span style="border-radius: 999px; display: flex; align-items: center; justify-content: center; color: #8FB3B8">PHE</span></div>
+<div style="margin: 10px 14px 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px">
 <div style="height: 62px; border-radius: 16px; background: #7FE3EC; color: #021A20; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-size: 10px; font-weight: 600; box-shadow: 0 0 18px rgba(127,227,236,0.35)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#021A20" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 3v8 M6.3 7.3a8 8 0 1 0 11.4 0"></path></svg>Pump</div>
 <div style="height: 62px; border-radius: 16px; border: 1px solid rgba(127,227,236,0.28); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-size: 10px; font-weight: 600; color: #8FB3B8"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7FE3EC" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.3-5.7 M20 4v4h-4"></path></svg>Auto</div>
 <div style="height: 62px; border-radius: 16px; border: 1px solid rgba(127,227,236,0.28); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-size: 10px; font-weight: 600; color: #8FB3B8"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7FE3EC" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 6c0-1.7 3.1-3 7-3s7 1.3 7 3v12c0 1.7-3.1 3-7 3s-7-1.3-7-3z M5 6c0 1.7 3.1 3 7 3s7-1.3 7-3"></path></svg>Tanks</div>
@@ -68,6 +69,42 @@
 </div>
 </div>
 </sc-if>
+<sc-if value="{{isPhe}}" hint-placeholder-val="{{ false }}">
+<div style="position: absolute; inset: 0">
+<div style="height: 150px; padding: 44px 16px 0; box-sizing: border-box; background: linear-gradient(160deg, #0A9AAE, #037788 55%, #035360); display: flex; align-items: flex-start; gap: 10px">
+<div style="width: 36px; height: 36px; border-radius: 12px; background: linear-gradient(180deg, #FFFFFF, #E3F7F9); display: flex; align-items: center; justify-content: center">
+<svg width="26" height="26" viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="20.5" fill="none" stroke="rgba(3,83,96,0.1)" stroke-width="3.6"></circle><circle cx="24" cy="24" r="20.5" fill="none" stroke="#1FA9B9" stroke-width="3.6" stroke-linecap="round" stroke-dasharray="96.6 128.8" transform="rotate(128 24 24)"></circle><circle cx="24" cy="24" r="13.6" fill="#EAF7F9"></circle><path d="M10.4 26q3.4-3 6.8 0t6.8 0t6.8 0t6.8 0V38H10.4z" fill="#037788"></path></svg>
+</div>
+<div style="display: flex; flex-direction: column"><span style="font-size: 11px; color: rgba(255,255,255,0.75)">Welcome back</span><span style="font-size: 15px; font-weight: 600; color: #FFFFFF">Rina</span></div>
+<div style="margin-left: auto; position: relative; width: 34px; height: 34px; border-radius: 50%; background: rgba(2,26,32,0.25); display: flex; align-items: center; justify-content: center"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4z M10 20a2 2 0 0 0 4 0"></path></svg><span style="position: absolute; top: 7px; right: 8px; width: 7px; height: 7px; border-radius: 50%; background: #FF7A6B"></span></div>
+<div style="width: 34px; height: 34px; border-radius: 50%; padding: 2px; box-sizing: border-box; background: conic-gradient(#FFFFFF, #7FE3EC, #FFFFFF)"><div style="width: 30px; height: 30px; border-radius: 50%; background: linear-gradient(180deg, #FFFFFF, #DDF6F8); color: #035360; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center">RK</div></div>
+</div>
+<div style="position: relative; margin: -54px 14px 0; height: 128px; border-radius: 22px; overflow: hidden; background: #0A242B; box-shadow: 0 16px 30px -14px rgba(0,0,0,0.6)">
+<svg width="254" height="128" viewBox="0 0 254 128" aria-hidden="true" style="position: absolute; inset: 0"><path d="M0 52q21-9 42 0t42 0t42 0t42 0t42 0t42 0V128H0z" fill="#204449"></path><path d="M0 58q21-9 42 0t42 0t42 0t42 0t42 0t42 0V128H0z" fill="#34646B"></path></svg>
+<div style="position: relative; padding: 16px 16px; display: flex; flex-direction: column; gap: 4px">
+<span style="font-size: 11px; color: #8FB3B8">Average level · 2 PHE lines</span>
+<span style="font-family: Outfit, sans-serif; font-size: 36px; font-weight: 500; line-height: 1">80%</span>
+<span style="margin-top: 10px; display: flex; gap: 6px; align-items: center; font-size: 11px; font-weight: 600"><span style="width: 7px; height: 7px; border-radius: 50%; background: #34D399; box-shadow: 0 0 8px #34D399"></span>PHE water coming</span>
+</div>
+</div>
+<div style="margin: 10px 14px 0; height: 34px; padding: 3px; box-sizing: border-box; border-radius: 999px; background: #06171C; display: grid; grid-template-columns: 1fr 1fr; font-size: 11px; font-weight: 600"><span style="border-radius: 999px; display: flex; align-items: center; justify-content: center; color: #8FB3B8">Household</span><span style="border-radius: 999px; display: flex; align-items: center; justify-content: center; background: #037788; color: #FFFFFF">PHE</span></div>
+<div style="margin: 10px 14px 0; padding: 12px; border-radius: 16px; background: #0A242B; display: flex; flex-direction: column; gap: 8px">
+<div style="display: flex; justify-content: space-between; font-size: 10px; font-weight: 600; letter-spacing: .12em; color: #7FE3EC">PHE SUPPLY<span style="letter-spacing: 0; font-size: 11px; color: #6EE7B7">Water coming</span></div>
+<div style="height: 5px; border-radius: 5px; background: linear-gradient(90deg, rgba(127,227,236,0.12), #7FE3EC 50%, rgba(127,227,236,0.12))"></div>
+<div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px; font-weight: 600">Auto fill<span style="width: 38px; height: 22px; border-radius: 999px; background: #037788; position: relative"><span style="position: absolute; top: 3px; right: 3px; width: 16px; height: 16px; border-radius: 50%; background: #FFFFFF"></span></span></div>
+</div>
+<div style="margin: 10px 14px 0; display: flex; flex-direction: column; gap: 8px">
+<sc-for list="{{pheLines}}" as="t" hint-placeholder-count="2">
+<div style="display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 16px; background: #0A242B">
+<svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true"><circle cx="17" cy="17" r="14" fill="none" stroke="rgba(127,227,236,0.14)" stroke-width="4"></circle><circle cx="17" cy="17" r="14" fill="none" stroke="#7FE3EC" stroke-width="4" stroke-linecap="round" stroke-dasharray="{{t.dash}}" transform="rotate(-90 17 17)"></circle></svg>
+<span style="display: flex; flex-direction: column; flex-grow: 1"><span style="font-size: 13px; font-weight: 600">{{t.name}} · {{t.pct}}%</span><span style="font-size: 10px; color: #8FB3B8">{{t.sub}}</span></span>
+<span style="height: 24px; padding: 0 10px; border-radius: 999px; font-size: 9px; font-weight: 700; letter-spacing: .05em; line-height: 24px; {{t.vStyle}}">{{t.v}}</span>
+</div>
+</sc-for>
+</div>
+</div>
+</sc-if>
+
 
 <sc-if value="{{isTanks}}" hint-placeholder-val="{{ false }}">
 <div style="position: absolute; inset: 0; padding: 48px 14px 0; box-sizing: border-box">
@@ -124,7 +161,7 @@
 <div style="position: absolute; left: 0; right: 0; bottom: 0; height: 380px; border-radius: 28px 28px 0 0; background: #0A242B; padding: 10px 16px 0; box-sizing: border-box">
 <div style="width: 40px; height: 4px; border-radius: 4px; background: rgba(232,246,247,0.25); margin: 0 auto 14px"></div>
 <div style="font-size: 17px; font-weight: 600">Bluetooth setup</div>
-<div style="margin-top: 4px; font-size: 11px; color: #8FB3B8">Found your controller. Pick your Wi-Fi.</div>
+<div style="margin-top: 4px; font-size: 11px; color: #8FB3B8">Found RelaxPump PHE. Pick your Wi-Fi.</div>
 <div style="margin-top: 12px; padding: 10px 12px; border-radius: 14px; background: #06171C; display: flex; align-items: center; gap: 10px"><span style="width: 30px; height: 30px; border-radius: 10px; background: rgba(127,227,236,0.12); display: flex; align-items: center; justify-content: center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7FE3EC" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10-5 4V3l5 4L7 17"></path></svg></span><span style="flex-grow: 1; font-size: 12px; font-weight: 600">RelaxPump-3F2A</span><span style="font-size: 10px; font-weight: 600; color: #7FE3EC">Found</span></div>
 <sc-for list="{{wifis}}" as="w" hint-placeholder-count="3">
 <div style="margin-top: 8px; padding: 10px 12px; border-radius: 14px; display: flex; align-items: center; gap: 10px; font-size: 12px; {{w.style}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7FE3EC" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M2 9a15 15 0 0 1 20 0 M5 12.5a10 10 0 0 1 14 0 M8.5 16a5 5 0 0 1 7 0 M12 19.5h.01"></path></svg><span style="flex-grow: 1">{{w.n}}</span><span style="font-size: 10px; color: #8FB3B8">{{w.s}}</span></div>
@@ -161,7 +198,7 @@
 </div>
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"screen":{"editor":"enum","options":["welcome","home","tanks","usage","ble","account"],"default":"home"},"$preview":{"width":300,"height":620}}'>
+<script type="text/x-dc" data-dc-script data-props='{"screen":{"editor":"enum","options":["welcome","home","phe","tanks","usage","ble","account"],"default":"home"},"$preview":{"width":300,"height":620}}'>
 class Component extends DCLogic {
   renderVals() {
     const s = this.props.screen ?? 'home';
@@ -172,6 +209,10 @@ class Component extends DCLogic {
       { name: 'Garden', pct: 18, litres: '90 / 500 L' }
     ];
     const homeTanks = tanks.map(t => ({ ...t, col: t.pct < 25 ? '#F59E0B' : '#7FE3EC', dash: (t.pct * 0.88).toFixed(1) + ' 88' }));
+    const pheLines = [
+      { name: 'Main tank', pct: 64, sub: 'Filling · +4% in 10 min', v: 'OPEN', vStyle: 'background: rgba(52,211,153,0.16); color: #6EE7B7' },
+      { name: 'Kitchen line', pct: 97, sub: 'Full · valve closed', v: 'CLOSED', vStyle: 'background: rgba(143,179,184,0.14); color: #8FB3B8' }
+    ].map(t => ({ ...t, dash: (t.pct * 0.88).toFixed(1) + ' 88' }));
     const tankCards = tanks.map((t, i) => ({
       name: t.name, pct: t.pct, h: t.pct + '%',
       fill: t.pct < 25 ? 'linear-gradient(180deg, #FCD34D, #D97706)' : 'linear-gradient(180deg, #7FE3EC, #037788)',
@@ -192,10 +233,10 @@ class Component extends DCLogic {
       { t: 'Sign out', d: 'M15 4h4v16h-4 M10 8l-4 4 4 4 M6 12h10', c: '#FCA5A5', ic: '#FCA5A5' }
     ];
     return {
-      isWelcome: s === 'welcome', isHome: s === 'home', isTanks: s === 'tanks', isUsage: s === 'usage', isBle: s === 'ble', isAccount: s === 'account',
-      showNav: s === 'home' || s === 'tanks' || s === 'usage' || s === 'account',
-      navHome: s === 'home' ? on : off, navTanks: s === 'tanks' ? on : off, navUsage: s === 'usage' ? on : off,
-      homeTanks, tankCards, bars, perTank, wifis, rows
+      isWelcome: s === 'welcome', isHome: s === 'home', isPhe: s === 'phe', isTanks: s === 'tanks', isUsage: s === 'usage', isBle: s === 'ble', isAccount: s === 'account',
+      showNav: s === 'home' || s === 'phe' || s === 'tanks' || s === 'usage' || s === 'account',
+      navHome: s === 'home' || s === 'phe' ? on : off, navTanks: s === 'tanks' ? on : off, navUsage: s === 'usage' ? on : off,
+      homeTanks, pheLines, tankCards, bars, perTank, wifis, rows
     };
   }
 }

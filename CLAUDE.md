@@ -213,3 +213,14 @@ The firmware is flashed once; the app's installer setup (PIN) sets how many tank
 **`docs/flexible-system.md` replaces the fixed 3-tank parts of §4 and §7** (data model, pins,
 behaviour), and `reference/design-v2/` holds the new app screens. Read both before changing the
 firmware, the app's tank screens, the rules or the docs.
+
+## 11. v3 two modules: Household + PHE, many boards per account, OTA
+
+The product now has **two modules**, each its own board with its own ESP32 and the same PCB +
+firmware build: **Household** (pump + 1–5 semi tanks, as v2) and **PHE** (1–5 PHE supply lines,
+sensor + valve per line, no pump). The type is set at the factory. One app account holds any number
+of boards; Home shows Household / PHE tabs. Firmware updates go over the air from the app
+(signed, with rollback). **`docs/two-module-system.md` wins over §4, §7, §10 and
+`docs/flexible-system.md` where they disagree**, and `reference/design-v3/` holds the new screens.
+Read both before changing the firmware, the app, the rules or the docs. Never commit the OTA
+signing key or per-device secrets.

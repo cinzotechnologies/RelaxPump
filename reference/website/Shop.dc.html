@@ -177,6 +177,20 @@ a{color:#035360}a:hover{color:#037788}
 .fine{font-size:12px;line-height:1.5;color:#48656A}
 @container site (max-width:1100px){.caps{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @container site (max-width:820px){.plan{padding:40px 0 48px}.calc{grid-template-columns:minmax(0,1fr)}.cbox{padding:18px}.rcard b{font-size:24px}}
+.popts{display:flex;flex-direction:column;gap:8px}
+.po{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:14px;width:100%;padding:12px 14px;border:1px solid #CFE3E7;border-radius:16px;background:#FFFFFF;text-align:left;font:inherit;color:#021A20;cursor:pointer;touch-action:manipulation;transition:transform .12s,border-color .2s}
+.po:active{transform:scale(.98)}
+.po.on{border-color:#035360;background:#E6F4F6;box-shadow:inset 0 0 0 1px #035360}
+.po[disabled]{cursor:not-allowed;opacity:.6}
+.po .hp{min-width:64px;font:500 20px/1 Outfit,sans-serif;color:#035360}
+.po .pd{display:flex;flex-direction:column;gap:3px;min-width:0}
+.po .pd b{font-size:14px;font-weight:600}
+.po .pd span{font-size:12px;color:#48656A}
+.tagx{height:24px;padding:0 10px;border-radius:999px;font:700 11px/24px Inter,sans-serif;white-space:nowrap}
+.t-best{background:#035360;color:#FFFFFF}
+.t-ok{background:#DCFCE7;color:#166534}
+.t-slow{background:#FFF4DB;color:#7A4A00}
+.t-no{background:#FDE8E8;color:#991B1B}
 /* flat white buttons, thin outline, no shadows */
 .nav{background:rgba(255,255,255,.97)!important;border-bottom:1px solid #CFE3E7!important;box-shadow:0 10px 28px -20px rgba(2,26,32,.35)}
 .btn,.btn:hover,.btn-p,.btn-p:hover,.btn-s,.btn-s:hover,.nav-in>.btn-p,.nav-in>.btn-p:hover{background:#FFFFFF!important;color:#035360!important;box-shadow:inset 0 0 0 1px #035360!important;transform:none!important}
@@ -255,13 +269,18 @@ a{color:#035360}a:hover{color:#037788}
 <span class="kicker">Plan your kit</span>
 <h2 style="margin-top: 14px; font-size: 44px; font-weight: 500; line-height: 1.05; letter-spacing: -0.02em">What do you need?</h2>
 <div class="caps">
-<div class="cap"><b>8</b><span>semi tanks on one controller</span></div>
-<div class="cap"><b>8 + 8</b><span>valves and sensors, buy only what you use</span></div>
-<div class="cap"><b>+ PHE</b><span>own valve for the PHE line</span></div>
-<div class="cap"><b>+ Main</b><span>sensor for the main tank, and the pump</span></div>
+<div class="cap"><b>5</b><span>semi tanks on the Household controller</span></div>
+<div class="cap"><b>5</b><span>PHE lines on the PHE controller</span></div>
+<div class="cap"><b>1 + 1</b><span>sensor and valve for each tank or line</span></div>
+<div class="cap"><b>1 app</b><span>for both — buy one or both</span></div>
 </div>
 <div class="calc">
 <div class="cbox">
+<div class="q"><span class="ql">What do you have?</span>
+<div class="opts"><sc-for list="{{modOpts}}" as="o" hint-placeholder-count="3"><button class="opt {{o.cls}}" type="button" onClick="{{o.go}}">{{o.label}}</button></sc-for></div></div>
+<sc-if value="{{hasPhe}}" hint-placeholder-val="{{ false }}"><div class="q"><span class="ql">PHE lines<b>{{cLines}}</b></span>
+<div class="step" style="align-self: flex-start"><button type="button" aria-label="One less PHE line" onClick="{{lineDec}}">−</button><span>{{cLines}}</span><button type="button" aria-label="One more PHE line" onClick="{{lineInc}}">+</button></div></div></sc-if>
+<sc-if value="{{hasHH}}" hint-placeholder-val="{{ true }}">
 <div class="q"><span class="ql">Semi tanks<b>{{cTanks}}</b></span>
 <div class="step" style="align-self: flex-start"><button type="button" aria-label="One less tank" onClick="{{tankDec}}">−</button><span>{{cTanks}}</span><button type="button" aria-label="One more tank" onClick="{{tankInc}}">+</button></div></div>
 <div class="q"><span class="ql">Size of each tank</span>
@@ -273,10 +292,16 @@ a{color:#035360}a:hover{color:#037788}
 <sc-if value="{{isUnder}}" hint-placeholder-val="{{ false }}"><label class="ql" for="dep" style="font-weight: 500">How deep<b>{{cDepth}} ft</b></label><input class="rng" id="dep" type="range" min="2" max="40" step="1" value="{{cDepth}}" onChange="{{setDepth}}"></sc-if></div>
 <div class="q"><span class="ql">Pipe size</span>
 <div class="opts"><sc-for list="{{pipeOpts}}" as="o" hint-placeholder-count="4"><button class="opt {{o.cls}}" type="button" onClick="{{o.go}}">{{o.label}}</button></sc-for></div></div>
-<div class="tgl"><span>PHE line</span><button class="sw {{pheCls}}" type="button" aria-label="PHE line" aria-pressed="{{pheOn}}" onClick="{{togglePhe}}"><i></i></button></div>
 <div class="tgl"><span>Sensor in the main tank</span><button class="sw {{mainCls}}" type="button" aria-label="Sensor in the main tank" aria-pressed="{{mainOn}}" onClick="{{toggleMain}}"><i></i></button></div>
+</sc-if>
 </div>
 <div class="cbox res">
+<sc-if value="{{pheOnly}}" hint-placeholder-val="{{ false }}"><div class="rbig">
+<div class="rcard"><span>PHE lines</span><b>{{cLines}}</b><small>sensor + valve each</small></div>
+<div class="rcard"><span>Pump</span><b>None</b><small>PHE pressure fills the tanks</small></div>
+</div>
+<div class="warn">PHE pressure is low. Our PHE valves are zero-pressure 12 V solenoids, and they close by themselves in a power cut.</div></sc-if>
+<sc-if value="{{hasHH}}" hint-placeholder-val="{{ true }}">
 <div class="rbig">
 <div class="rcard"><span>Pump</span><b>{{rPump}}</b><small>{{rPumpNote}}</small></div>
 <div class="rcard"><span>Lift</span><b>{{rHead}} m</b><small>height + pipe losses</small></div>
@@ -284,11 +309,19 @@ a{color:#035360}a:hover{color:#037788}
 <div class="rcard"><span>All tanks, from empty</span><b>{{rAll}}</b><small>one tank at a time</small></div>
 </div>
 <sc-if value="{{hasWarn}}" hint-placeholder-val="{{ false }}"><div class="warn">{{rWarn}}</div></sc-if>
+<span class="ql" style="margin-top: 2px">Your pump options</span>
+<div class="popts">
+<sc-for list="{{pumpOpts}}" as="o" hint-placeholder-count="4">
+<button class="po {{o.cls}}" type="button" disabled="{{o.off}}" aria-pressed="{{o.sel}}" onClick="{{o.go}}"><span class="hp">{{o.hp}}</span><span class="pd"><b>{{o.line}}</b><span>{{o.sub}}</span></span><span class="tagx {{o.tcls}}">{{o.tag}}</span></button>
+</sc-for>
+</div>
+<sc-if value="{{hasTip}}" hint-placeholder-val="{{ false }}"><p class="fine" style="font-size: 13px; color: #035360">{{pipeTip}}</p></sc-if>
+</sc-if>
 <div class="klist">
 <sc-for list="{{kitList}}" as="k" hint-placeholder-count="4"><div class="kr"><span style="display: flex; flex-direction: column; gap: 2px"><b>{{k.name}}</b><span class="fine">{{k.note}}</span></span><span class="kq">× {{k.q}}</span></div></sc-for>
 </div>
 <button class="btn btn-p" type="button" onClick="{{addKit}}" style="width: 100%">Add this kit to cart</button>
-<p class="fine">Estimate from typical pump curves. Check the head and flow on your pump label, or call +91 98632 62589.</p>
+<p class="fine">Pump figures are estimates from typical pump curves. Check the head and flow on your pump label, or call +91 98632 62589.</p>
 </div>
 </div>
 </div>
@@ -433,7 +466,7 @@ a{color:#035360}a:hover{color:#037788}
 class Component extends DCLogic {
   constructor(p) {
     super(p);
-    this.state = { cat: 'All', cart: {}, open: false, step: 'cart', pay: 'cod', menu: false, c: { tanks: 3, litres: 1000, height: 30, under: false, depth: 8, pipe: 1, phe: false, main: false } };
+    this.state = { cat: 'All', cart: {}, open: false, step: 'cart', pay: 'cod', menu: false, c: { tanks: 3, litres: 1000, height: 30, under: false, depth: 8, pipe: 1, mod: 'hh', lines: 2, main: false } };
   }
   setQty(id, q) {
     const cart = { ...this.state.cart };
@@ -444,6 +477,7 @@ class Component extends DCLogic {
     const s = this.state;
     const ICON = {
       ctrl: 'M4 5h16v14H4z M8 9h5v4H8z M16 9h.01',
+      phectrl: 'M4 5h16v14H4z M8 9h5v4H8z M16 9h.01',
       tank: 'M2 13h20 M9 9h6v8H9z M10 5h4v4h-4z',
       phe: 'M2 13h20 M9 9h6v8H9z M10 5h4v4h-4z',
       main: 'M4 8h16v8H4z M9 12h.01 M15 12h.01',
@@ -454,9 +488,10 @@ class Component extends DCLogic {
       install: 'M3 11l9-7 9 7v9H3z M9 20v-6h6v6'
     };
     const P = [
-      { id: 'ctrl', cat: 'Kits', name: 'RelaxPump Controller', desc: 'Up to 8 tanks, PHE and pump.', tag: 'One per home', isCtrl: true },
-      { id: 'tank', cat: 'Kits', name: 'Semi Tank Kit', desc: 'One sensor and one valve.', tag: 'Per tank', isValve: true },
-      { id: 'phe', cat: 'Kits', name: 'PHE Kit', desc: 'Valve and check valve for the PHE line.', tag: 'PHE line', isValve: true },
+      { id: 'ctrl', cat: 'Kits', name: 'Household Controller', desc: 'Pump + up to 5 semi tanks.', tag: 'Household', isCtrl: true },
+      { id: 'phectrl', cat: 'Kits', name: 'PHE Controller', desc: 'Up to 5 PHE lines. No pump.', tag: 'PHE', isCtrl: true },
+      { id: 'tank', cat: 'Kits', name: 'Tank Kit', desc: 'One sensor and one valve.', tag: 'Per tank', isValve: true },
+      { id: 'phe', cat: 'Kits', name: 'PHE Line Kit', desc: 'Sensor + zero-pressure valve.', tag: 'Per PHE line', isValve: true },
       { id: 'main', cat: 'Kits', name: 'Main Tank Kit', desc: 'Sensor for the main tank.', tag: 'Main tank', isSensor: true },
       { id: 'pump', cat: 'Kits', name: 'Pump Kit', desc: 'Contactor sized to your pump.', tag: 'Pump', isRelay: true },
       { id: 'sensor', cat: 'Add-ons', name: 'Level Sensor', desc: 'Sensor only.', tag: 'Add-on', isSensor: true },
@@ -478,7 +513,9 @@ class Component extends DCLogic {
     const head = Math.round(((c.height / 3.28) * 1.2 + (c.under ? depthM : 0.5)) * 10) / 10;
     const flowOf = (x) => Math.min(x.q * (1 - head / x.h), pipe.cap);
     const ok = PUMPS.filter(x => x.h * 0.75 >= head);
-    const pump = ok.find(x => flowOf(x) >= Math.min(25, pipe.cap * 0.9)) || ok[ok.length - 1];
+    const best = ok.find(x => flowOf(x) >= Math.min(25, pipe.cap * 0.9)) || ok[ok.length - 1];
+    const picked = PUMPS.find(x => x.hp === c.pick && x.h * 0.75 >= head);
+    const pump = picked || best;
     let warn = '';
     if (c.under && depthM > 6) warn = 'The main tank is deeper than 6 m (20 ft). A surface pump cannot lift from there — use a submersible pump. Call us to plan it.';
     else if (!pump) warn = 'This is higher than a 2 HP pump lifts well. You need a high-head or booster pump — call us to plan it.';
@@ -486,13 +523,36 @@ class Component extends DCLogic {
     const oneMin = flow ? Math.round(c.litres / flow) : 0;
     const allMin = flow ? c.tanks * oneMin + (c.tanks - 1) : 0;
     const fmt = (m) => (m >= 60 ? Math.floor(m / 60) + ' h ' + (m % 60) + ' min' : m + ' min');
-    const tanksMax = 8;
+    const pumpOpts = PUMPS.map(x => {
+      const works = x.h * 0.75 >= head, lifts = x.h > head * 1.05;
+      const f = lifts ? Math.max(1, Math.round(Math.min(x.q * (1 - head / x.h), pipe.cap))) : 0;
+      const one = f ? Math.round(c.litres / f) : 0;
+      const all = f ? c.tanks * one + (c.tanks - 1) : 0;
+      const isBest = !warn && best && x.hp === best.hp;
+      const tag = !lifts ? 'Too weak' : (!works ? 'Very slow' : (isBest ? 'Best' : (f >= Math.min(25, pipe.cap * 0.9) ? 'Good' : 'Slow')));
+      return {
+        hp: x.hp, tag, tcls: tag === 'Best' ? 't-best' : tag === 'Good' ? 't-ok' : tag === 'Too weak' ? 't-no' : 't-slow',
+        line: lifts ? f + ' L/min · one tank ' + fmt(one) : 'Cannot lift to ' + c.height + ' ft',
+        sub: lifts ? 'All tanks ' + fmt(all) + ' · contactor ' + x.ct : 'Max lift ' + x.h + ' m, you need about ' + head + ' m',
+        off: !works, sel: pump && x.hp === pump.hp ? 'true' : 'false', cls: pump && x.hp === pump.hp ? 'on' : '',
+        go: () => setC({ pick: x.hp })
+      };
+    });
+    const nextPipe = PIPES[PIPES.indexOf(pipe) + 1];
+    let pipeTip = '';
+    if (pump && !warn && nextPipe && Math.min(pump.q * (1 - head / pump.h), pipe.cap) >= pipe.cap - 0.5) {
+      const f2 = Math.round(Math.min(pump.q * (1 - head / pump.h), nextPipe.cap));
+      if (f2 > flow) pipeTip = 'Your ' + pipe.label + ' pipe is the limit. With a ' + nextPipe.label + ' pipe this pump gives about ' + f2 + ' L/min — one tank in ' + fmt(Math.round(c.litres / f2)) + '.';
+    }
+    const tanksMax = 5;
+    const hasHH = c.mod !== 'phe', hasPhe = c.mod !== 'hh';
     const kitList = [
-      { id: 'ctrl', name: 'RelaxPump Controller', note: 'One per home', q: 1 },
-      { id: 'tank', name: 'Semi Tank Kit', note: 'Sensor + valve for each tank', q: c.tanks },
-      c.phe ? { id: 'phe', name: 'PHE Kit', note: 'Valve + check valve', q: 1 } : null,
-      c.main ? { id: 'main', name: 'Main Tank Kit', note: 'Sensor for the main tank', q: 1 } : null,
-      { id: 'pump', name: 'Pump Kit', note: pump ? 'Contactor ' + pump.ct + ' for a ' + pump.hp + ' pump' : 'We size it with you', q: 1 }
+      hasHH ? { id: 'ctrl', name: 'Household Controller', note: 'Pump + semi tanks', q: 1 } : null,
+      hasHH ? (c.tanks === 1 ? { id: 'sensor', name: 'Level Sensor', note: 'One tank needs no valve', q: 1 } : { id: 'tank', name: 'Tank Kit', note: 'Sensor + valve for each tank', q: c.tanks }) : null,
+      hasHH && c.main ? { id: 'main', name: 'Main Tank Kit', note: 'Sensor for the main tank', q: 1 } : null,
+      hasHH ? { id: 'pump', name: 'Pump Kit', note: pump ? 'Contactor ' + pump.ct + ' for a ' + pump.hp + ' pump' : 'We size it with you', q: 1 } : null,
+      hasPhe ? { id: 'phectrl', name: 'PHE Controller', note: 'PHE lines, no pump', q: 1 } : null,
+      hasPhe ? { id: 'phe', name: 'PHE Line Kit', note: 'Sensor + valve for each PHE line', q: c.lines } : null
     ].filter(Boolean);
     const calcVals = {
       cTanks: c.tanks, cHeight: c.height, cDepth: c.depth, isUnder: c.under,
@@ -503,11 +563,13 @@ class Component extends DCLogic {
       pipeOpts: PIPES.map(x => ({ label: x.label, cls: c.pipe === x.v ? 'on' : '', go: () => setC({ pipe: x.v }) })),
       setHeight: (e) => setC({ height: Number(e.target.value) }),
       setDepth: (e) => setC({ depth: Number(e.target.value) }),
-      pheCls: c.phe ? 'on' : '', pheOn: c.phe ? 'true' : 'false', togglePhe: () => setC({ phe: !c.phe }),
+      modOpts: [{ label: 'Pump + tanks', v: 'hh' }, { label: 'PHE lines', v: 'phe' }, { label: 'Both', v: 'both' }].map(o => ({ label: o.label, cls: c.mod === o.v ? 'on' : '', go: () => setC({ mod: o.v }) })),
+      hasHH, hasPhe, pheOnly: !hasHH, cLines: c.lines,
+      lineDec: () => setC({ lines: Math.max(1, c.lines - 1) }), lineInc: () => setC({ lines: Math.min(5, c.lines + 1) }),
       mainCls: c.main ? 'on' : '', mainOn: c.main ? 'true' : 'false', toggleMain: () => setC({ main: !c.main }),
-      rPump: warn ? 'Call us' : pump.hp, rPumpNote: warn ? 'Special pump needed' : 'or bigger',
+      rPump: warn ? 'Call us' : pump.hp, rPumpNote: warn ? 'Special pump needed' : (picked && best && picked.hp !== best.hp ? 'your choice' : 'best for you'),
       rHead: head, rFlow: flow, rOne: warn ? '—' : fmt(oneMin), rAll: warn ? '—' : fmt(allMin),
-      hasWarn: !!warn, rWarn: warn, kitList,
+      hasWarn: !!warn, rWarn: warn, kitList, pumpOpts, pipeTip, hasTip: !!pipeTip,
       addKit: () => { const cart = {}; kitList.forEach(k => { cart[k.id] = k.q; }); this.setState({ cart, open: true, step: 'cart' }); }
     };
     const cats = ['All', 'Kits', 'Add-ons', 'Service'].map(c => ({ label: c, cls: c === s.cat ? 'on' : '', sel: c === s.cat ? 'true' : 'false', go: () => this.setState({ cat: c }) }));

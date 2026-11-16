@@ -444,16 +444,16 @@ a{color:#035360}a:hover{color:#037788}
 </header>
 
 <section class="hero" id="top">
-<img class="hbg" src="./assets/hero-water.jpg" alt="Water drop splashing on calm water">
+<img class="hbg" src="/_blob/190579f479ae2ac7b8cc60efc8283253" alt="Water drop splashing on calm water">
 <div class="hfade"></div>
 <div class="wrap hcopy">
 <h1 class="h1 in d1">Smart water tank<br><em>automation</em></h1>
-<p class="hsub in d2">See every tank and run your pump from your phone — by hand or fully automatic.</p>
+<p class="hsub in d2">Your pump tanks and PHE lines in one app — by hand or fully automatic.</p>
 <div class="hero-ctas in d3">
 <a class="hb hb-main" href="#download"><span class="hb-t">Get the app</span></a>
 <a class="hb hb-alt" href="Shop.dc.html"><span class="hb-t">Order the kit</span></a>
 </div>
-<div class="hchecks in d4"><span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#037788" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10"></path></svg>Up to 3 tanks</span><span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#037788" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10"></path></svg>Works anywhere</span><span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#037788" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10"></path></svg>Dry-run safe</span></div>
+<div class="hchecks in d4"><span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#037788" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10"></path></svg>Household + PHE</span><span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#037788" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10"></path></svg>Works anywhere</span><span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#037788" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10"></path></svg>Dry-run safe</span></div>
 </div>
 </section>
 
@@ -534,7 +534,7 @@ a{color:#035360}a:hover{color:#037788}
 </div>
 <div class="vid">
 <div class="player">
-<img src="./assets/hero-water.jpg" alt="">
+<img src="/_blob/190579f479ae2ac7b8cc60efc8283253" alt="">
 <div class="pshade"></div>
 <div class="ptop"><span class="pchip">Chapter {{chN}} of 5</span><span class="soonc">VIDEO SOON</span></div>
 <button class="play" type="button" aria-label="Play video" onClick="{{playVid}}"><svg width="30" height="30" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13c0 .6.7 1 1.2.6l10-6.5c.5-.3.5-1 0-1.3l-10-6.5c-.5-.3-1.2 0-1.2.7z" fill="currentColor"></path></svg></button>
@@ -784,10 +784,10 @@ class Component extends DCLogic {
   renderVals() {
     const s = this.state;
     const F = [
-      { n: '01', k: 'Levels', t: 'Live levels', d: 'Every tank on your phone, anywhere.', screen: 'home', bg: 'linear-gradient(150deg, #0A9AAE, #037788 55%, #035360)' },
+      { n: '01', k: 'Levels', t: 'Live levels', d: 'Every tank and PHE line on your phone, anywhere.', screen: 'home', bg: 'linear-gradient(150deg, #0A9AAE, #037788 55%, #035360)' },
       { n: '02', k: 'Auto', t: 'Auto fill', d: 'Set start and stop. It does the rest.', screen: 'tanks', bg: 'linear-gradient(150deg, #035360, #02343C 60%, #021A20)' },
       { n: '03', k: 'Alerts', t: 'Usage & alerts', d: 'Litres, pump time, and dry-run alerts.', screen: 'usage', bg: 'linear-gradient(150deg, #2FB6C6, #037788 60%, #035360)' },
-      { n: '04', k: 'Setup', t: '1-minute setup', d: 'Scan, connect Wi-Fi, done.', screen: 'ble', bg: 'linear-gradient(150deg, #044753, #035360 50%, #037788)' }
+      { n: '04', k: 'Setup', t: '1-minute setup', d: 'Add device, connect Wi-Fi, done.', screen: 'ble', bg: 'linear-gradient(150deg, #044753, #035360 50%, #037788)' }
     ];
     const feats = F.map((f, i) => ({
       ...f,
@@ -797,11 +797,12 @@ class Component extends DCLogic {
     }));
     const SH = [
       { key: 'welcome', label: 'Welcome', d: 'A calm start — your tanks, one tap away.' },
-      { key: 'home', label: 'Home', d: 'Average level, pump status and every tank at a glance.' },
+      { key: 'home', label: 'Household', d: 'Pump, auto fill and every semi tank at a glance.' },
+      { key: 'phe', label: 'PHE', d: 'PHE water coming, valves and every PHE line.' },
       { key: 'tanks', label: 'Tanks', d: 'Valves, live fills and auto start/stop levels.' },
       { key: 'usage', label: 'Usage', d: 'Litres and pump minutes for the last 7 days.' },
-      { key: 'ble', label: 'Bluetooth setup', d: 'First-time setup: send your Wi-Fi to the controller.' },
-      { key: 'account', label: 'Account', d: 'Profile, password, tanks and sign out.' }
+      { key: 'ble', label: 'Add device', d: 'Add a Household or PHE board by Bluetooth.' },
+      { key: 'account', label: 'Account', d: 'Profile, my devices, updates and sign out.' }
     ];
     const n = SH.length;
     const posName = { '-2': 'pm2', '-1': 'pm1', '0': 'p0', '1': 'p1', '2': 'p2' };
@@ -810,8 +811,8 @@ class Component extends DCLogic {
       return { ...x, pos: posName[String(rel)] || 'ph', chip: i === s.shot ? 'on' : '', sel: i === s.shot ? 'true' : 'false', go: () => this.setState({ shot: i }) };
     });
     const P = [
-      { id: 'kit', name: 'RelaxPump Controller Kit', desc: 'The ESP32 controller that runs your pump and up to 3 tanks.', tag: 'Start here', isCtrl: true },
-      { id: 'sensor', name: 'Ultrasonic Level Sensor', desc: 'Add one sensor per tank to see its level live.', tag: 'Add-on', isSensor: true },
+      { id: 'kit', name: 'Household Controller', desc: 'Runs your pump and up to 5 semi tanks.', tag: 'Household', isCtrl: true },
+      { id: 'phe', name: 'PHE Controller', desc: 'Fills up to 5 tanks from PHE lines. No pump needed.', tag: 'PHE', isCtrl: true },
       { id: 'install', name: 'Home Installation', desc: 'Our team fits the kit, wires the pump and sets up the app with you.', tag: 'Service', isInstall: true }
     ];
     const products = P.map(p => {
@@ -825,14 +826,14 @@ class Component extends DCLogic {
     const PG = [
       { ...blank, isCoverL: true, cls: 'dark' },
       { ...blank, isTitle: true },
-      T('Start here', 'In the box', L(['ESP32 controller', 'Ultrasonic sensor — one per tank', '12 V solenoid valve — one per tank', 'Relay module + pump contactor', '5 V power supply']), 'isBox'),
+      T('Start here', 'In the box', L(['RelaxPump controller', 'Ultrasonic sensor — one per tank', '12 V solenoid valve — one per tank', 'Pump contactor (Household)', '12 V power supply']), 'isBox'),
       T('Before you start', 'Stay safe', L(['Switch off the pump at the MCB.', 'Pump wiring must be done by an electrician.', 'Keep your Wi-Fi password ready.'], ['#F59E0B', '#F59E0B', '#037788'])),
       T('Step 1', 'Mount the sensors', L(['Fix the probe on the tank lid.', 'Keep it at least 30 cm above the full level.']), 'isTank'),
       T('Step 1 · cable', 'One cable per tank', L(['Brown — 5 V', 'Brown-white — GND', 'Blue — Trig', 'Green — Echo'], ['#8B5A2B', '#C9A27A', '#2563EB', '#16A34A'])),
-      T('Step 2', 'Fit the valves', L(['One 12 V solenoid valve on each tank inlet.', 'Relay IN1–IN3 switch valves 1–3.']), 'isValve'),
-      T('Step 3', 'Wire the pump', L(['Relay IN4 drives the contactor coil.', 'Use an MCB on the pump line.', 'Electrician only.'], ['#037788', '#037788', '#F59E0B']), 'isPump'),
+      T('Step 2', 'Fit the valves', L(['One 12 V valve on each tank inlet.', 'Sensor T1 and valve V1 are tank 1, and so on.']), 'isValve'),
+      T('Step 3', 'Wire the pump (Household)', L(['Relay K1 drives the contactor coil.', 'Use an MCB on the pump line.', 'Electrician only.'], ['#037788', '#037788', '#F59E0B']), 'isPump'),
       T('Step 4', 'Power on', L(['Slow blink — waiting for setup', 'Fast blink — connecting', 'Steady — online', 'Double blink — safety stop'], ['#7FE3EC', '#2FB6C6', '#035360', '#F59E0B'])),
-      T('Step 5', 'Set up in the app', L(['1. Sign up with your phone number.', '2. Scan the QR on the box.', '3. Pick your Wi-Fi and connect.', '4. Set your tank sizes.']), 'isPhone'),
+      T('Step 5', 'Set up in the app', L(['1. Sign up with your phone number.', '2. Tap Add device.', '3. Pick your board and Wi-Fi.', '4. Set your tanks or PHE lines.']), 'isPhone'),
       T('Built in', 'Safety', L(['Valve opens 2 s before the pump.', 'Stops on a dry run.', 'Max run time — 30 min.', '60 s rest before restart.']), 'isShield'),
       T('Help', 'Need help?', L(['New router? Hold BOOT 5 s, then set up again.', 'Call +91 98632 62589', 'cinzotechnologies@gmail.com', 'Chala Road, Luangmual'])),
       { ...blank, isEnd: true, cls: 'dark' },
