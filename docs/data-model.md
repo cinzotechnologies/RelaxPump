@@ -1,30 +1,53 @@
-# Realtime Database data model (v2 customizable system, 1–5 tanks)
+# Realtime Database data model (v3: Household + PHE modules, many boards per account, OTA)
 
-Source of truth for the shape: `docs/flexible-system.md` §3. Types in the app:
-`app/src/model/layout.ts` (config, validation, helpers) and `app/src/model/types.ts`.
+Source of truth for the shape: `docs/flexible-system.md` §3 (Household) and
+`docs/two-module-system.md` §3 (PHE, OTA — it wins where they differ). Types in the app:
+`app/src/model/layout.ts` (household config), `app/src/model/phe.ts` (PHE config),
+`app/src/model/types.ts` and `app/src/model/state.ts` (reading state/info/firmware).
 
 ```
 devices/{deviceId}/                     deviceId = "RP-" + 6 hex, e.g. RP-3F2A9C
-  info:   { name, fw, board: 'v1'|'v2', maxTanks: 5, ownerUid }
-                                         admin creates; the device writes fw/board/maxTanks
-                                         (board is a label: hand-wired board / PCB, same pins);
-                                         the user sets ownerUid by claiming
-  config: { tankCount: 1..5, low, high, maxRunMin,
-            tanks: [ { name?, litres?, emptyCm, fullCm, heightFt? } ],   length = tankCount
-            main?: { enabled, litres?, emptyCm?, fullCm?, minPct 5–40 } }
-  state:  { online, lastSeen, rssi, ssid, pump, auto, msg, active: int|null,
-            tanks: [ { pct, valve, ok } ],
-            main: { pct, ok } | null,
-            detected: { tanks: [bool × 5], main },       which sensor ports answer
-            check: { run, rows: [ { i, pctMin, lpm|null, minToFull|null, slow } ] } | null }
-  cmd:    { pump?, auto?, valve?: { i: 0..4, open }, pumpCheck?,
-            test?: { port: 'V1'..'V5'|'PUMP', ms ≤ 3000 }, ts }
+  info:   { name, fw, board: 'v1'|'v2'|'v3', maxTanks: 5, ownerUid,
+            type: 'household'|'phe', flash: 4|8|16 }
+                                         admin creates (new-device writes type); the device
+                                         writes fw/board/maxTanks/type/flash. type is set at the
+                                         factory and can never change (missing = household).
+                                         board: v1 hand-wired relays (active LOW), v2 PCB,
+                                         v3 Rev C (8 relays, K7/K8 spare). User sets ownerUid by claiming.
+  config: household → { tankCount: 1..5, low, high, maxRunMin,
+                        tanks: [ { name?, litres?, emptyCm, fullCm, heightFt? } ],   length = tankCount
+                        main?: { enabled, litres?, emptyCm?, fullCm?, minPct 5–40 } }
+          phe       → { tankCount: 1..5 (= PHE lines), low: reopen 50–95 (85), high: close 60–100 (95),
+                        tanks: [ { name?, litres?, emptyCm, fullCm } ] }        no main/maxRunMin/heightFt
+  state:  household → { online, lastSeen, rssi, ssid, pump, auto, msg, active: int|null,
+                        tanks: [ { pct, valve, ok } ],
+                        main: { pct, ok } | null,
+                        detected: { tanks: [bool × 5], main },       which sensor ports answer
+                        cm: [cm|null × 6],                           live distances T1–T5, MAIN
+                        check: { run, rows: [ { i, pctMin, lpm|null, minToFull|null, slow } ] } | null }
+          phe       → { online, lastSeen, rssi, ssid, auto, msg, detected, cm,
+                        tanks: [ { pct, valve, ok, rising } ],       rising = up ≥ 2 % in 10 min
+                        supply: 'flowing'|'none'|'unknown' }
+          both      → fwAvailable: 'x.y.z' | null                    this board may install it
+                      ota: { phase: download|verify|install|restart|done|failed, pct, to, err? } | null
+  cmd:    household → { pump?, auto?, valve?: { i: 0..4, open }, pumpCheck?,
+                        test?: { port: 'V1'..'V5'|'PUMP', ms ≤ 3000 }, wifiReset?, ota?, ts }
+          phe       → { auto?, valve?: { i, open }, test?: { port: 'V1'..'V5', ms ≤ 3000 },
+                        wifiReset?, ota?, ts }                       pump/pumpCheck/PUMP refused
+          ota       → { version: 'x.y.z' }                           must equal firmware/stable/version
   events/{pushId}: { type, tank, ts, min?, auto? }
-            type = full | low | pump_on | pump_off | dry_run | timeout | sensor |
-                   main_low | board_error | check_done
-            tank = tank index, or -1 for main tank / board events
-  usage/{yyyy-mm-dd}: { litres, pumpMin, perTank: [ { litres, pumpMin } ] }   up to 5
-users/{uid}: { name, phone, devices: { deviceId: true }, fcm: { token: true }, createdAt }
+            household: full | low | pump_on | pump_off | dry_run | timeout | sensor |
+                       main_low | board_error | check_done
+            phe:       flow_start | flow_stop | phe_full | overflow | sensor
+            both:      ota_done | ota_failed
+            tank = tank / line index, or -1 for main tank / board / supply events
+  usage/{yyyy-mm-dd}: household { litres, pumpMin, perTank: [ { litres, pumpMin } ] }   up to 5
+                      phe       { litres, perTank: [ { litres } ] }    litres received per line
+firmware/stable: { version, url, sha256, sig, size, minFw, rollout: 0–100, date, notes: [..] }
+                                         written by firmware/scripts/release.mjs (admin);
+                                         any signed-in user and every device may read it
+users/{uid}: { name, phone, devices: { deviceId: true, … }, fcm: { token: true }, createdAt }
+                                         one account, any number of boards (both types)
 claims/{deviceId}: { codeHash }                      admin only, never readable
 claimAttempts/{deviceId}/{uid}: "<sha256 hex>"       write-only, used by the claim rule
 installerPins/{deviceId}: { hash }                   never readable (see "Installer PIN")
@@ -40,7 +63,14 @@ pinChecks/{deviceId}/{uid}: ts                       write succeeds only with a 
 - `tanks` has exactly `tankCount` entries; `tankCount ≤ info.maxTanks` (old 3-tank firmware
   reports 3, v2 firmware reports 5).
 - Main tank sensor (port MAIN) optional: the pump never starts, and stops, below `main.minPct`.
-- No PHE line, no modes, no tanks without a sensor.
+- No tanks without a sensor.
+
+PHE board (`info.type = 'phe'`):
+- 1–5 PHE lines; line *n* = sensor T*n* on its tank + valve V*n* on its pipe, **always** (also with
+  one line). No pump, no main tank. Lines are independent; any number of valves may be open.
+- Auto opens a line's valve below `low` (reopen) and closes it at `high` (close), at least 5 apart.
+  A valve opened by hand still closes at `high`. Sensor lost → valve closed + event `sensor`.
+- The rules pick the household or the PHE shape from `info.type`.
 
 ## Who may write what
 
@@ -48,7 +78,10 @@ pinChecks/{deviceId}/{uid}: ts                       write succeeds only with a 
 |---|---|
 | `config` as a whole, `tankCount`, `tanks/{i}` (layout), `emptyCm`, `fullCm`, `heightFt`, `maxRunMin`, `main` | owner **with installer PIN** (or no PIN set yet) |
 | `config/low`, `high`, `tanks/{i}/name`, `tanks/{i}/litres`, `main/litres` | owner (customer) |
-| `info/fw`, `board`, `maxTanks` | device |
+| `info/fw`, `board`, `maxTanks`, `flash` | device |
+| `info/type` | device or `new-device`, **once** (never changes afterwards) |
+| `cmd/ota` | owner, only with `version == firmware/stable/version` |
+| `firmware/stable` | admin only (`release.mjs`); readable by signed-in users and devices |
 | `state`, `events` (append-only), `usage` | device |
 | `cmd` | owner writes, device deletes |
 
@@ -79,14 +112,15 @@ and is rejected by the rules.
 
 | Who | Firebase Auth email | Notes |
 |---|---|---|
-| Customer | `91XXXXXXXXXX@users.relaxpump.app` | phone + password; one account per controller, the family shares the login |
+| Customer | `91XXXXXXXXXX@users.relaxpump.app` | phone + password; **one account, many controllers** (Household and PHE boards); the family shares the login |
 | Controller | `rp-3f2a9c@devices.relaxpump.app` | created by `new-device` with `emailVerified: true`; rules require it, so a look-alike sign-up cannot act as a device |
 
 ## Claiming a controller
 
 No QR. During Bluetooth setup (security 1, PoP `relaxpump-ble-v1` shared by all controllers) the app
-reads the custom endpoint `rp-identity`, which answers `RP1;<deviceId>;<claimCode>` (`RP_CLAIM_CODE`
-in `secrets.h`). So anyone within Bluetooth range while the controller is in setup can claim it, if
+reads the custom endpoint `rp-identity`, which answers `RP2;<deviceId>;<claimCode>;<type>;<fw>` (v3;
+boards before v3 answer `RP1;<deviceId>;<claimCode>` and are household). The claim code lives in
+the board's NVS since v3 (`factory-flash`), in `secrets.h` before. So anyone within Bluetooth range while the controller is in setup can claim it, if
 it has no owner yet.
 
 1. The app computes `sha256("<deviceId>:<claimCode>")` (hex).
@@ -95,7 +129,8 @@ it has no owner yet.
 3. The rules accept `ownerUid` only when it is empty, equals the caller, and the attempt hash equals
    `claims/{id}/codeHash`. `claims` can never be read, so only someone who got the code from the controller can claim.
 
-The owner releases a controller by deleting `info/ownerUid`.
+The owner releases a controller by deleting `info/ownerUid` and `users/{uid}/devices/{id}` in one
+update (app: Account → My devices → Remove from my account). Its box code then works for the next owner.
 
 ## Rules
 

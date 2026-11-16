@@ -199,5 +199,22 @@ buttons and motion.
   PHE Controller + PHE Line Kit × lines. No PHE toggle, no 8 tanks anywhere.
 - This replaces `docs/website-brief.md` §9 and `docs/flexible-system.md` §6 where they differ.
 
-## 8. Not now
+## 8. What was built (2026-11-16/17)
+
+| Part | Where | Tests |
+|---|---|---|
+| Rules: `info.type` once, PHE config/cmd/state/usage, `cmd.ota` = `firmware/stable`, release by owner | `firebase/scripts/build-rules.mjs` | 64 emulator tests |
+| PHE engine (1–5 lines, auto/manual, fail-safe, rising/supply, flow events, overflow, litres) | `firmware/lib/engine/src/phe.*` | host tests for 1, 2, 5 lines |
+| One build: type in NVS, `info.type/flash`, BLE `RelaxPump-H-/P-XXXX`, `RP2` identity, K1–K8 | `firmware/src/` (fw 3.0.0) | builds: esp32dev, release, revc |
+| OTA: 2 slots, check + rollout bucket, HTTPS download, sha256 + ECDSA P-256, outputs off, rollback < 90 s | `firmware/src/ota.*` | bench (V7) |
+| Factory: `new-device --type/--board v3`, `nvs.csv`, `factory-flash` (Node NVS image) | `firebase/scripts/` | NVS image byte-identical to Espressif's tool |
+| Release: `keygen.mjs`, `release.mjs` (GitHub Release, `firmware/stable`, `--rollout`) | `firmware/scripts/` | dry run |
+| App data: fleet store (many boards, tab saved), PHE store, OTA card logic, mock fleet | `app/src/state`, `model`, `logic`, `services` | 126 app tests |
+| App screens: Home tabs + PHE view, Add device (6 steps), My devices + Software update, PHE Installer setup, PHE notifications | `app/src/app`, `features/` | render tests |
+| Push notifications for PHE + update events | `web/lib/jobs/firebaseJobs.ts` | unit |
+| Website: v3 copy, PHE phone, products, Plan your kit | `web/`, `migrations/0003_v3.sql` | 60 unit + visual |
+
+Bench steps still to do (they need the owner): `docs/release.md` §6.
+
+## 9. Not now
 Flow meters, battery backup, board-to-board links.

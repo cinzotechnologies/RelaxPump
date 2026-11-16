@@ -73,6 +73,54 @@ notifications with the app closed, Account › Delete account.
 - Website: set the Google Play link (Admin → Website → App download → "Google Play is live").
 - Publish over-the-air fixes with `npx eas-cli update --channel production` (JS-only changes).
 
+## 6. v3 rollout (Household + PHE, many boards, OTA) — in this order
+
+1. **Rules** (changes Firebase): `cd firebase && npm test && npm run deploy:rules`.
+   Old v2 apps keep working (their writes still match the household shape).
+2. **Website + push jobs** (changes Cloudflare): `cd web && npm run check`, then
+   `npm run db:migrate:remote` (applies `0003_v3.sql`: new copy where the admin has not edited it,
+   new products), `npm run deploy`, `npm run deploy:jobs` (PHE + update notifications).
+3. **Signing key** (once, by the owner): `node firmware/scripts/keygen.mjs` → private key in
+   `D:/keys/relaxpump-ota-sign.pem` (+ a second copy offline), public key in
+   `firmware/include/ota_pubkey.h` → commit it. Without it every board refuses updates ("no key").
+4. **Firmware with the key**: `pio run -e release`; the factory / last USB flash of every existing
+   board: `npm run factory-flash -- --id RP-… --port COMx` (`docs/SETUP.md` §6).
+5. **App**: `cd app && npm run check`, EAS preview build → test → production.
+6. **First OTA**: raise `FW_VERSION`, commit, then § Firmware update below.
+
+## Firmware update (OTA)
+
+Boards download the update themselves from the GitHub Release (HTTPS), check its sha256 and the
+ECDSA P-256 signature against the public key built into their firmware, install it into the other
+slot and restart. A board that does not reach the cloud within 90 s of the new boot goes back to
+the old version by itself (and reports "update failed"). Household boards refuse while the pump
+runs; every output is off during the update. (`docs/two-module-system.md` §4.3, `firmware/src/ota.h`.)
+
+Each release:
+
+1. Raise `FW_VERSION` in `firmware/src/config.h`, run the host tests, commit and push to `main`.
+2. Dry run (builds, signs, checks the signature, publishes nothing):
+   `RP_SIGN_KEY=D:/keys/relaxpump-ota-sign.pem node firmware/scripts/release.mjs --dry-run`
+   - It warns above 95 % of the 4 MB boards' OTA slot (1,966,080 bytes). 3.0.0 with the key built in
+     is ≈ 1.92 MB (97.5 %): trim before adding big features, or move those boards to Rev C.
+3. Publish at 10 %: `RP_SIGN_KEY=… GITHUB_TOKEN=… node firmware/scripts/release.mjs --notes "Line 1|Line 2"`
+   - `GITHUB_TOKEN`: fine-grained token, this repo only, *Contents: read and write* (or a logged-in
+     `gh` CLI). It creates the Release `fw-vX.Y.Z` with `relaxpump-X.Y.Z.bin`, checks the download
+     URL answers, then writes `firmware/stable` (`--min-fw x.y.z` for boards that must update via an
+     older step first).
+   - The repo is public, so the binary is public: it never contains `secrets.h` (env:release) and
+     the script refuses a binary that holds any device password or claim code.
+4. Test board first: its rollout bucket is `sha256(id) % 100` (serial `id` shows it). If it is not
+   under 10, use `--rollout <bucket+1>` for the first step. App → My devices → Update now → watch
+   Downloading → Checking → Installing → Restarting → Up to date.
+5. Widen: `node firmware/scripts/release.mjs --rollout 100`. Pause: `--rollout 0` (boards stop
+   offering it; boards already updated stay).
+6. Something wrong after an update? The board rolls back on its own if it cannot reach the cloud.
+   Otherwise publish a fixed higher version; there is no downgrade.
+
+Never commit the private key; keep the offline copy. Losing it means no board can be updated
+again without a USB flash.
+
 ## Not done / later
 
 - iOS (needs an Apple developer account and `GoogleService-Info.plist`).
