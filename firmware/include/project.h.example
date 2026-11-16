@@ -1,0 +1,6 @@
+// Shared build values for every board (not per device). Copy to project.h (git-ignored), or run
+// `node scripts/make-project-h.mjs`, which reads the API key from app/google-services.json.
+// The release script (scripts/release.mjs) checks this file exists before it builds.
+#pragma once
+#define RP_FIREBASE_API_KEY "AIza..."
+#define RP_FIREBASE_DB_URL  "https://iotcinzo-default-rtdb.asia-southeast1.firebasedatabase.app"

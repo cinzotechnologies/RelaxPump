@@ -49,6 +49,24 @@ bool parse(const String &json, rp::Layout &l) {
   return true;
 }
 
+bool parsePhe(const String &json, rp::PheLayout &l) {
+  JsonDocument doc;
+  if (deserializeJson(doc, json) || !doc.is<JsonObject>()) return false;
+  l.low = doc["low"] | l.low;
+  l.high = doc["high"] | l.high;
+  l.n = doc["tankCount"] | 1;
+  for (int i = 0; i < rp::MAX_TANKS; i++) l.line[i] = rp::PheLine();
+  eachIndexed(doc["tanks"], [&](int i, JsonVariantConst t) {
+    if (i < 0 || i >= rp::MAX_TANKS) return;
+    rp::PheLine &c = l.line[i];
+    c.emptyCm = t["emptyCm"] | c.emptyCm;
+    c.fullCm = t["fullCm"] | c.fullCm;
+    c.litres = t["litres"] | 0.0f;
+  });
+  rp::sanitize(l);
+  return true;
+}
+
 void saveConfig(const String &json) {
   Preferences p;
   p.begin("rp", false);

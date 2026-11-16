@@ -3,7 +3,9 @@
 #include <Arduino.h>
 #include <Preferences.h>
 
-#include "secrets.h"
+#if !defined(RP_RELEASE) && __has_include("secrets.h")
+#include "secrets.h"  // dev fallback for RP_BOARD
+#endif
 
 #ifndef RP_BOARD
 #define RP_BOARD 1
@@ -14,12 +16,17 @@ namespace board {
 static const int TRIG[rp::N_SENSORS] = {16, 18, 23, 13, 14, 21};  // T1–T5, MAIN
 static const int ECHO[rp::N_SENSORS] = {17, 19, 4, 34, 35, 39};
 static const int VALVE[rp::MAX_TANKS] = {25, 26, 27, 32, 22};    // V1–V5
-static const int PUMP = 33;
+static const int PUMP = 33;                                       // K1
+static const int SPARE[2] = {5, 15};                              // K7, K8 (driven OFF)
 
 static int ver = 1;
 static int ON = LOW, OFF = HIGH;  // v1 relay module: active LOW
 
 int version() { return ver; }
+
+const char *label() { return ver == 3 ? "v3" : ver == 2 ? "v2" : "v1"; }
+
+static int clampVer(int v) { return v == 2 || v == 3 ? v : 1; }
 
 static void outputOff(int pin) {
   digitalWrite(pin, OFF);  // latch OFF first, so the relay / MOSFET never blips on at boot
@@ -28,11 +35,12 @@ static void outputOff(int pin) {
 }
 
 void begin(int v) {
-  ver = v == 2 ? 2 : 1;
-  ON = ver == 2 ? HIGH : LOW;
-  OFF = ver == 2 ? LOW : HIGH;
+  ver = clampVer(v);
+  ON = ver >= 2 ? HIGH : LOW;  // v2 PCB and Rev C (ULN) are active HIGH
+  OFF = ver >= 2 ? LOW : HIGH;
   outputOff(PUMP);
   for (int p : VALVE) outputOff(p);
+  for (int p : SPARE) outputOff(p);
   for (int i = 0; i < rp::N_SENSORS; i++) {
     pinMode(TRIG[i], OUTPUT);
     digitalWrite(TRIG[i], LOW);
@@ -50,7 +58,10 @@ void pump(bool on) { digitalWrite(PUMP, on ? ON : OFF); }
 void allOff() {
   pump(false);
   for (int i = 0; i < rp::MAX_TANKS; i++) valve(i, false);
+  for (int p : SPARE) digitalWrite(p, OFF);
 }
+
+int flashMb() { return (int)(ESP.getFlashChipSize() / (1024 * 1024)); }
 
 // ------------------------------------------------------------------ sensors
 static float readOnceCm(int trig, int echo) {
@@ -92,13 +103,13 @@ int storedVersion() {
   p.begin("rp", true);
   int v = p.getInt("board", RP_BOARD);
   p.end();
-  return v == 2 ? 2 : 1;
+  return clampVer(v);
 }
 
 void storeVersion(int v) {
   Preferences p;
   p.begin("rp", false);
-  p.putInt("board", v == 2 ? 2 : 1);
+  p.putInt("board", clampVer(v));
   p.end();
 }
 

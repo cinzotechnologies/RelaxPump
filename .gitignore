@@ -22,6 +22,10 @@ GoogleService-Info.plist
 # Firmware
 firmware/.pio/
 firmware/include/secrets.h
+firmware/include/project.h
+# OTA signing key: it must live outside the repo, this is only a safety net
+*.pem
+*.key
 .pio/
 
 # Firebase local
